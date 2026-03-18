@@ -1,0 +1,21 @@
+{
+    "agents": [
+        "codex",
+        "gemini",
+        "copilot",
+        "opencode"
+    ],
+    "guidelines": true,
+    "herd_mcp": true,
+    "mcp": true,
+    "packages": [
+        "livewire/blaze"
+    ],
+    "sail": false,
+    "skills": [
+        "livewire-development",
+        "pest-testing",
+        "tailwindcss-development",
+        "blaze-optimize"
+    ]
+}
