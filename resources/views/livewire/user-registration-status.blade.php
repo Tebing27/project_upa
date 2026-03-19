@@ -55,7 +55,7 @@
         </div>
     @endif
 
-    <div class="rounded-[2rem] border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+    <div class="rounded-4xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
         <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
             <div>
                 <h2 class="text-2xl font-semibold text-zinc-900 dark:text-white">{{ auth()->user()->name }}</h2>
@@ -71,7 +71,7 @@
         </div>
 
         <div class="mt-8 overflow-x-auto pb-2">
-            <div class="relative mx-auto flex min-w-[700px] justify-between px-1">
+            <div class="relative mx-auto flex min-w-175 justify-between px-1">
                 <div class="absolute left-8 right-8 top-5 h-0.5 bg-zinc-200 dark:bg-zinc-700"></div>
                 <div class="absolute left-8 top-5 h-0.5 bg-emerald-500 transition-all"
                     style="width: calc((100% - 4rem) * {{ max($currentStep - 1, 0) / 3 }});"></div>
@@ -117,7 +117,7 @@
         </div>
     </div>
 
-    <div class="rounded-[2rem] border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+    <div class="rounded-4xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
         <h2 class="text-xl font-semibold text-zinc-900 dark:text-white">Dokumen</h2>
 
         @if ($documentCards === [])
@@ -162,7 +162,7 @@
         @endif
     </div>
 
-    <div class="rounded-[2rem] border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+    <div class="rounded-4xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
         <h2 class="text-xl font-semibold text-zinc-900 dark:text-white">Riwayat Status</h2>
 
         @if ($statusHistory === [])
