@@ -3,8 +3,10 @@
 namespace App\Livewire\Admin;
 
 use App\Models\Registration;
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\View\View;
 use Livewire\Component;
 
 class JadwalUji extends Component
@@ -14,6 +16,8 @@ class JadwalUji extends Component
     public ?int $deleteRegistrationId = null;
 
     public string $examDate = '';
+
+    public string $examTime = '';
 
     public string $examLocation = '';
 
@@ -37,7 +41,8 @@ class JadwalUji extends Component
 
         $this->scheduleRegistrationId = $registration->id;
         $this->highlight = $registration->id;
-        $this->examDate = $registration->exam_date?->format('Y-m-d\TH:i') ?? '';
+        $this->examDate = $registration->exam_date?->format('Y-m-d') ?? '';
+        $this->examTime = $registration->exam_date?->format('H:i') ?? '';
         $this->examLocation = $registration->exam_location ?? '';
         $this->assessorName = $registration->assessor_name ?? '';
 
@@ -49,6 +54,7 @@ class JadwalUji extends Component
         $validated = $this->validate([
             'scheduleRegistrationId' => 'required|integer|exists:registrations,id',
             'examDate' => 'required|date',
+            'examTime' => 'required|date_format:H:i',
             'examLocation' => 'required|string|max:255',
             'assessorName' => 'required|string|max:255',
         ]);
@@ -59,8 +65,10 @@ class JadwalUji extends Component
             return;
         }
 
+        $examDateTime = Carbon::createFromFormat('Y-m-d H:i', $validated['examDate'].' '.$validated['examTime']);
+
         $registration->update([
-            'exam_date' => $validated['examDate'],
+            'exam_date' => $examDateTime,
             'exam_location' => $validated['examLocation'],
             'assessor_name' => $validated['assessorName'],
             'status' => 'terjadwal',
@@ -102,11 +110,14 @@ class JadwalUji extends Component
         $this->dispatch('close-modal', id: 'modal-hapus-jadwal');
     }
 
-    public function render()
+    public function render(): View
     {
+        $registrations = $this->scheduleRegistrations();
+
         return view('livewire.admin.jadwal-uji', [
-            'eligibleRegistrations' => $this->eligibleRegistrations(),
-            'scheduledRegistrations' => $this->scheduledRegistrations(),
+            'registrations' => $registrations,
+            'readyRegistrationsCount' => $registrations->where('status', 'dokumen_ok')->count(),
+            'scheduledRegistrationsCount' => $registrations->where('status', 'terjadwal')->count(),
             'selectedScheduleRegistration' => $this->scheduleRegistration(),
             'selectedDeleteRegistration' => $this->deleteRegistration(),
         ]);
@@ -115,25 +126,23 @@ class JadwalUji extends Component
     /**
      * @return Collection<int, Registration>
      */
-    private function eligibleRegistrations(): Collection
+    private function scheduleRegistrations(): Collection
     {
         return $this->registrationsQuery()
-            ->where('status', 'dokumen_ok')
-            ->latest()
-            ->get();
-    }
-
-    /**
-     * @return Collection<int, Registration>
-     */
-    private function scheduledRegistrations(): Collection
-    {
-        return $this->registrationsQuery()
-            ->where('status', 'terjadwal')
-            ->when($this->filterDate !== '', function (Builder $query): void {
-                $query->whereDate('exam_date', $this->filterDate);
+            ->where(function (Builder $query): void {
+                $query
+                    ->where('status', 'dokumen_ok')
+                    ->orWhere(function (Builder $scheduledQuery): void {
+                        $scheduledQuery
+                            ->where('status', 'terjadwal')
+                            ->when($this->filterDate !== '', function (Builder $query): void {
+                                $query->whereDate('exam_date', $this->filterDate);
+                            });
+                    });
             })
+            ->orderByRaw("case when status = 'dokumen_ok' then 0 else 1 end")
             ->orderBy('exam_date')
+            ->latest('id')
             ->get();
     }
 
@@ -163,6 +172,7 @@ class JadwalUji extends Component
     {
         $this->scheduleRegistrationId = null;
         $this->examDate = '';
+        $this->examTime = '';
         $this->examLocation = '';
         $this->assessorName = '';
     }

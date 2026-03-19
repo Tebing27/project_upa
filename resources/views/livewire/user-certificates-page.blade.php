@@ -10,17 +10,17 @@
     </div>
 
     <div class="rounded-[2rem] border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
-        <div class="rounded-[1.75rem] bg-linear-to-br from-sky-950 via-blue-950 to-slate-900 p-8 text-white">
-            <p class="text-xs font-semibold uppercase tracking-[0.24em] text-blue-200/80">Sertifikat Aktif</p>
+        <div class="rounded-[1.75rem] bg-linear-to-br from-emerald-900 via-emerald-800 to-green-950 p-8 text-white">
+            <p class="text-xs font-semibold uppercase tracking-[0.24em] text-amber-200/80">Sertifikat Aktif</p>
 
             <div class="mt-6 flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
                 <div>
-                    <p class="text-sm text-blue-100/70">No. Sertifikat</p>
-                    <p class="mt-1 font-mono text-lg tracking-wide text-blue-100">{{ $activeCertificate ? 'CERT-' . str_pad((string) $activeCertificate->id, 5, '0', STR_PAD_LEFT) : 'Tidak ada' }}</p>
+                    <p class="text-sm text-emerald-100/70">No. Sertifikat</p>
+                    <p class="mt-1 font-mono text-lg tracking-wide text-emerald-100">{{ $activeCertificate ? 'CERT-' . str_pad((string) $activeCertificate->id, 5, '0', STR_PAD_LEFT) : 'Tidak ada' }}</p>
 
                     <h2 class="mt-8 text-3xl font-semibold tracking-tight">{{ $activeCertificate?->scheme_name ?? 'Tidak ada sertifikat aktif' }}</h2>
-                    <p class="mt-3 text-sm text-blue-100/80">{{ auth()->user()->name }}</p>
-                    <p class="mt-5 text-sm text-blue-100/70">
+                    <p class="mt-3 text-sm text-emerald-100/80">{{ auth()->user()->name }}</p>
+                    <p class="mt-5 text-sm text-emerald-100/70">
                         @if ($activeCertificate?->expired_date)
                             Berlaku s.d. {{ $activeCertificate->expired_date->translatedFormat('F Y') }}
                         @else
@@ -31,7 +31,7 @@
 
                 <div class="flex flex-col gap-3 sm:flex-row">
                     @if ($downloadUrl)
-                        <a href="{{ $downloadUrl }}" target="_blank" class="inline-flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-blue-500">
+                        <a href="{{ $downloadUrl }}" target="_blank" class="inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-emerald-700">
                             <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                             </svg>
@@ -49,12 +49,12 @@
                     @endif
 
                     @if (! $downloadUrl && ! $resultDownloadUrl)
-                        <span class="inline-flex items-center justify-center rounded-xl bg-white/10 px-5 py-3 text-sm font-semibold text-blue-100/90 ring-1 ring-inset ring-white/10">
+                        <span class="inline-flex items-center justify-center rounded-xl bg-white/10 px-5 py-3 text-sm font-semibold text-emerald-100/90 ring-1 ring-inset ring-white/10">
                             File belum tersedia
                         </span>
                     @endif
 
-                    <span class="inline-flex items-center justify-center rounded-xl bg-white/10 px-5 py-3 text-sm font-semibold text-blue-100/90 ring-1 ring-inset ring-white/10">
+                    <span class="inline-flex items-center justify-center rounded-xl bg-white/10 px-5 py-3 text-sm font-semibold text-emerald-100/90 ring-1 ring-inset ring-white/10">
                         {{ $activeCertificate ? 'Status: Aktif' : 'Belum ada sertifikat' }}
                     </span>
                 </div>
@@ -105,7 +105,7 @@
                             <td class="px-6 py-4">
                                 <div class="flex flex-col gap-2">
                                     @if ($certificate->file_path)
-                                        <a href="{{ Storage::url($certificate->file_path) }}" target="_blank" class="inline-flex items-center gap-2 text-sm font-semibold text-blue-600 transition hover:text-blue-700 dark:text-blue-300 dark:hover:text-blue-200">
+                                        <a href="{{ Storage::url($certificate->file_path) }}" target="_blank" class="inline-flex items-center gap-2 text-sm font-semibold text-emerald-600 transition hover:text-emerald-700 dark:text-emerald-400 dark:hover:text-emerald-300">
                                             <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                                             </svg>

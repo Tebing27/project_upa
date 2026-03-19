@@ -20,8 +20,6 @@ class FortifyTwoFactorLoginResponse implements TwoFactorLoginResponseContract
 
     private function homePath(Request $request): string
     {
-        return $request->user()?->can('admin')
-            ? route('admin.dashboard')
-            : route('dashboard');
+        return route('dashboard');
     }
 }

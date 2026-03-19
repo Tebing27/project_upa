@@ -3,9 +3,9 @@
 
     <div class="grid grid-cols-1 gap-6 mb-8 md:grid-cols-3">
         <!-- Card 1 -->
-        <div class="rounded-xl border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900 p-6 shadow-sm">
+        <div class="rounded-xl border border-zinc-200 border-t-4 border-t-emerald-500 bg-white dark:border-zinc-800 dark:bg-zinc-900 p-6 shadow-sm hover:shadow-md transition-shadow">
             <div class="flex items-center">
-                <div class="p-3 bg-blue-100 rounded-full dark:bg-blue-900/50 text-blue-600 dark:text-blue-400">
+                <div class="p-3 bg-emerald-100 rounded-full dark:bg-emerald-900/50 text-emerald-600 dark:text-emerald-400">
                     <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
                 </div>
                 <div class="ml-4">
@@ -16,7 +16,7 @@
         </div>
 
         <!-- Card 2 -->
-        <div class="rounded-xl border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900 p-6 shadow-sm">
+        <div class="rounded-xl border border-zinc-200 border-t-4 border-t-amber-500 bg-white dark:border-zinc-800 dark:bg-zinc-900 p-6 shadow-sm hover:shadow-md transition-shadow">
             <div class="flex items-center">
                 <div class="p-3 bg-amber-100 rounded-full dark:bg-amber-900/50 text-amber-600 dark:text-amber-400">
                     <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
@@ -29,9 +29,9 @@
         </div>
 
         <!-- Card 3 -->
-        <div class="rounded-xl border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900 p-6 shadow-sm">
+        <div class="rounded-xl border border-zinc-200 border-t-4 border-t-emerald-600 bg-white dark:border-zinc-800 dark:bg-zinc-900 p-6 shadow-sm hover:shadow-md transition-shadow">
             <div class="flex items-center">
-                <div class="p-3 bg-green-100 rounded-full dark:bg-green-900/50 text-green-600 dark:text-green-400">
+                <div class="p-3 bg-emerald-100 rounded-full dark:bg-emerald-900/50 text-emerald-600 dark:text-emerald-400">
                     <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                 </div>
                 <div class="ml-4">
@@ -80,9 +80,9 @@
                                             $colorMap = [
                                                 'draft' => 'bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300',
                                                 'menunggu_verifikasi' => 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400',
-                                                'dokumen_ok' => 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
+                                                'dokumen_ok' => 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400',
                                                 'terjadwal' => 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400',
-                                                'kompeten' => 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',
+                                                'kompeten' => 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400',
                                                 'tidak_kompeten' => 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400',
                                             ];
                                             $colorClass = $colorMap[$reg->status] ?? $colorMap['draft'];
@@ -125,9 +125,10 @@
                         <div class="p-4 rounded-xl border border-zinc-200 bg-zinc-50/50 dark:border-zinc-700 dark:bg-zinc-800/50">
                             <div class="flex items-start justify-between mb-2">
                                 <div class="font-medium text-sm text-zinc-900 dark:text-white">
-                                    {{ \Carbon\Carbon::parse($schedule->exam_date)->translatedFormat('l, d F Y H:i') }}
+                                    <p>{{ \Carbon\Carbon::parse($schedule->exam_date)->translatedFormat('l, d F Y') }}</p>
+                                    <p class="mt-1 text-xs font-normal text-zinc-500 dark:text-zinc-400">Jam {{ \Carbon\Carbon::parse($schedule->exam_date)->format('H:i') }}</p>
                                 </div>
-                                <span class="inline-flex items-center rounded-md bg-indigo-50 px-2 py-1 text-xs font-medium text-indigo-700 ring-1 ring-inset ring-indigo-700/10 dark:bg-indigo-900/30 dark:text-indigo-400 dark:ring-indigo-700/30">
+                                <span class="inline-flex items-center rounded-md bg-emerald-50 px-2 py-1 text-xs font-medium text-emerald-700 ring-1 ring-inset ring-emerald-700/10 dark:bg-emerald-900/30 dark:text-emerald-400 dark:ring-emerald-700/30">
                                     {{ $schedule->participant_count }} Peserta
                                 </span>
                             </div>

@@ -16,13 +16,13 @@
                         <h2 class="text-xl font-semibold text-zinc-900 dark:text-white">{{ $registration->user->name }}</h2>
                         @php
                             $statusColorMap = [
-                                'dokumen_ok' => 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
+                                'dokumen_ok' => 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400',
                                 'dokumen_ditolak' => 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400',
                                 'menunggu_verifikasi' => 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400',
                                 'pending_payment' => 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400',
                                 'paid' => 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400',
                                 'terjadwal' => 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400',
-                                'kompeten' => 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',
+                                'kompeten' => 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400',
                                 'tidak_kompeten' => 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400',
                             ];
                             $statusClass = $statusColorMap[$registration->status] ?? 'bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300';
@@ -43,7 +43,7 @@
                 </div>
                 <div class="mt-4 md:mt-0">
                     @if($registration->status === 'dokumen_ok')
-                        <button wire:click="lanjutkanKeJadwal" class="inline-flex items-center gap-2 rounded-md bg-zinc-900 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-zinc-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-zinc-900 dark:bg-white dark:text-zinc-900 dark:hover:bg-zinc-200">
+                        <button wire:click="lanjutkanKeJadwal" class="inline-flex items-center gap-2 rounded-md bg-emerald-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-emerald-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-600 dark:bg-emerald-500 dark:text-zinc-900 dark:hover:bg-emerald-400">
                             Lanjutkan ke Jadwal
                         </button>
                     @endif
@@ -105,7 +105,7 @@
                                 </a>
                                 
                                 @if($docStatus !== 'verified')
-                                    <button wire:click="verifikasiDokumen('{{ $docField }}')" class="inline-flex items-center gap-1 rounded bg-zinc-900 px-2 py-1 text-xs font-medium text-white shadow-sm hover:bg-zinc-800 dark:bg-white dark:text-zinc-900 dark:hover:bg-zinc-200 transition-colors">
+                                    <button wire:click="verifikasiDokumen('{{ $docField }}')" class="inline-flex items-center gap-1 rounded bg-emerald-600 px-2 py-1 text-xs font-medium text-white shadow-sm hover:bg-emerald-700 dark:bg-emerald-500 dark:text-zinc-900 dark:hover:bg-emerald-400 transition-colors">
                                         <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
                                         Verifikasi
                                     </button>

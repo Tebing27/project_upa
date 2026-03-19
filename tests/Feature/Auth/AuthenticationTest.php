@@ -34,7 +34,7 @@ test('admins are redirected to the admin dashboard after login', function () {
 
     $response
         ->assertSessionHasNoErrors()
-        ->assertRedirect(route('admin.dashboard', absolute: false));
+        ->assertRedirect(route('dashboard', absolute: false));
 
     $this->assertAuthenticated();
 });

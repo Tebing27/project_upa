@@ -15,10 +15,20 @@ test('authenticated users can visit the dashboard', function () {
     $response->assertOk();
 });
 
-test('authenticated admins are redirected from the user dashboard to the admin dashboard', function () {
+test('authenticated admins can visit the admin dashboard at /dashboard', function () {
     $admin = User::factory()->create(['role' => 'admin']);
     $this->actingAs($admin);
 
     $response = $this->get(route('dashboard'));
-    $response->assertRedirect(route('admin.dashboard'));
+    $response
+        ->assertOk()
+        ->assertSee('Dashboard Admin');
+});
+
+test('legacy admin dashboard URL is no longer available', function () {
+    $admin = User::factory()->create(['role' => 'admin']);
+    $this->actingAs($admin);
+
+    $response = $this->get('/admin/dashboard');
+    $response->assertNotFound();
 });

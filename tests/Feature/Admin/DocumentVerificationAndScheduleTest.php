@@ -121,7 +121,8 @@ it('can create a schedule for a document-approved participant', function () {
     Livewire::actingAs($admin)
         ->test(JadwalUji::class)
         ->call('openScheduleModal', $registration->id)
-        ->set('examDate', '2026-04-10T09:00')
+        ->set('examDate', '2026-04-10')
+        ->set('examTime', '09:00')
         ->set('examLocation', 'Lab Sertifikasi Gedung A')
         ->set('assessorName', 'Budi Santoso')
         ->call('saveSchedule')
@@ -152,7 +153,8 @@ it('can update an existing schedule for a participant', function () {
     Livewire::actingAs($admin)
         ->test(JadwalUji::class)
         ->call('openScheduleModal', $registration->id)
-        ->set('examDate', '2026-04-12T13:30')
+        ->set('examDate', '2026-04-12')
+        ->set('examTime', '13:30')
         ->set('examLocation', 'Lab Baru')
         ->set('assessorName', 'Asesor Baru')
         ->call('saveSchedule');
@@ -200,6 +202,41 @@ it('can filter schedule participants by search keyword and exam date', function 
         ->assertSee('Bagas Siap Jadwal')
         ->assertSee('Bagas Terjadwal')
         ->assertDontSee('Sinta Terjadwal');
+});
+
+it('shows ready and scheduled participants in a single schedule table with contextual actions', function () {
+    $admin = User::factory()->create(['role' => 'admin']);
+    $scheme = Scheme::factory()->create(['name' => 'Junior Web Developer']);
+
+    $readyUser = User::factory()->create(['name' => 'Raka Belum Dijadwalkan']);
+    $scheduledUser = User::factory()->create(['name' => 'Dina Sudah Terjadwal']);
+
+    Registration::factory()->create([
+        'user_id' => $readyUser->id,
+        'scheme_id' => $scheme->id,
+        'status' => 'dokumen_ok',
+    ]);
+
+    Registration::factory()->create([
+        'user_id' => $scheduledUser->id,
+        'scheme_id' => $scheme->id,
+        'status' => 'terjadwal',
+        'exam_date' => Carbon::parse('2026-04-10 09:00:00'),
+        'exam_location' => 'Lab Sertifikasi',
+        'assessor_name' => 'Asesor Uji',
+    ]);
+
+    Livewire::actingAs($admin)
+        ->test(JadwalUji::class)
+        ->assertSee('Peserta Jadwal Uji')
+        ->assertDontSee('Peserta Siap Dijadwalkan')
+        ->assertDontSee('Peserta Terjadwal')
+        ->assertDontSee('Upload Sertifikat & Hasil')
+        ->assertSee('Raka Belum Dijadwalkan')
+        ->assertSee('Dina Sudah Terjadwal')
+        ->assertSee('Jadwalkan')
+        ->assertSee('Edit')
+        ->assertSee('Hapus');
 });
 
 it('can delete a schedule and move the participant back to document approved', function () {
@@ -258,7 +295,6 @@ it('can upload certificate and exam result files for a scheduled participant', f
     Livewire::actingAs($admin)
         ->test(UploadHasilUji::class)
         ->call('openUploadModal', $registration->id)
-        ->set('score', '92')
         ->set('certificateFile', $certificateFile)
         ->set('resultFile', $resultFile)
         ->call('uploadParticipantFiles')
@@ -275,7 +311,7 @@ it('can upload certificate and exam result files for a scheduled participant', f
         ->first();
 
     expect($registration->status)->toBe('sertifikat_terbit')
-        ->and($registration->score)->toBe(92)
+        ->and($registration->score)->toBeNull()
         ->and($oldCertificate->status)->toBe('inactive')
         ->and($newCertificate)->not->toBeNull()
         ->and($newCertificate->status)->toBe('active')
@@ -286,11 +322,88 @@ it('can upload certificate and exam result files for a scheduled participant', f
     Storage::disk('public')->assertExists($newCertificate->result_file_path);
 });
 
+it('keeps uploaded participants visible on the upload page for future updates', function () {
+    $admin = User::factory()->create(['role' => 'admin']);
+    $scheme = Scheme::factory()->create(['name' => 'Junior Web Developer']);
+    $participant = User::factory()->create(['name' => 'Peserta Upload Tetap Tampil']);
+
+    $registration = Registration::factory()->create([
+        'user_id' => $participant->id,
+        'scheme_id' => $scheme->id,
+        'status' => 'sertifikat_terbit',
+        'exam_date' => Carbon::parse('2026-04-10 09:00:00'),
+        'exam_location' => 'Lab Sertifikasi Gedung A',
+        'assessor_name' => 'Budi Santoso',
+    ]);
+
+    Certificate::factory()->create([
+        'user_id' => $participant->id,
+        'scheme_name' => 'Junior Web Developer',
+        'status' => 'active',
+        'file_path' => 'certificates/jwd.pdf',
+        'result_file_path' => 'exam-results/jwd-result.pdf',
+    ]);
+
+    Livewire::actingAs($admin)
+        ->test(UploadHasilUji::class)
+        ->assertSee('Peserta Upload Tetap Tampil')
+        ->assertSee('Sudah upload')
+        ->assertSee('Lihat Sertifikat')
+        ->assertSee('Lihat Hasil Ujian')
+        ->assertSee('Edit')
+        ->assertSee('Hapus')
+        ->assertDontSee('Upload Ulang')
+        ->call('openUploadModal', $registration->id)
+        ->assertSet('uploadRegistrationId', $registration->id);
+});
+
+it('can delete uploaded certificate files and return participant to scheduled status', function () {
+    Storage::fake('public');
+
+    $admin = User::factory()->create(['role' => 'admin']);
+    $scheme = Scheme::factory()->create(['name' => 'Junior Web Developer']);
+    $participant = User::factory()->create();
+    $registration = Registration::factory()->create([
+        'user_id' => $participant->id,
+        'scheme_id' => $scheme->id,
+        'status' => 'sertifikat_terbit',
+        'exam_date' => Carbon::parse('2026-04-10 09:00:00'),
+        'exam_location' => 'Lab Sertifikasi Gedung A',
+        'assessor_name' => 'Budi Santoso',
+    ]);
+
+    $certificate = Certificate::factory()->create([
+        'user_id' => $participant->id,
+        'scheme_name' => 'Junior Web Developer',
+        'status' => 'active',
+        'file_path' => 'certificates/jwd.pdf',
+        'result_file_path' => 'exam-results/jwd-result.pdf',
+    ]);
+
+    Storage::disk('public')->put('certificates/jwd.pdf', 'certificate');
+    Storage::disk('public')->put('exam-results/jwd-result.pdf', 'result');
+
+    Livewire::actingAs($admin)
+        ->test(UploadHasilUji::class)
+        ->call('confirmDelete', $registration->id)
+        ->call('deleteUploadedFiles')
+        ->assertDispatched('close-modal')
+        ->assertDispatched('toast');
+
+    $registration->refresh();
+
+    expect($registration->status)->toBe('terjadwal')
+        ->and(Certificate::query()->find($certificate->id))->toBeNull();
+
+    Storage::disk('public')->assertMissing('certificates/jwd.pdf');
+    Storage::disk('public')->assertMissing('exam-results/jwd-result.pdf');
+});
+
 it('shows only admin navigation on the admin dashboard', function () {
     $admin = User::factory()->create(['role' => 'admin']);
 
     $this->actingAs($admin)
-        ->get(route('admin.dashboard'))
+        ->get(route('dashboard'))
         ->assertOk()
         ->assertSee('Admin Panel')
         ->assertSee('Dashboard Admin')
@@ -304,7 +417,7 @@ it('links recent admin requests to the document review page', function () {
     $registration = Registration::factory()->create();
 
     $this->actingAs($admin)
-        ->get(route('admin.dashboard'))
+        ->get(route('dashboard'))
         ->assertOk()
         ->assertSee(route('admin.verifikasi.detail', $registration), false);
 });

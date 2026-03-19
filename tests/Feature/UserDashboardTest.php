@@ -27,8 +27,10 @@ it('renders the user dashboard with the new summary cards', function () {
         ->assertSee('Status Pendaftaran')
         ->assertSee('Kode Referensi')
         ->assertSee('REF-2024-0042')
-        ->assertSee('Progress Pendaftaran')
-        ->assertSee('Verifikasi Data & Dokumen')
+        ->assertSee('Alur Sertifikasi')
+        ->assertSee('Tahap 1 dari 4')
+        ->assertSee('Daftar')
+        ->assertSee('Verifikasi')
         ->assertSee('Detail Pendaftaran')
         ->assertSee('Tidak ada');
 });
@@ -69,7 +71,7 @@ it('shows rejected document details in progress step two', function () {
     $this->actingAs($user)
         ->get('/dashboard')
         ->assertOk()
-        ->assertSee('Dokumen yang perlu diperbaiki')
+        ->assertSee('Lengkapi Dokumen')
         ->assertSee('KHS ditolak')
         ->assertSee('Dokumen buram dan tidak terbaca.')
         ->assertSee('Lihat status pendaftaran');
@@ -91,7 +93,10 @@ it('shows the exam schedule in progress step three', function () {
     $this->actingAs($user)
         ->get('/dashboard')
         ->assertOk()
-        ->assertSee('Jadwal ujian Anda')
+        ->assertSee('Persiapan Ujian')
+        ->assertSee('Tanggal Ujian')
+        ->assertSee('Jam Ujian')
+        ->assertSee('Jam 09:00')
         ->assertSee('Lab Sertifikasi Gedung A')
         ->assertSee('Budi Santoso');
 });
