@@ -71,7 +71,7 @@ class VerifikasiDokumen extends Component
         if ($this->tab === 'perlu_review') {
             $query->whereIn('status', ['menunggu_verifikasi', 'pending_payment', 'paid']);
         } elseif ($this->tab === 'dokumen_ok') {
-            $query->where('status', 'dokumen_ok');
+            $query->whereIn('status', ['dokumen_ok', 'terjadwal', 'kompeten', 'tidak_kompeten']);
         } elseif ($this->tab === 'ditolak') {
             $query->where(function (Builder $rejectedQuery): void {
                 $rejectedQuery->whereIn('status', ['dokumen_ditolak', 'rejected']);

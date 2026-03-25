@@ -3,6 +3,7 @@
 namespace App\Livewire;
 
 use App\Models\Registration;
+use Illuminate\Support\Facades\Storage;
 use Livewire\Component;
 use Livewire\WithFileUploads;
 
@@ -10,26 +11,54 @@ class UserRegistrationStatus extends Component
 {
     use WithFileUploads;
 
+    public Registration $registration;
+
     public array $reuploadFiles = [];
 
     public ?string $successMessage = null;
 
+    public function mount(?Registration $registration = null): void
+    {
+        if (! $registration || ! $registration->exists) {
+            $registration = Registration::query()
+                ->where('user_id', auth()->id())
+                ->latest()
+                ->first();
+
+            if (! $registration) {
+                abort(404);
+            }
+        }
+
+        if ($registration->user_id !== auth()->id()) {
+            abort(403);
+        }
+
+        $this->registration = $registration->load('scheme');
+    }
+
     public function render()
     {
-        $registration = auth()->user()->registrations()->with('scheme')->latest()->first();
+        $this->registration->refresh();
+        $this->registration->load('scheme');
 
         return view('livewire.user-registration-status', [
-            'registration' => $registration,
-            'currentStep' => $this->getStepProgress($registration?->status),
-            'statusLabel' => $this->getStatusLabel($registration?->status),
-            'documentCards' => $this->getDocumentCards($registration),
-            'statusHistory' => $this->getStatusHistory($registration),
+            'registration' => $this->registration,
+            'currentStep' => $this->getStepProgress($this->registration->status),
+            'statusLabel' => $this->getStatusLabel($this->registration->status),
+            'documentCards' => $this->getDocumentCards($this->registration),
+            'statusHistory' => $this->getStatusHistory($this->registration),
         ]);
     }
 
     public function reuploadDocument(string $documentField): void
     {
-        $registration = auth()->user()->registrations()->latest()->firstOrFail();
+        $registration = $this->registration;
+
+        if ($registration->user_id !== auth()->id()) {
+            abort(403);
+        }
+
         $fileRules = $this->documentUploadRules();
 
         if (! array_key_exists($documentField, $fileRules)) {
@@ -62,17 +91,17 @@ class UserRegistrationStatus extends Component
 
     public function getStepProgress(?string $status): int
     {
-        return match($status) {
+        return match ($status) {
             'menunggu_verifikasi', 'dokumen_kurang', 'dokumen_ditolak', 'dokumen_ok', 'rejected' => 2,
-            'terjadwal', 'selesai_uji', 'kompeten', 'tidak_kompeten' => 3,
-            'sertifikat_terbit' => 4,
+            'terjadwal' => 3,
+            'selesai_uji', 'kompeten', 'tidak_kompeten', 'sertifikat_terbit' => 4,
             default => 1,
         };
     }
 
     public function getStatusLabel(?string $status): string
     {
-        return match($status) {
+        return match ($status) {
             'pending_payment' => 'Menunggu Bayar',
             'menunggu_verifikasi' => 'Verifikasi Dokumen',
             'dokumen_kurang' => 'Dokumen Kurang',
@@ -89,7 +118,7 @@ class UserRegistrationStatus extends Component
     }
 
     /**
-     * @return array<int, array{field: string, label: string, status: string, note: string|null, has_file: bool, can_reupload: bool}>
+     * @return array<int, array{field: string, label: string, status: string, note: string|null, has_file: bool, can_reupload: bool, file_url: string|null}>
      */
     public function getDocumentCards(?Registration $registration): array
     {
@@ -119,6 +148,7 @@ class UserRegistrationStatus extends Component
                     'note' => $documentStatus['note'] ?? null,
                     'has_file' => (bool) $registration->{$field},
                     'can_reupload' => $status === 'rejected',
+                    'file_url' => $registration->{$field} ? Storage::url($registration->{$field}) : null,
                 ];
             })
             ->values()
@@ -180,9 +210,11 @@ class UserRegistrationStatus extends Component
         if (in_array($registration->status, ['kompeten', 'tidak_kompeten', 'sertifikat_terbit'], true)) {
             $history[] = [
                 'title' => $registration->status === 'tidak_kompeten' ? 'Hasil ujian belum kompeten' : 'Hasil ujian kompeten',
-                'description' => $registration->score !== null
-                    ? 'Nilai akhir: '.$registration->score
-                    : 'Hasil ujian telah diproses.',
+                'description' => $registration->status === 'tidak_kompeten'
+                    ? 'Silahkan download file hasil ujian dan lakukan pendaftaran ulang.'
+                    : ($registration->score !== null
+                        ? 'Nilai akhir: '.$registration->score
+                        : 'Hasil ujian telah diproses.'),
                 'date' => $registration->updated_at?->translatedFormat('d M Y'),
                 'color' => $registration->status === 'tidak_kompeten' ? 'red' : 'emerald',
             ];
@@ -218,7 +250,7 @@ class UserRegistrationStatus extends Component
 
     private function documentStoragePath(string $documentField): string
     {
-        return match($documentField) {
+        return match ($documentField) {
             'fr_apl_01_path' => 'documents/fr_apl_01',
             'fr_apl_02_path' => 'documents/fr_apl_02',
             'ktm_path' => 'documents/ktm',

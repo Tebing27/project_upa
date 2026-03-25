@@ -3,8 +3,8 @@
 namespace App\Livewire\Admin;
 
 use App\Models\Registration;
-use Livewire\Component;
 use Illuminate\Support\Facades\Auth;
+use Livewire\Component;
 
 class DetailDokumen extends Component
 {
@@ -97,6 +97,7 @@ class DetailDokumen extends Component
         foreach ($docs as $doc) {
             if (empty($this->registration->$doc)) {
                 $allVerified = false;
+
                 continue;
             }
 

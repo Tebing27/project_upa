@@ -5,6 +5,7 @@ namespace App\Models;
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Str;
@@ -71,14 +72,14 @@ class User extends Authenticatable
         return Str::of($this->name)
             ->explode(' ')
             ->take(2)
-            ->map(fn($word) => Str::substr($word, 0, 1))
+            ->map(fn ($word) => Str::substr($word, 0, 1))
             ->implode('');
     }
 
     /**
      * Get the registrations for the user.
      */
-    public function registrations(): \Illuminate\Database\Eloquent\Relations\HasMany
+    public function registrations(): HasMany
     {
         return $this->hasMany(Registration::class);
     }
@@ -86,8 +87,50 @@ class User extends Authenticatable
     /**
      * Get the certificates for the user.
      */
-    public function certificates(): \Illuminate\Database\Eloquent\Relations\HasMany
+    public function certificates(): HasMany
     {
         return $this->hasMany(Certificate::class);
+    }
+
+    /**
+     * Determine if the user has an active certificate for a given scheme.
+     */
+    public function hasActiveCertificateForScheme(int $schemeId): bool
+    {
+        return $this->certificates()
+            ->where('scheme_id', $schemeId)
+            ->active()
+            ->exists();
+    }
+
+    /**
+     * Determine if the user has ANY certificate (active or inactive) for a given scheme.
+     */
+    public function hasAnyCertificateForScheme(int $schemeId): bool
+    {
+        return $this->certificates()
+            ->where('scheme_id', $schemeId)
+            ->exists();
+    }
+
+    /**
+     * Determine if the user has a registration in progress (not yet completed/failed).
+     */
+    public function hasInProgressRegistration(): bool
+    {
+        return $this->registrations()
+            ->whereNotIn('status', ['sertifikat_terbit', 'tidak_kompeten'])
+            ->exists();
+    }
+
+    /**
+     * Determine if the user has an in-progress registration for a specific scheme.
+     */
+    public function hasInProgressRegistrationForScheme(int $schemeId): bool
+    {
+        return $this->registrations()
+            ->where('scheme_id', $schemeId)
+            ->whereNotIn('status', ['sertifikat_terbit', 'tidak_kompeten'])
+            ->exists();
     }
 }

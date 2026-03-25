@@ -5,6 +5,7 @@ use App\Livewire\Admin\JadwalUji;
 use App\Livewire\Admin\SchemeManager;
 use App\Livewire\Admin\UploadHasilUji;
 use App\Livewire\Admin\VerifikasiDokumen;
+use App\Livewire\DaftarSkemaBaru;
 use App\Livewire\UserCertificatesPage;
 use App\Livewire\UserRegistrationStatus;
 use Illuminate\Support\Facades\Route;
@@ -18,8 +19,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
             : view('dashboard');
     })->name('dashboard');
 
-    Route::get('dashboard/status-pendaftaran', UserRegistrationStatus::class)->name('dashboard.status');
+    Route::get('dashboard/status-pendaftaran/{registration?}', UserRegistrationStatus::class)->name('dashboard.status');
     Route::get('dashboard/sertifikat-saya', UserCertificatesPage::class)->name('dashboard.certificates');
+    Route::get('dashboard/daftar-skema', DaftarSkemaBaru::class)->name('dashboard.daftar-skema');
 
     Route::middleware('can:admin')->prefix('admin')->name('admin.')->group(function () {
         Route::get('schemes', SchemeManager::class)->name('schemes');

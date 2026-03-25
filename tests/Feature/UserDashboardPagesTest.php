@@ -13,10 +13,11 @@ it('renders the registration status page', function () {
     $user = User::factory()->create(['nim' => '2210511042']);
     $scheme = Scheme::factory()->create(['name' => 'Junior Web Developer']);
 
-    Registration::factory()->create([
+    $registration = Registration::factory()->create([
         'user_id' => $user->id,
         'scheme_id' => $scheme->id,
         'status' => 'dokumen_ditolak',
+        'khs_path' => 'documents/khs/khs.pdf',
         'document_statuses' => [
             'khs_path' => [
                 'status' => 'rejected',
@@ -26,12 +27,13 @@ it('renders the registration status page', function () {
     ]);
 
     $this->actingAs($user)
-        ->get(route('dashboard.status'))
+        ->get(route('dashboard.status', $registration))
         ->assertOk()
         ->assertSee('Status Pendaftaran')
         ->assertSee('Dokumen')
         ->assertSee('Riwayat Status')
-        ->assertSee('Dokumen KHS buram.');
+        ->assertSee('Dokumen KHS buram.')
+        ->assertSee('Lihat File');
 });
 
 it('allows users to reupload rejected documents', function () {
@@ -54,7 +56,7 @@ it('allows users to reupload rejected documents', function () {
     $file = UploadedFile::fake()->create('khs.pdf', 200, 'application/pdf');
 
     Livewire::actingAs($user)
-        ->test(UserRegistrationStatus::class)
+        ->test(UserRegistrationStatus::class, ['registration' => $registration])
         ->set('reuploadFiles.khs_path', $file)
         ->call('reuploadDocument', 'khs_path')
         ->assertSet('successMessage', 'Dokumen berhasil diupload ulang dan sedang menunggu verifikasi admin.');

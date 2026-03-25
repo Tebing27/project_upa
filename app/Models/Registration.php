@@ -2,12 +2,14 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
+use Database\Factories\RegistrationFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Registration extends Model
 {
-    /** @use HasFactory<\Database\Factories\RegistrationFactory> */
+    /** @use HasFactory<RegistrationFactory> */
     use HasFactory;
 
     /**
@@ -18,6 +20,7 @@ class Registration extends Model
     protected $fillable = [
         'user_id',
         'scheme_id',
+        'type',
         'fr_apl_01_path',
         'fr_apl_02_path',
         'ktm_path',
@@ -28,6 +31,7 @@ class Registration extends Model
         'payment_reference',
         'va_number',
         'status',
+        'exam_result_path',
         'document_statuses',
         'exam_date',
         'exam_location',
@@ -51,7 +55,7 @@ class Registration extends Model
     /**
      * Get the user that owns the registration.
      */
-    public function user(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
     }
@@ -59,7 +63,7 @@ class Registration extends Model
     /**
      * Get the scheme that the registration belongs to.
      */
-    public function scheme(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    public function scheme(): BelongsTo
     {
         return $this->belongsTo(Scheme::class);
     }

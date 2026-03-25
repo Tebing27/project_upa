@@ -2,7 +2,7 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
+use App\Models\Scheme;
 use Illuminate\Database\Seeder;
 
 class SchemeSeeder extends Seeder
@@ -37,7 +37,7 @@ class SchemeSeeder extends Seeder
         ];
 
         foreach ($schemes as $scheme) {
-            \App\Models\Scheme::create($scheme);
+            Scheme::create($scheme);
         }
     }
 }

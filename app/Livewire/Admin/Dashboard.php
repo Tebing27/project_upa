@@ -2,8 +2,8 @@
 
 namespace App\Livewire\Admin;
 
-use App\Models\Registration;
 use App\Models\Certificate;
+use App\Models\Registration;
 use Livewire\Component;
 
 class Dashboard extends Component

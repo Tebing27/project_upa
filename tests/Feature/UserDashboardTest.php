@@ -27,12 +27,12 @@ it('renders the user dashboard with the new summary cards', function () {
         ->assertSee('Status Pendaftaran')
         ->assertSee('Kode Referensi')
         ->assertSee('REF-2024-0042')
-        ->assertSee('Alur Sertifikasi')
+        ->assertSee('Progress Pendaftaran')
         ->assertSee('Tahap 1 dari 4')
         ->assertSee('Daftar')
         ->assertSee('Verifikasi')
         ->assertSee('Detail Pendaftaran')
-        ->assertSee('Tidak ada');
+        ->assertSee('Tidak ada pendaftaran aktif');
 });
 
 it('displays the active certificate summary from the database', function () {
@@ -74,6 +74,7 @@ it('shows rejected document details in progress step two', function () {
         ->assertSee('Lengkapi Dokumen')
         ->assertSee('KHS ditolak')
         ->assertSee('Dokumen buram dan tidak terbaca.')
+        ->assertSee('Upload Ulang Dokumen')
         ->assertSee('Lihat status pendaftaran');
 });
 
@@ -124,4 +125,41 @@ it('shows certificate and exam result download actions when files are available'
         ->assertOk()
         ->assertSee('Unduh Sertifikat')
         ->assertSee('Unduh Hasil Ujian');
+});
+
+it('shows Daftar Ulang button when status is tidak_kompeten', function () {
+    $user = User::factory()->create();
+    $scheme = Scheme::factory()->create(['name' => 'Junior Web Developer']);
+
+    Registration::factory()->create([
+        'user_id' => $user->id,
+        'scheme_id' => $scheme->id,
+        'status' => 'tidak_kompeten',
+        'exam_result_path' => 'exam-results/failed.pdf',
+    ]);
+
+    $this->actingAs($user)
+        ->get('/dashboard')
+        ->assertOk()
+        ->assertSee('Belum Kompeten')
+        ->assertSee('Unduh Hasil Ujian')
+        ->assertSee('Daftar Ulang Skema Ini');
+});
+
+it('shows review status when documents are being verified', function () {
+    $user = User::factory()->create();
+    $scheme = Scheme::factory()->create(['name' => 'Junior Web Developer']);
+
+    Registration::factory()->create([
+        'user_id' => $user->id,
+        'scheme_id' => $scheme->id,
+        'status' => 'menunggu_verifikasi',
+    ]);
+
+    $this->actingAs($user)
+        ->get('/dashboard')
+        ->assertOk()
+        ->assertSee('Tahap Review')
+        ->assertSee('Sedang Direview')
+        ->assertSee('Lihat Detail Status');
 });

@@ -17,6 +17,18 @@ trait ProfileValidationRules
         return [
             'name' => $this->nameRules(),
             'email' => $this->emailRules($userId),
+            'nim' => ['nullable', 'string', 'max:255'],
+            'no_ktp' => ['nullable', 'string', 'max:255'],
+            'tempat_lahir' => ['nullable', 'string', 'max:255'],
+            'tanggal_lahir' => ['nullable', 'date'],
+            'jenis_kelamin' => ['nullable', 'in:L,P'],
+            'alamat_rumah' => ['nullable', 'string'],
+            'no_wa' => ['nullable', 'string', 'max:255'],
+            'pendidikan_terakhir' => ['nullable', 'string', 'max:255'],
+            'total_sks' => ['nullable', 'integer', 'min:0'],
+            'status_semester' => ['nullable', 'string', 'max:255'],
+            'fakultas' => ['nullable', 'string', 'max:255'],
+            'program_studi' => ['nullable', 'string', 'max:255'],
         ];
     }
 

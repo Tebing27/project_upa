@@ -1,199 +1,330 @@
-<div class="space-y-6 p-6">
+<div class="min-h-screen bg-[#f8fafc] p-6 md:p-8 font-sans">
     @php
         $steps = [
             1 => 'Daftar',
             2 => 'Verifikasi Data & Dokumen',
             3 => 'Jadwal Ujian',
-            4 => 'Sertifikat Terbit',
+            4 => $registration?->status === 'tidak_kompeten' ? 'Tidak Lolos Ujian' : 'Sertifikat Terbit',
         ];
+
         $statusBadgeClasses = match ($registration?->status) {
-            'dokumen_ditolak',
-            'rejected',
-            'tidak_kompeten'
-                => 'bg-red-50 text-red-700 ring-red-200 dark:bg-red-900/30 dark:text-red-300 dark:ring-red-800/70',
+            'dokumen_ditolak', 'rejected', 'tidak_kompeten' => 'bg-red-50 text-red-700 border-red-100',
             'terjadwal',
             'selesai_uji',
             'kompeten',
             'sertifikat_terbit'
-                => 'bg-blue-50 text-blue-700 ring-blue-200 dark:bg-blue-900/30 dark:text-blue-300 dark:ring-blue-800/70',
-            'dokumen_ok',
-            'menunggu_verifikasi'
-                => 'bg-emerald-50 text-emerald-700 ring-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-300 dark:ring-emerald-800/70',
-            'pending_payment'
-                => 'bg-amber-50 text-amber-700 ring-amber-200 dark:bg-amber-900/30 dark:text-amber-300 dark:ring-amber-800/70',
-            default
-                => 'bg-zinc-100 text-zinc-700 ring-zinc-200 dark:bg-zinc-800 dark:text-zinc-300 dark:ring-zinc-700',
+                => 'bg-[#d1fae5] text-emerald-700 border-[#a7f3d0]/50',
+            'dokumen_ok', 'menunggu_verifikasi' => 'bg-teal-50 text-teal-700 border-teal-100',
+            'pending_payment' => 'bg-amber-50 text-amber-700 border-amber-100',
+            default => 'bg-slate-50 text-slate-700 border-slate-200',
         };
+
+        $statusBadgeDot = match ($registration?->status) {
+            'dokumen_ditolak', 'rejected', 'tidak_kompeten' => 'bg-red-500',
+            'terjadwal', 'selesai_uji', 'kompeten', 'sertifikat_terbit' => 'bg-[#10b981]',
+            'dokumen_ok', 'menunggu_verifikasi' => 'bg-teal-500',
+            'pending_payment' => 'bg-amber-500',
+            default => 'bg-slate-400',
+        };
+
         $statusStyles = [
-            'verified' =>
-                'border-emerald-300 bg-emerald-50 text-emerald-700 dark:border-emerald-800/70 dark:bg-emerald-900/20 dark:text-emerald-300',
-            'pending' =>
-                'border-amber-300 bg-amber-50 text-amber-700 dark:border-amber-800/70 dark:bg-amber-900/20 dark:text-amber-300',
-            'rejected' =>
-                'border-red-300 bg-red-50 text-red-700 dark:border-red-800/70 dark:bg-red-900/20 dark:text-red-300',
-            'missing' =>
-                'border-zinc-300 bg-white text-zinc-500 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-400',
+            'verified' => 'border-[#a7f3d0]/60 bg-[#f0fdf4]',
+            'pending' => 'border-amber-100 bg-[#fffbeb]',
+            'rejected' => 'border-red-100 bg-[#fef2f2]',
+            'missing' => 'border-slate-200 bg-white',
         ];
+
+        $statusTextColors = [
+            'verified' => 'text-[#059669]',
+            'pending' => 'text-amber-600',
+            'rejected' => 'text-red-600',
+            'missing' => 'text-slate-500',
+        ];
+
+        $statusIconBgs = [
+            'verified' => 'bg-[#d1fae5] text-[#059669]',
+            'pending' => 'bg-amber-100/70 text-amber-600',
+            'rejected' => 'bg-red-100/70 text-red-600',
+            'missing' => 'bg-slate-100 text-slate-500',
+        ];
+
         $statusLabels = [
             'verified' => 'Terverifikasi',
             'pending' => 'Menunggu Review',
             'rejected' => 'Ditolak',
             'missing' => 'Belum Upload',
         ];
+
+        $historyColors = [
+            'blue' => 'bg-[#3b82f6]',
+            'amber' => 'bg-[#f59e0b]',
+            'red' => 'bg-[#ef4444]',
+            'indigo' => 'bg-[#6366f1]',
+            'emerald' => 'bg-[#10b981]',
+            'purple' => 'bg-[#8b5cf6]',
+        ];
+
+        $historyBgColors = [
+            'blue' => 'bg-blue-100/80',
+            'amber' => 'bg-amber-100/80',
+            'red' => 'bg-red-100/80',
+            'indigo' => 'bg-indigo-100/80',
+            'emerald' => 'bg-emerald-100/80',
+            'purple' => 'bg-purple-100/80',
+        ];
+
+        $verifiedDocumentsCount = collect($documentCards)->where('status', 'verified')->count();
     @endphp
 
-    <div>
-        <h1 class="text-3xl font-semibold tracking-tight text-zinc-900 dark:text-white">Status Pendaftaran</h1>
-        <p class="mt-2 text-sm text-zinc-500 dark:text-zinc-400">Pantau progres pendaftaran, cek status dokumen, dan
-            upload ulang dokumen yang ditolak.</p>
-    </div>
-
-    @if ($successMessage)
-        <div
-            class="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700 dark:border-emerald-800/70 dark:bg-emerald-900/20 dark:text-emerald-300">
-            {{ $successMessage }}
+    <div class="max-w-7xl mx-auto space-y-6">
+        <!-- Header -->
+        <div>
+            <h1 class="text-2xl md:text-[28px] font-bold tracking-tight text-[#1e293b]">Status Pendaftaran</h1>
+            <p class="mt-1.5 text-[15px] text-slate-500">Pantau progres pendaftaran, cek status dokumen, dan upload ulang
+                dokumen yang ditolak.</p>
         </div>
-    @endif
 
-    <div class="rounded-4xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
-        <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-            <div>
-                <h2 class="text-2xl font-semibold text-zinc-900 dark:text-white">{{ auth()->user()->name }}</h2>
-                <p class="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
-                    {{ $registration?->scheme?->name ?: 'Skema belum dipilih' }} • NIM: {{ auth()->user()->nim ?: '-' }}
-                </p>
+        @if ($successMessage)
+            <div class="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
+                {{ $successMessage }}
+            </div>
+        @endif
+
+        <!-- User Info & Stepper Card -->
+        <section
+            class="rounded-[1.25rem] border border-slate-100 bg-white p-6 md:p-8 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.03)]">
+            <div class="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+                <div>
+                    <h2 class="text-xl font-bold text-slate-800">{{ auth()->user()->name }}</h2>
+                    <p class="mt-1 text-[15px] text-slate-500">
+                        {{ $registration?->scheme?->name ?: 'Skema belum dipilih' }} <span class="mx-1.5">&bull;</span>
+                        NIM: {{ auth()->user()->nim ?: '-' }}
+                    </p>
+                </div>
+
+                <div
+                    class="inline-flex items-center rounded-full px-4 py-1.5 text-[13px] font-semibold {{ $statusBadgeClasses }}">
+                    <span class="mr-2 h-1.5 w-1.5 rounded-full {{ $statusBadgeDot }}"></span>
+                    {{ $statusLabel }}
+                </div>
             </div>
 
-            <span
-                class="inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold ring-1 ring-inset {{ $statusBadgeClasses }}">
-                {{ $statusLabel }}
-            </span>
-        </div>
+            <!-- Stepper -->
+            <div class="mt-8 mb-4 pb-12">
+                <div class="relative flex w-full px-8"> @php
+                    $progressWidth = 0;
+                    if ($currentStep === 2) {
+                        $progressWidth = 33.3333;
+                    } elseif ($currentStep === 3) {
+                        $progressWidth = 66.6666;
+                    } elseif ($currentStep >= 4) {
+                        $progressWidth = 100;
+                    }
+                @endphp
 
-        <div class="mt-8 overflow-x-auto pb-2">
-            <div class="relative mx-auto flex min-w-175 justify-between px-1">
-                <div class="absolute left-8 right-8 top-5 h-0.5 bg-zinc-200 dark:bg-zinc-700"></div>
-                <div class="absolute left-8 top-5 h-0.5 bg-emerald-500 transition-all"
-                    style="width: calc((100% - 4rem) * {{ max($currentStep - 1, 0) / 3 }});"></div>
+                    <div class="absolute left-0 right-0 top-[19px] h-[2px] bg-slate-200 z-0"></div>
 
-                @foreach ($steps as $stepNumber => $stepLabel)
-                    @php
-                        $isCompleted = $stepNumber < $currentStep;
-                        $isCurrent = $stepNumber === $currentStep;
-                        $isRejectedStep =
-                            $stepNumber === 2 &&
-                            in_array($registration?->status, ['dokumen_ditolak', 'rejected'], true);
-                    @endphp
+                    <div class="absolute left-0 top-[19px] h-[2px] bg-[#10b981] transition-all duration-500 z-0"
+                        style="width: {{ $progressWidth }}%;"></div>
 
-                    <div class="relative z-10 flex w-40 flex-col items-center text-center">
-                        <div @class([
-                            'flex h-10 w-10 items-center justify-center rounded-full border-2 bg-white text-sm font-semibold dark:bg-zinc-900',
-                            'border-emerald-500 bg-emerald-500 text-white dark:bg-emerald-500' => $isCompleted,
-                            'border-blue-500 text-blue-600 ring-4 ring-blue-100 dark:text-blue-300 dark:ring-blue-900/40' =>
-                                $isCurrent && !$isRejectedStep,
-                            'border-red-500 text-red-600 ring-4 ring-red-100 dark:text-red-300 dark:ring-red-900/40' => $isRejectedStep,
-                            'border-zinc-300 text-zinc-400 dark:border-zinc-600 dark:text-zinc-500' =>
-                                !$isCompleted && !$isCurrent && !$isRejectedStep,
-                        ])>
-                            @if ($isCompleted)
-                                <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M5 13l4 4L19 7" />
-                                </svg>
-                            @elseif ($isRejectedStep)
-                                <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M6 18L18 6M6 6l12 12" />
-                                </svg>
-                            @else
-                                {{ $stepNumber }}
-                            @endif
-                        </div>
+                    <div class="relative flex w-full justify-between z-10">
+                        @foreach ($steps as $stepNumber => $stepLabel)
+                            @php
+                                $isCompleted = $stepNumber < $currentStep;
+                                $isCurrent = $stepNumber === $currentStep;
+                                $isRejectedStep =
+                                    ($stepNumber === 2 &&
+                                        in_array($registration?->status, ['dokumen_ditolak', 'rejected'], true)) ||
+                                    ($stepNumber === 4 && $registration?->status === 'tidak_kompeten');
 
-                        <p class="mt-3 text-sm font-medium text-zinc-700 dark:text-zinc-200">{{ $stepLabel }}</p>
-                    </div>
-                @endforeach
-            </div>
-        </div>
-    </div>
+                                $displayLabel = str_replace(' & ', "\n& ", $stepLabel);
+                            @endphp
 
-    <div class="rounded-4xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
-        <h2 class="text-xl font-semibold text-zinc-900 dark:text-white">Dokumen</h2>
+                            <div class="relative flex flex-col items-center shrink-0">
+                                <div @class([
+                                    'relative z-10 flex shrink-0 h-[40px] w-[40px] items-center justify-center rounded-full text-[15px] font-bold ring-[6px] ring-white transition-colors',
+                                    'bg-[#10b981] text-white' =>
+                                        $isCompleted || ($isCurrent && !$isRejectedStep),
+                                    'bg-red-500 text-white' => $isRejectedStep,
+                                    'bg-white border-[2px] border-slate-200 text-slate-400' =>
+                                        !$isCompleted && !$isCurrent && !$isRejectedStep,
+                                ])>
+                                    @if ($isCompleted)
+                                        <svg class="h-[18px] w-[18px]" fill="none" viewBox="0 0 24 24"
+                                            stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"
+                                                d="M5 13l4 4L19 7" />
+                                        </svg>
+                                    @elseif ($isRejectedStep)
+                                        <svg class="h-[18px] w-[18px]" fill="none" viewBox="0 0 24 24"
+                                            stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"
+                                                d="M6 18L18 6M6 6l12 12" />
+                                        </svg>
+                                    @else
+                                        {{ $stepNumber }}
+                                    @endif
+                                </div>
 
-        @if ($documentCards === [])
-            <p class="mt-4 text-sm text-zinc-500 dark:text-zinc-400">Belum ada data dokumen.</p>
-        @else
-            <div class="mt-6 grid gap-4 md:grid-cols-2">
-                @foreach ($documentCards as $document)
-                    <div
-                        class="rounded-2xl border px-4 py-4 {{ $statusStyles[$document['status']] ?? $statusStyles['missing'] }}">
-                        <div class="flex items-start justify-between gap-3">
-                            <div>
-                                <h3 class="font-semibold">{{ $document['label'] }}</h3>
-                                <p class="mt-1 text-sm opacity-90">
-                                    {{ $statusLabels[$document['status']] ?? 'Belum diketahui' }}</p>
-                                @if ($document['note'])
-                                    <p class="mt-2 text-sm opacity-90">{{ $document['note'] }}</p>
-                                @endif
+                                <div
+                                    class="absolute top-[52px] left-1/2 -translate-x-1/2 w-[120px] md:w-[150px] text-center">
+                                    <p @class([
+                                        'whitespace-pre-line leading-[1.3] text-[11px] md:text-[13px]',
+                                        'text-slate-600 font-medium' => $isCompleted || $isCurrent,
+                                        'text-slate-400' => !$isCompleted && !$isCurrent,
+                                        'text-red-600 font-medium' => $isRejectedStep,
+                                    ])>
+                                        {{ $displayLabel }}
+                                    </p>
+                                </div>
                             </div>
-
-                            <span
-                                class="mt-1 inline-flex h-7 items-center rounded-full bg-white/70 px-2 text-xs font-semibold text-current dark:bg-black/10">
-                                {{ $document['has_file'] ? 'Ada File' : 'Belum Ada' }}
-                            </span>
-                        </div>
-
-                        @if ($document['can_reupload'])
-                            <form wire:submit="reuploadDocument('{{ $document['field'] }}')" class="mt-4 space-y-3">
-                                <input type="file" wire:model="reuploadFiles.{{ $document['field'] }}"
-                                    class="block w-full rounded-xl border border-current/20 bg-white/80 px-3 py-2 text-sm text-current file:mr-3 file:rounded-lg file:border-0 file:bg-white file:px-3 file:py-2 file:text-sm file:font-semibold file:text-zinc-900 dark:bg-zinc-950/60 dark:file:bg-zinc-800 dark:file:text-white" />
-                                @error('reuploadFiles.' . $document['field'])
-                                    <p class="text-sm">{{ $message }}</p>
-                                @enderror
-                                <button type="submit"
-                                    class="inline-flex items-center rounded-xl bg-zinc-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-zinc-800 dark:bg-white dark:text-zinc-900 dark:hover:bg-zinc-200">
-                                    Upload Ulang
-                                </button>
-                            </form>
-                        @endif
+                        @endforeach
                     </div>
-                @endforeach
+                </div>
             </div>
-        @endif
-    </div>
+        </section>
 
-    <div class="rounded-4xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
-        <h2 class="text-xl font-semibold text-zinc-900 dark:text-white">Riwayat Status</h2>
+        <!-- Main Content Grid -->
+        <div class="grid grid-cols-1 gap-6 lg:grid-cols-[1.8fr_1fr]">
+            <!-- Dokumen Section -->
+            <section
+                class="rounded-[1.25rem] border border-slate-100 bg-white p-6 md:p-7 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.03)]">
+                <div class="flex items-center justify-between mb-6">
+                    <h2 class="text-[1.15rem] font-bold text-slate-800">Dokumen</h2>
+                    <span class="text-[13px] font-medium text-slate-400">{{ count($documentCards) }} dokumen</span>
+                </div>
 
-        @if ($statusHistory === [])
-            <p class="mt-4 text-sm text-zinc-500 dark:text-zinc-400">Belum ada riwayat status.</p>
-        @else
-            <div class="mt-6 space-y-5">
-                @foreach ($statusHistory as $history)
-                    <div class="flex gap-4">
-                        <div class="flex flex-col items-center">
-                            <span @class([
-                                'mt-1 h-3 w-3 rounded-full',
-                                'bg-blue-500' => $history['color'] === 'blue',
-                                'bg-amber-500' => $history['color'] === 'amber',
-                                'bg-red-500' => $history['color'] === 'red',
-                                'bg-indigo-500' => $history['color'] === 'indigo',
-                                'bg-emerald-500' => $history['color'] === 'emerald',
-                            ])></span>
-                            @if (!$loop->last)
-                                <span class="mt-2 h-full w-px bg-zinc-200 dark:bg-zinc-700"></span>
-                            @endif
-                        </div>
-                        <div class="pb-4">
-                            <p class="font-semibold text-zinc-900 dark:text-white">{{ $history['title'] }}</p>
-                            <p class="mt-1 text-sm text-zinc-600 dark:text-zinc-300">{{ $history['description'] }}</p>
-                            @if ($history['date'])
-                                <p class="mt-1 text-xs text-zinc-500 dark:text-zinc-400">{{ $history['date'] }}</p>
-                            @endif
-                        </div>
+                @if ($documentCards === [])
+                    <p class="text-sm text-slate-500">Belum ada data dokumen.</p>
+                @else
+                    <div class="grid gap-4 sm:grid-cols-2">
+                        @foreach ($documentCards as $document)
+                            <article
+                                class="flex flex-col justify-between rounded-xl border p-4 transition-all {{ $statusStyles[$document['status']] ?? $statusStyles['missing'] }}">
+                                <div class="flex items-center justify-between gap-3">
+                                    <div class="flex items-center gap-3 min-w-0">
+                                        <div
+                                            class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg {{ $statusIconBgs[$document['status']] ?? $statusIconBgs['missing'] }}">
+                                            <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24"
+                                                stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"
+                                                    d="M9 12h6m-6 4h6M9 8h6m2 12H7a2 2 0 01-2-2V6a2 2 0 012-2h7.586A2 2 0 0116 4.586L19.414 8A2 2 0 0120 9.414V18a2 2 0 01-2 2z" />
+                                            </svg>
+                                        </div>
+                                        <div class="min-w-0">
+                                            <h3 class="truncate text-[14px] font-semibold text-slate-800">
+                                                {{ $document['label'] }}</h3>
+                                            <div
+                                                class="mt-0.5 flex items-center gap-1.5 {{ $statusTextColors[$document['status']] ?? $statusTextColors['missing'] }}">
+                                                @if ($document['status'] === 'verified')
+                                                    <svg class="h-[13px] w-[13px]" viewBox="0 0 20 20"
+                                                        fill="currentColor">
+                                                        <path fill-rule="evenodd"
+                                                            d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z"
+                                                            clip-rule="evenodd" />
+                                                    </svg>
+                                                @elseif($document['status'] === 'rejected')
+                                                    <svg class="h-[13px] w-[13px]" viewBox="0 0 20 20"
+                                                        fill="currentColor">
+                                                        <path fill-rule="evenodd"
+                                                            d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.28 7.22a.75.75 0 00-1.06 1.06L8.94 10l-1.72 1.72a.75.75 0 101.06 1.06L10 11.06l1.72 1.72a.75.75 0 101.06-1.06L11.06 10l1.72-1.72a.75.75 0 00-1.06-1.06L10 8.94 8.28 7.22z"
+                                                            clip-rule="evenodd" />
+                                                    </svg>
+                                                @else
+                                                    <svg class="h-[13px] w-[13px]" viewBox="0 0 20 20"
+                                                        fill="currentColor">
+                                                        <path fill-rule="evenodd"
+                                                            d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a.75.75 0 000 1.5h.253a.25.25 0 01.244.304l-.459 2.066A1.75 1.75 0 0010.747 15H11a.75.75 0 000-1.5h-.253a.25.25 0 01-.244-.304l.459-2.066A1.75 1.75 0 009.253 9H9z"
+                                                            clip-rule="evenodd" />
+                                                    </svg>
+                                                @endif
+                                                <span
+                                                    class="text-[12px] font-medium">{{ $statusLabels[$document['status']] ?? 'Belum diketahui' }}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    @if ($document['has_file'] && $document['file_url'])
+                                        <a href="{{ $document['file_url'] }}" target="_blank"
+                                            class="shrink-0 rounded-full border border-[#a7f3d0]/60 bg-white px-3 py-1 text-[12px] font-medium text-[#059669] transition hover:bg-emerald-50">
+                                            Lihat File
+                                        </a>
+                                    @else
+                                        <span
+                                            class="shrink-0 rounded-full border border-slate-200 bg-white px-3 py-1 text-[12px] font-medium text-slate-400">
+                                            Belum Ada File
+                                        </span>
+                                    @endif
+                                </div>
+
+                                @if ($document['note'])
+                                    <p class="mt-3 text-[13px] text-slate-600">{{ $document['note'] }}</p>
+                                @endif
+
+                                @if ($document['can_reupload'])
+                                    <form wire:submit="reuploadDocument('{{ $document['field'] }}')"
+                                        class="mt-4 pt-4 border-t border-slate-200/60">
+                                        <div class="flex gap-2">
+                                            <input type="file" wire:model="reuploadFiles.{{ $document['field'] }}"
+                                                class="block w-full text-xs text-slate-500 file:mr-2 file:rounded-md file:border-0 file:bg-slate-100 file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-slate-700 hover:file:bg-slate-200" />
+                                            <button type="submit"
+                                                class="shrink-0 rounded-md bg-slate-800 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-slate-700">
+                                                Upload
+                                            </button>
+                                        </div>
+                                        @error('reuploadFiles.' . $document['field'])
+                                            <p class="mt-1.5 text-xs text-red-600">{{ $message }}</p>
+                                        @enderror
+                                    </form>
+                                @endif
+                            </article>
+                        @endforeach
                     </div>
-                @endforeach
-            </div>
-        @endif
+                @endif
+            </section>
+
+            <!-- Riwayat Status Section -->
+            <section
+                class="rounded-[1.25rem] border border-slate-100 bg-white p-6 md:p-7 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.03)]">
+                <h2 class="text-[1.15rem] font-bold text-slate-800 mb-6">Riwayat Status</h2>
+
+                @if ($statusHistory === [])
+                    <p class="text-sm text-slate-500">Belum ada riwayat status.</p>
+                @else
+                    <div class="space-y-6">
+                        @foreach ($statusHistory as $index => $history)
+                            <div class="relative flex gap-4">
+                                @if (!$loop->last)
+                                    <div class="absolute left-[0.9rem] top-8 -bottom-6 w-[2px] bg-slate-100"></div>
+                                @endif
+
+                                <div
+                                    class="relative z-10 flex h-[1.8rem] w-[1.8rem] shrink-0 items-center justify-center rounded-full {{ $historyBgColors[$history['color']] ?? $historyBgColors['blue'] }}">
+                                    <div
+                                        class="flex h-[1.15rem] w-[1.15rem] items-center justify-center rounded-full {{ $historyColors[$history['color']] ?? $historyColors['blue'] }} text-white">
+                                        <svg class="h-[10px] w-[10px]" fill="none" viewBox="0 0 24 24"
+                                            stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3"
+                                                d="M5 13l4 4L19 7" />
+                                        </svg>
+                                    </div>
+                                </div>
+
+                                <div class="pb-2">
+                                    <p class="text-[14.5px] font-semibold text-slate-800 leading-tight">
+                                        {{ $history['title'] }}</p>
+                                    <p class="mt-1 text-[13px] text-slate-500 leading-snug">
+                                        {{ $history['description'] }}</p>
+                                    @if ($history['date'])
+                                        <p class="mt-1 text-[12px] font-medium text-slate-400">{{ $history['date'] }}
+                                        </p>
+                                    @endif
+                                </div>
+                            </div>
+                        @endforeach
+                    </div>
+                @endif
+            </section>
+        </div>
     </div>
 </div>

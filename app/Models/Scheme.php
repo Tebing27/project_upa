@@ -2,12 +2,14 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
+use Database\Factories\SchemeFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Scheme extends Model
 {
-    /** @use HasFactory<\Database\Factories\SchemeFactory> */
+    /** @use HasFactory<SchemeFactory> */
     use HasFactory;
 
     /**
@@ -38,7 +40,7 @@ class Scheme extends Model
     /**
      * Get the registrations for the scheme.
      */
-    public function registrations(): \Illuminate\Database\Eloquent\Relations\HasMany
+    public function registrations(): HasMany
     {
         return $this->hasMany(Registration::class);
     }

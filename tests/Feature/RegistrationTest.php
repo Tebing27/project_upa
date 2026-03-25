@@ -3,9 +3,8 @@
 use App\Models\Scheme;
 use App\Models\User;
 use Illuminate\Http\UploadedFile;
-use Illuminate\Support\Facades\Storage;
-use Livewire\Volt\Volt;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
 use Livewire\Livewire;
 
 test('a user can log in with nim', function () {
@@ -87,6 +86,6 @@ test('registration stepper functional flow', function () {
     $this->assertDatabaseHas('registrations', [
         'scheme_id' => $scheme->id,
         'payment_reference' => '98987654321',
-        'status' => 'pending_payment'
+        'status' => 'pending_payment',
     ]);
 });

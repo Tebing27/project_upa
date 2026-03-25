@@ -108,6 +108,26 @@ it('redirects document-approved participants to the schedule page without changi
     expect($registration->status)->toBe('dokumen_ok');
 });
 
+it('shows the Data Pribadi modal button and correct user data in DetailDokumen', function () {
+    $admin = User::factory()->create(['role' => 'admin']);
+    $scheme = Scheme::factory()->create(['name' => 'Junior Web Developer']);
+    $participant = User::factory()->create([
+        'name' => 'Data Pribadi Peserta',
+        'nim' => '12345678',
+    ]);
+    $registration = Registration::factory()->create([
+        'user_id' => $participant->id,
+        'scheme_id' => $scheme->id,
+        'status' => 'menunggu_verifikasi',
+    ]);
+
+    Livewire::actingAs($admin)
+        ->test(DetailDokumen::class, ['registration' => $registration])
+        ->assertSee('Data Pribadi')
+        ->assertSee('Data Pribadi Peserta')
+        ->assertSee('12345678');
+});
+
 it('can create a schedule for a document-approved participant', function () {
     $admin = User::factory()->create(['role' => 'admin']);
     $scheme = Scheme::factory()->create(['name' => 'Junior Web Developer']);
@@ -282,13 +302,6 @@ it('can upload certificate and exam result files for a scheduled participant', f
         'assessor_name' => 'Budi Santoso',
     ]);
 
-    $oldCertificate = Certificate::factory()->create([
-        'user_id' => $participant->id,
-        'scheme_name' => 'Junior Web Developer',
-        'status' => 'active',
-        'file_path' => 'certificates/old-jwd.pdf',
-    ]);
-
     $certificateFile = UploadedFile::fake()->create('sertifikat.pdf', 200, 'application/pdf');
     $resultFile = UploadedFile::fake()->create('hasil-ujian.pdf', 200, 'application/pdf');
 
@@ -297,29 +310,75 @@ it('can upload certificate and exam result files for a scheduled participant', f
         ->call('openUploadModal', $registration->id)
         ->set('certificateFile', $certificateFile)
         ->set('resultFile', $resultFile)
+        ->set('expiredDate', '2029-04-10')
         ->call('uploadParticipantFiles')
         ->assertDispatched('close-modal')
         ->assertDispatched('toast');
 
     $registration->refresh();
-    $oldCertificate->refresh();
 
-    $newCertificate = Certificate::query()
+    $certificate = Certificate::query()
         ->where('user_id', $participant->id)
         ->where('scheme_name', 'Junior Web Developer')
         ->latest('id')
         ->first();
 
     expect($registration->status)->toBe('sertifikat_terbit')
-        ->and($registration->score)->toBeNull()
-        ->and($oldCertificate->status)->toBe('inactive')
-        ->and($newCertificate)->not->toBeNull()
-        ->and($newCertificate->status)->toBe('active')
-        ->and($newCertificate->file_path)->not->toBeNull()
-        ->and($newCertificate->result_file_path)->not->toBeNull();
+        ->and($certificate)->not->toBeNull()
+        ->and($certificate->status)->toBe('active')
+        ->and($certificate->file_path)->not->toBeNull()
+        ->and($certificate->result_file_path)->not->toBeNull()
+        ->and($certificate->expired_date->format('Y-m-d'))->toBe('2029-04-10');
 
-    Storage::disk('public')->assertExists($newCertificate->file_path);
-    Storage::disk('public')->assertExists($newCertificate->result_file_path);
+    Storage::disk('public')->assertExists($certificate->file_path);
+    Storage::disk('public')->assertExists($certificate->result_file_path);
+});
+
+it('can edit only the expired date without re-uploading files', function () {
+    Storage::fake('public');
+
+    $admin = User::factory()->create(['role' => 'admin']);
+    $scheme = Scheme::factory()->create(['name' => 'Junior Web Developer']);
+    $participant = User::factory()->create();
+    $registration = Registration::factory()->create([
+        'user_id' => $participant->id,
+        'scheme_id' => $scheme->id,
+        'status' => 'sertifikat_terbit',
+        'exam_date' => Carbon::parse('2026-04-10 09:00:00'),
+        'exam_location' => 'Lab Sertifikasi Gedung A',
+        'assessor_name' => 'Budi Santoso',
+    ]);
+
+    Storage::disk('public')->put('certificates/jwd.pdf', 'certificate-content');
+    Storage::disk('public')->put('exam-results/jwd-result.pdf', 'result-content');
+
+    $certificate = Certificate::factory()->create([
+        'user_id' => $participant->id,
+        'scheme_id' => $scheme->id,
+        'scheme_name' => 'Junior Web Developer',
+        'status' => 'active',
+        'expired_date' => '2029-04-10',
+        'file_path' => 'certificates/jwd.pdf',
+        'result_file_path' => 'exam-results/jwd-result.pdf',
+    ]);
+
+    Livewire::actingAs($admin)
+        ->test(UploadHasilUji::class)
+        ->call('openUploadModal', $registration->id)
+        ->assertSet('expiredDate', '2029-04-10')
+        ->set('expiredDate', '2030-06-15')
+        ->call('uploadParticipantFiles')
+        ->assertDispatched('close-modal')
+        ->assertDispatched('toast');
+
+    $certificate->refresh();
+
+    expect($certificate->expired_date->format('Y-m-d'))->toBe('2030-06-15')
+        ->and($certificate->file_path)->toBe('certificates/jwd.pdf')
+        ->and($certificate->result_file_path)->toBe('exam-results/jwd-result.pdf');
+
+    Storage::disk('public')->assertExists('certificates/jwd.pdf');
+    Storage::disk('public')->assertExists('exam-results/jwd-result.pdf');
 });
 
 it('keeps uploaded participants visible on the upload page for future updates', function () {
@@ -338,6 +397,7 @@ it('keeps uploaded participants visible on the upload page for future updates', 
 
     Certificate::factory()->create([
         'user_id' => $participant->id,
+        'scheme_id' => $scheme->id,
         'scheme_name' => 'Junior Web Developer',
         'status' => 'active',
         'file_path' => 'certificates/jwd.pdf',
@@ -374,6 +434,7 @@ it('can delete uploaded certificate files and return participant to scheduled st
 
     $certificate = Certificate::factory()->create([
         'user_id' => $participant->id,
+        'scheme_id' => $scheme->id,
         'scheme_name' => 'Junior Web Developer',
         'status' => 'active',
         'file_path' => 'certificates/jwd.pdf',

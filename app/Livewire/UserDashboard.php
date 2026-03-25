@@ -11,36 +11,38 @@ class UserDashboard extends Component
     public function render()
     {
         $user = auth()->user();
-        $latestRegistration = $user->registrations()
+        $allRegistrations = $user->registrations()
             ->with('scheme')
             ->latest()
-            ->first();
-        $activeCertificate = $user->certificates()
-            ->where('status', 'active')
-            ->latest('expired_date')
-            ->first();
+            ->get();
+        $latestRegistration = $allRegistrations->first();
+        $allCertificates = $user->certificates()->latest()->get();
+        $activeCertificate = $allCertificates->first(fn ($cert): bool => $cert->is_active);
+        $hasInProgressRegistration = $user->hasInProgressRegistration();
 
         return view('livewire.user-dashboard', [
-            'activeCertificatesCount' => $user->certificates()->where('status', 'active')->count(),
+            'activeCertificatesCount' => $allCertificates->filter(fn ($cert): bool => $cert->is_active)->count(),
             'latestRegistration' => $latestRegistration,
+            'allRegistrations' => $allRegistrations,
             'activeCertificate' => $activeCertificate,
             'rejectedDocuments' => $this->getRejectedDocuments($latestRegistration),
+            'hasInProgressRegistration' => $hasInProgressRegistration,
         ]);
     }
 
     public function getStepProgress(?string $status): int
     {
-        return match($status) {
+        return match ($status) {
             'menunggu_verifikasi', 'dokumen_kurang', 'dokumen_ditolak', 'dokumen_ok', 'rejected' => 2,
-            'terjadwal', 'selesai_uji', 'kompeten', 'tidak_kompeten' => 3,
-            'sertifikat_terbit' => 4,
+            'terjadwal' => 3,
+            'selesai_uji', 'kompeten', 'tidak_kompeten', 'sertifikat_terbit' => 4,
             default => 1,
         };
     }
 
     public function getStatusLabel(?string $status): string
     {
-        return match($status) {
+        return match ($status) {
             'pending_payment' => 'Menunggu Bayar',
             'menunggu_verifikasi' => 'Verifikasi Dokumen',
             'dokumen_kurang' => 'Dokumen Kurang',
@@ -53,6 +55,14 @@ class UserDashboard extends Component
             'sertifikat_terbit' => 'Sertifikat Terbit',
             'draft' => 'Daftar',
             default => Str::title(str_replace('_', ' ', (string) $status)),
+        };
+    }
+
+    public function getTypeLabel(?string $type): string
+    {
+        return match ($type) {
+            'perpanjangan' => 'Perpanjangan',
+            default => 'Baru',
         };
     }
 

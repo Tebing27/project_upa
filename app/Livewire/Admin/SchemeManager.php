@@ -3,18 +3,27 @@
 namespace App\Livewire\Admin;
 
 use App\Models\Scheme;
-use Livewire\Component;
 use Livewire\Attributes\Computed;
+use Livewire\Component;
 
 class SchemeManager extends Component
 {
     // Form fields
     public $schemeId;
+
     public $name = '';
+
     public $faculty = '';
+
     public $study_program = '';
+
     public $description = '';
+
     public $is_active = true;
+
+    public $filterFaculty = '';
+
+    protected $queryString = ['filterFaculty'];
 
     protected function rules(): array
     {
@@ -30,11 +39,27 @@ class SchemeManager extends Component
     #[Computed]
     public function groupedSchemes()
     {
-        return Scheme::orderBy('faculty')
+        $query = Scheme::query();
+
+        if ($this->filterFaculty) {
+            $query->where('faculty', $this->filterFaculty);
+        }
+
+        return $query->orderBy('faculty')
             ->orderBy('study_program')
             ->orderBy('name')
             ->get()
             ->groupBy(['faculty', 'study_program']);
+    }
+
+    #[Computed]
+    public function availableFaculties()
+    {
+        return Scheme::query()
+            ->select('faculty')
+            ->distinct()
+            ->orderBy('faculty')
+            ->pluck('faculty');
     }
 
     public function create()
@@ -49,7 +74,7 @@ class SchemeManager extends Component
     {
         $this->resetFields();
         $scheme = Scheme::findOrFail($id);
-        
+
         $this->schemeId = $scheme->id;
         $this->name = $scheme->name;
         $this->faculty = $scheme->faculty;

@@ -30,13 +30,19 @@ class UploadHasilUji extends Component
 
     public ?TemporaryUploadedFile $resultFile = null;
 
-    protected $queryString = ['search', 'filterDate', 'highlight'];
+    public ?string $expiredDate = null;
+
+    public string $examResult = 'kompeten';
+
+    public string $filterStatus = '';
+
+    protected $queryString = ['search', 'filterDate', 'highlight', 'filterStatus'];
 
     public function openUploadModal(int $registrationId): void
     {
         $registration = $this->uploadableRegistrationQuery()->findOrFail($registrationId);
 
-        if (! in_array($registration->status, ['terjadwal', 'sertifikat_terbit'], true)) {
+        if (! in_array($registration->status, ['terjadwal', 'sertifikat_terbit', 'tidak_kompeten'], true)) {
             return;
         }
 
@@ -45,16 +51,27 @@ class UploadHasilUji extends Component
         $this->certificateFile = null;
         $this->resultFile = null;
 
+        if ($registration->status === 'tidak_kompeten') {
+            $this->examResult = 'belum_kompeten';
+            $this->expiredDate = null;
+        } else {
+            $this->examResult = 'kompeten';
+            $activeCertificate = $this->activeCertificateForRegistration($registration);
+            $this->expiredDate = $activeCertificate?->expired_date?->format('Y-m-d');
+        }
+
         $this->dispatch('open-modal', id: 'modal-upload-sertifikat');
     }
 
     public function confirmDelete(int $registrationId): void
     {
         $registration = $this->uploadableRegistrationQuery()->findOrFail($registrationId);
-        $activeCertificate = $this->activeCertificateForRegistration($registration);
 
-        if (! $activeCertificate) {
-            return;
+        if ($registration->status !== 'tidak_kompeten') {
+            $activeCertificate = $this->activeCertificateForRegistration($registration);
+            if (! $activeCertificate) {
+                return;
+            }
         }
 
         $this->deleteRegistrationId = $registration->id;
@@ -65,47 +82,96 @@ class UploadHasilUji extends Component
 
     public function uploadParticipantFiles(): void
     {
-        $validated = $this->validate([
-            'uploadRegistrationId' => 'required|integer|exists:registrations,id',
-            'certificateFile' => 'required|file|mimes:pdf|max:4096',
-            'resultFile' => 'required|file|mimes:pdf|max:4096',
-        ]);
-
         $registration = Registration::query()
             ->with(['scheme'])
-            ->findOrFail($validated['uploadRegistrationId']);
+            ->findOrFail($this->uploadRegistrationId);
 
-        if (! in_array($registration->status, ['terjadwal', 'sertifikat_terbit'], true)) {
+        if (! in_array($registration->status, ['terjadwal', 'sertifikat_terbit', 'tidak_kompeten'], true)) {
             return;
         }
 
+        $activeCertificate = $this->activeCertificateForRegistration($registration);
+        $isEditingCertificate = $activeCertificate !== null;
+        $isEditingResultOnly = $registration->exam_result_path !== null;
+
+        $rules = [
+            'uploadRegistrationId' => 'required|integer|exists:registrations,id',
+            'examResult' => 'required|in:kompeten,belum_kompeten',
+        ];
+
+        if ($this->examResult === 'kompeten') {
+            $rules['expiredDate'] = 'required|date|after:today';
+            $rules['certificateFile'] = ($isEditingCertificate ? 'nullable' : 'required').'|file|mimes:pdf|max:4096';
+            $rules['resultFile'] = ($isEditingCertificate ? 'nullable' : 'required').'|file|mimes:pdf|max:4096';
+        } else {
+            $rules['resultFile'] = ($isEditingResultOnly ? 'nullable' : 'required').'|file|mimes:pdf|max:4096';
+        }
+
+        $validated = $this->validate($rules);
+
         $schemeName = $registration->scheme?->name ?? 'Sertifikat Kompetensi';
 
-        Certificate::query()
-            ->where('user_id', $registration->user_id)
-            ->where('scheme_name', $schemeName)
-            ->where('status', 'active')
-            ->update(['status' => 'inactive']);
+        if ($this->examResult === 'kompeten') {
+            if ($isEditingCertificate) {
+                $updateData = ['expired_date' => $validated['expiredDate']];
 
-        $certificatePath = $this->certificateFile->store('certificates', 'public');
-        $resultPath = $this->resultFile->store('exam-results', 'public');
+                if ($this->certificateFile) {
+                    if ($activeCertificate->file_path) {
+                        Storage::disk('public')->delete($activeCertificate->file_path);
+                    }
+                    $updateData['file_path'] = $this->certificateFile->store('certificates', 'public');
+                }
 
-        Certificate::query()->create([
-            'user_id' => $registration->user_id,
-            'scheme_name' => $schemeName,
-            'level' => null,
-            'status' => 'active',
-            'expired_date' => null,
-            'file_path' => $certificatePath,
-            'result_file_path' => $resultPath,
-        ]);
+                if ($this->resultFile) {
+                    if ($activeCertificate->result_file_path) {
+                        Storage::disk('public')->delete($activeCertificate->result_file_path);
+                    }
+                    $updateData['result_file_path'] = $this->resultFile->store('exam-results', 'public');
+                }
 
-        $registration->update([
-            'status' => 'sertifikat_terbit',
-        ]);
+                $activeCertificate->update($updateData);
+            } else {
+                $certificatePath = $this->certificateFile->store('certificates', 'public');
+                $resultPath = $this->resultFile->store('exam-results', 'public');
+
+                Certificate::query()->create([
+                    'user_id' => $registration->user_id,
+                    'scheme_id' => $registration->scheme_id,
+                    'scheme_name' => $schemeName,
+                    'level' => null,
+                    'status' => 'active',
+                    'expired_date' => $validated['expiredDate'],
+                    'file_path' => $certificatePath,
+                    'result_file_path' => $resultPath,
+                ]);
+            }
+
+            $registration->update([
+                'status' => 'sertifikat_terbit',
+                'exam_result_path' => null,
+            ]);
+        } else {
+            $resultPath = $registration->exam_result_path;
+
+            if ($this->resultFile) {
+                if ($resultPath && $resultPath !== $activeCertificate?->result_file_path) {
+                    Storage::disk('public')->delete($resultPath);
+                }
+                $resultPath = $this->resultFile->store('exam-results', 'public');
+            }
+
+            if ($isEditingCertificate) {
+                $activeCertificate->update(['status' => 'inactive']);
+            }
+
+            $registration->update([
+                'status' => 'tidak_kompeten',
+                'exam_result_path' => $resultPath,
+            ]);
+        }
 
         $this->resetUploadForm();
-        $this->dispatch('toast', ['message' => 'Sertifikat dan hasil ujian berhasil diunggah.', 'type' => 'success']);
+        $this->dispatch('toast', ['message' => 'Hasil ujian berhasil disimpan.', 'type' => 'success']);
         $this->dispatch('close-modal', id: 'modal-upload-sertifikat');
     }
 
@@ -116,29 +182,41 @@ class UploadHasilUji extends Component
         }
 
         $registration = $this->uploadableRegistrationQuery()->findOrFail($this->deleteRegistrationId);
-        $certificate = $this->activeCertificateForRegistration($registration);
 
-        if (! $certificate) {
-            return;
+        if ($registration->status === 'tidak_kompeten') {
+            if ($registration->exam_result_path) {
+                Storage::disk('public')->delete($registration->exam_result_path);
+            }
+            $registration->update([
+                'status' => 'terjadwal',
+                'exam_result_path' => null,
+            ]);
+        } else {
+            $certificate = $this->activeCertificateForRegistration($registration);
+
+            if ($certificate) {
+                if ($certificate->file_path) {
+                    Storage::disk('public')->delete($certificate->file_path);
+                }
+                if ($certificate->result_file_path) {
+                    Storage::disk('public')->delete($certificate->result_file_path);
+                }
+                $certificate->delete();
+            }
+
+            $registration->update([
+                'status' => 'terjadwal',
+            ]);
         }
-
-        if ($certificate->file_path) {
-            Storage::disk('public')->delete($certificate->file_path);
-        }
-
-        if ($certificate->result_file_path) {
-            Storage::disk('public')->delete($certificate->result_file_path);
-        }
-
-        $certificate->delete();
-
-        $registration->update([
-            'status' => 'terjadwal',
-        ]);
 
         $this->deleteRegistrationId = null;
         $this->dispatch('toast', ['message' => 'Hasil upload berhasil dihapus.', 'type' => 'success']);
         $this->dispatch('close-modal', id: 'modal-hapus-upload');
+    }
+
+    public function resetFilters(): void
+    {
+        $this->reset(['search', 'filterStatus', 'filterDate']);
     }
 
     public function render(): View
@@ -166,14 +244,14 @@ class UploadHasilUji extends Component
             ->where('status', 'active')
             ->whereIn('user_id', $registrations->pluck('user_id')->unique()->all())
             ->get()
-            ->keyBy(fn (Certificate $certificate): string => $certificate->user_id.'|'.$certificate->scheme_name);
+            ->keyBy(fn (Certificate $certificate): string => $certificate->user_id.'|'.$certificate->scheme_id);
 
         return $registrations->map(function (Registration $registration) use ($activeCertificates): Registration {
-            $certificate = $activeCertificates->get($registration->user_id.'|'.($registration->scheme?->name ?? ''));
+            $certificate = $activeCertificates->get($registration->user_id.'|'.$registration->scheme_id);
 
             $registration->active_certificate_id = $certificate?->id;
             $registration->certificate_file_url = $certificate?->file_path ? Storage::url($certificate->file_path) : null;
-            $registration->result_file_url = $certificate?->result_file_path ? Storage::url($certificate->result_file_path) : null;
+            $registration->result_file_url = $certificate?->result_file_path ? Storage::url($certificate->result_file_path) : ($registration->exam_result_path ? Storage::url($registration->exam_result_path) : null);
 
             return $registration;
         });
@@ -183,7 +261,7 @@ class UploadHasilUji extends Component
     {
         return Registration::query()
             ->with(['user', 'scheme'])
-            ->whereIn('status', ['terjadwal', 'sertifikat_terbit'])
+            ->whereIn('status', ['terjadwal', 'sertifikat_terbit', 'tidak_kompeten'])
             ->when($this->search !== '', function (Builder $query): void {
                 $query->whereHas('user', function (Builder $userQuery): void {
                     $userQuery
@@ -193,6 +271,15 @@ class UploadHasilUji extends Component
             })
             ->when($this->filterDate !== '', function (Builder $query): void {
                 $query->whereDate('exam_date', $this->filterDate);
+            })
+            ->when($this->filterStatus !== '', function (Builder $query): void {
+                if ($this->filterStatus === 'kompeten') {
+                    $query->where('status', 'sertifikat_terbit');
+                } elseif ($this->filterStatus === 'belum_kompeten') {
+                    $query->where('status', 'tidak_kompeten');
+                } elseif ($this->filterStatus === 'belum_upload') {
+                    $query->where('status', 'terjadwal');
+                }
             });
     }
 
@@ -209,15 +296,17 @@ class UploadHasilUji extends Component
     {
         $this->uploadRegistrationId = null;
         $this->deleteRegistrationId = null;
+        $this->expiredDate = null;
         $this->certificateFile = null;
         $this->resultFile = null;
+        $this->examResult = 'kompeten';
     }
 
     private function activeCertificateForRegistration(Registration $registration): ?Certificate
     {
         return Certificate::query()
             ->where('user_id', $registration->user_id)
-            ->where('scheme_name', $registration->scheme?->name ?? '')
+            ->where('scheme_id', $registration->scheme_id)
             ->where('status', 'active')
             ->latest('id')
             ->first();
