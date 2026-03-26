@@ -5,12 +5,14 @@ use App\Livewire\Admin\JadwalUji;
 use App\Livewire\Admin\SchemeManager;
 use App\Livewire\Admin\UploadHasilUji;
 use App\Livewire\Admin\VerifikasiDokumen;
+use App\Livewire\CekSertifikat;
 use App\Livewire\DaftarSkemaBaru;
 use App\Livewire\UserCertificatesPage;
 use App\Livewire\UserRegistrationStatus;
 use Illuminate\Support\Facades\Route;
 
 Route::view('/', 'welcome')->name('home');
+Route::get('cek-sertifikat', CekSertifikat::class)->name('cek-sertifikat');
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('dashboard', function () {
