@@ -14,8 +14,6 @@ class SchemeFactory extends Factory
     {
         return [
             'name' => fake()->jobTitle(),
-            'faculty' => fake()->word(),
-            'study_program' => fake()->word(),
             'description' => fake()->sentence(),
             'is_active' => true,
         ];

@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use App\Models\Scheme;
+use App\Models\StudyProgram;
 use Illuminate\Database\Seeder;
 
 class SchemeSeeder extends Seeder
@@ -37,7 +38,13 @@ class SchemeSeeder extends Seeder
         ];
 
         foreach ($schemes as $scheme) {
-            Scheme::create($scheme);
+            $studyProgramName = $scheme['study_program'];
+            unset($scheme['faculty'], $scheme['study_program']);
+            
+            $createdScheme = Scheme::create($scheme);
+            
+            $studyProgram = StudyProgram::firstOrCreate(['name' => $studyProgramName]);
+            $createdScheme->studyPrograms()->attach($studyProgram->id);
         }
     }
 }

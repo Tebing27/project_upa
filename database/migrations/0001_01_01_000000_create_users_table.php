@@ -29,6 +29,7 @@ return new class extends Migration
             $table->string('status_semester')->nullable();
             $table->string('fakultas')->nullable();
             $table->string('program_studi')->nullable();
+            $table->enum('role', ['mahasiswa', 'asesor', 'admin_lsp'])->default('mahasiswa');
             $table->rememberToken();
             $table->timestamps();
         });

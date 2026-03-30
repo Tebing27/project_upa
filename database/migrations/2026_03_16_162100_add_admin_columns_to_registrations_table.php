@@ -15,7 +15,7 @@ return new class extends Migration
             $table->json('document_statuses')->nullable();
             $table->dateTime('exam_date')->nullable();
             $table->string('exam_location')->nullable();
-            $table->string('assessor_name')->nullable();
+            $table->foreignId('assessor_id')->nullable()->constrained('users')->nullOnDelete();
             $table->integer('score')->nullable();
         });
     }
@@ -26,11 +26,12 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('registrations', function (Blueprint $table) {
+            $table->dropForeign(['assessor_id']);
             $table->dropColumn([
                 'document_statuses',
                 'exam_date',
                 'exam_location',
-                'assessor_name',
+                'assessor_id',
                 'score',
             ]);
         });

@@ -24,7 +24,7 @@ return new class extends Migration
             $table->string('passport_photo_path')->nullable();
             $table->string('payment_reference')->unique();
             $table->string('va_number')->nullable();
-            $table->enum('status', ['pending_payment', 'paid', 'completed'])->default('pending_payment');
+            $table->string('status')->default('draft');
             $table->timestamps();
         });
     }

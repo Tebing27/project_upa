@@ -37,6 +37,7 @@ class User extends Authenticatable
         'status_semester',
         'fakultas',
         'program_studi',
+        'role',
     ];
 
     /**
@@ -119,7 +120,7 @@ class User extends Authenticatable
     public function hasInProgressRegistration(): bool
     {
         return $this->registrations()
-            ->whereNotIn('status', ['sertifikat_terbit', 'tidak_kompeten'])
+            ->whereNotIn('status', [Registration::STATUS_CERTIFICATE_ISSUED, Registration::STATUS_INCOMPETENT])
             ->exists();
     }
 
@@ -130,7 +131,7 @@ class User extends Authenticatable
     {
         return $this->registrations()
             ->where('scheme_id', $schemeId)
-            ->whereNotIn('status', ['sertifikat_terbit', 'tidak_kompeten'])
+            ->whereNotIn('status', [Registration::STATUS_CERTIFICATE_ISSUED, Registration::STATUS_INCOMPETENT])
             ->exists();
     }
 }

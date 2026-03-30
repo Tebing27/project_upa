@@ -14,8 +14,6 @@ return new class extends Migration
         Schema::create('schemes', function (Blueprint $table) {
             $table->id();
             $table->string('name');
-            $table->string('faculty');
-            $table->string('study_program');
             $table->text('description')->nullable();
             $table->boolean('is_active')->default(true);
             $table->timestamps();

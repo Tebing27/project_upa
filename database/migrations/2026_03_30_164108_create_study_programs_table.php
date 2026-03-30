@@ -11,8 +11,10 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('registrations', function (Blueprint $table) {
-            $table->string('status')->default('draft')->change();
+        Schema::create('study_programs', function (Blueprint $table) {
+            $table->id();
+            $table->string('name');
+            $table->timestamps();
         });
     }
 
@@ -21,8 +23,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('registrations', function (Blueprint $table) {
-            $table->enum('status', ['pending_payment', 'paid', 'completed'])->default('pending_payment')->change();
-        });
+        Schema::dropIfExists('study_programs');
     }
 };

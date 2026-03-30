@@ -35,9 +35,17 @@ class Registration extends Model
         'document_statuses',
         'exam_date',
         'exam_location',
-        'assessor_name',
+        'assessor_id',
         'score',
     ];
+
+    public const STATUS_DRAFT = 'draft';
+    public const STATUS_PENDING_VERIFICATION = 'pending_verification';
+    public const STATUS_PENDING_PAYMENT = 'pending_payment';
+    public const STATUS_PAID = 'paid';
+    public const STATUS_COMPLETED = 'completed';
+    public const STATUS_CERTIFICATE_ISSUED = 'sertifikat_terbit';
+    public const STATUS_INCOMPETENT = 'tidak_kompeten';
 
     /**
      * Get the attributes that should be cast.
@@ -66,5 +74,13 @@ class Registration extends Model
     public function scheme(): BelongsTo
     {
         return $this->belongsTo(Scheme::class);
+    }
+
+    /**
+     * Get the assessor for the registration.
+     */
+    public function assessor(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'assessor_id');
     }
 }

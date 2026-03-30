@@ -6,6 +6,7 @@ use Database\Factories\SchemeFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class Scheme extends Model
 {
@@ -19,8 +20,6 @@ class Scheme extends Model
      */
     protected $fillable = [
         'name',
-        'faculty',
-        'study_program',
         'description',
         'is_active',
     ];
@@ -43,5 +42,13 @@ class Scheme extends Model
     public function registrations(): HasMany
     {
         return $this->hasMany(Registration::class);
+    }
+
+    /**
+     * Get the study programs for the scheme.
+     */
+    public function studyPrograms(): BelongsToMany
+    {
+        return $this->belongsToMany(StudyProgram::class, 'scheme_study_program', 'scheme_id', 'study_program_id');
     }
 }
