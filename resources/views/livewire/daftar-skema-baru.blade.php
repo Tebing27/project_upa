@@ -1,8 +1,18 @@
+@php
+    $dashboardRouteName = 'student.dashboard';
+    if (auth()->check()) {
+        if (auth()->user()->role === 'admin_lsp') {
+            $dashboardRouteName = 'admin.dashboard';
+        } elseif (auth()->user()->role === 'asesor') {
+            $dashboardRouteName = 'asesor.dashboard';
+        }
+    }
+@endphp
 <div class="space-y-6 bg-slate-50/50 p-6 min-h-screen">
     <div class="max-w-3xl mx-auto">
         {{-- Header --}}
         <div class="mb-8">
-            <a href="{{ route('dashboard') }}" class="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700 transition-colors mb-4">
+            <a href="{{ route($dashboardRouteName) }}" class="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700 transition-colors mb-4">
                 <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
                 </svg>
@@ -23,7 +33,7 @@
                     </div>
                     <h3 class="mt-4 text-lg font-bold text-gray-900">Tidak Dapat Mendaftar</h3>
                     <p class="mt-2 text-sm text-gray-500 max-w-md">{{ $errorMessage }}</p>
-                    <a href="{{ route('dashboard') }}" class="mt-6 inline-flex items-center gap-2 rounded-xl bg-gray-900 px-6 py-3 text-sm font-semibold text-white transition-all hover:bg-gray-800">
+                    <a href="{{ route($dashboardRouteName) }}" class="mt-6 inline-flex items-center gap-2 rounded-xl bg-gray-900 px-6 py-3 text-sm font-semibold text-white transition-all hover:bg-gray-800">
                         Kembali ke Dashboard
                     </a>
                 </div>
@@ -33,7 +43,7 @@
             <div class="mb-8">
                 <div class="relative flex w-full px-2 md:px-8">
                     @php
-                        $steps = [1 => 'Pilih Tipe & Skema', 2 => 'Upload Dokumen', 3 => 'Review & Bayar'];
+                        $steps = [1 => 'Pilih Tipe & Skema', 2 => 'Upload Dokumen', 3 => 'Review Pendaftaran'];
                         $progressWidth = match($currentStep) {
                             2 => 50,
                             3 => 100,
@@ -145,34 +155,11 @@
                                 <h3 class="text-lg font-semibold text-gray-900">Pilih Skema Sertifikasi</h3>
                                 <p class="mt-1 text-sm text-gray-500">
                                     @if ($registrationType === 'baru')
-                                        Silakan pilih Fakultas dan Program Studi untuk melihat skema yang tersedia.
+                                        Berikut adalah skema yang tersedia untuk Program Studi Anda.
                                     @else
-                                        Skema dengan sertifikat kedaluwarsa atau tidak aktif yang bisa diperpanjang.
+                                        Skema dengan sertifikat kedaluwarsa atau tidak aktif yang bisa diperpanjang berdasarkan Program Studi Anda.
                                     @endif
                                 </p>
-
-                                @if ($registrationType === 'baru')
-                                    <div class="mt-4 mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 rounded-xl bg-gray-50 p-4 border border-gray-100">
-                                        <div>
-                                            <label class="block text-sm font-medium text-gray-700">Fakultas</label>
-                                            <select wire:model.live="faculty" class="mt-1 block w-full rounded-lg border-gray-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-emerald-500 focus:ring-emerald-500">
-                                                <option value="">-- Pilih Fakultas --</option>
-                                                @foreach ($faculties as $fac)
-                                                    <option value="{{ $fac }}">{{ $fac }}</option>
-                                                @endforeach
-                                            </select>
-                                        </div>
-                                        <div>
-                                            <label class="block text-sm font-medium text-gray-700">Program Studi</label>
-                                            <select wire:model.live="studyProgram" class="mt-1 block w-full rounded-lg border-gray-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-emerald-500 focus:ring-emerald-500 disabled:bg-gray-100 disabled:cursor-not-allowed" @disabled(!$faculty)>
-                                                <option value="">-- Pilih Program Studi --</option>
-                                                @foreach ($studyPrograms as $sp)
-                                                    <option value="{{ $sp }}">{{ $sp }}</option>
-                                                @endforeach
-                                            </select>
-                                        </div>
-                                    </div>
-                                @endif
 
                                 @php
                                     $schemes = $registrationType === 'baru' ? $newSchemes : $renewalSchemes;
@@ -186,7 +173,7 @@
                                             </svg>
                                             <p class="text-sm text-amber-700">
                                                 @if ($registrationType === 'baru')
-                                                    Tidak ada skema baru yang tersedia. Silakan pilih Fakultas dan Program Studi lain, atau periksa riwayat pendaftaran Anda.
+                                                    Tidak ada skema baru yang tersedia untuk Program Studi Anda. Silakan hubungi Admin jika ini adalah kesalahan.
                                                 @else
                                                     Tidak ada sertifikat kedaluwarsa atau tidak aktif yang bisa diperpanjang saat ini.
                                                 @endif
@@ -301,7 +288,7 @@
                 {{-- STEP 3: Review & Bayar --}}
                 @if ($currentStep === 3)
                     <div class="rounded-[1.25rem] bg-white p-6 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] md:p-8">
-                        <h2 class="text-xl font-bold text-gray-900">Review & Instruksi Pembayaran</h2>
+                        <h2 class="text-xl font-bold text-gray-900">Review Pendaftaran</h2>
                         <p class="mt-1 text-sm text-gray-500">Pastikan data sudah benar sebelum menyelesaikan pendaftaran.</p>
 
                         {{-- Data Summary --}}
@@ -318,7 +305,7 @@
                                 </div>
                                 <div>
                                     <span class="font-semibold text-gray-900">Program Studi:</span>
-                                    <span class="text-gray-600">{{ auth()->user()->program_studi }}</span>
+                                    <span class="text-gray-600">{{ auth()->user()->studyProgram?->name ?? '-' }}</span>
                                 </div>
                                 <div>
                                     <span class="font-semibold text-gray-900">Tipe Pendaftaran:</span>
@@ -335,20 +322,6 @@
                                     <span class="text-gray-600">{{ $selectedScheme?->name ?? '-' }}</span>
                                 </div>
                             </div>
-                        </div>
-
-                        {{-- Payment Instructions --}}
-                        <div class="mt-6 rounded-xl border border-blue-200 bg-blue-50/50 p-6">
-                            <h3 class="text-lg font-semibold text-blue-900">Instruksi Pembayaran</h3>
-                            <p class="mt-2 text-sm text-blue-800">Silakan lakukan pembayaran menggunakan nomor referensi berikut.</p>
-                            <div class="mt-3 text-2xl font-mono font-bold text-blue-900">
-                                98{{ auth()->user()->nim }}
-                            </div>
-                            <ul class="mt-3 list-inside list-disc space-y-1 text-sm text-blue-800">
-                                <li>Transfer ke Virtual Account Bank X.</li>
-                                <li>Masukkan nomor Virtual Account di atas.</li>
-                                <li>Verifikasi jumlah pembayaran sebelum konfirmasi.</li>
-                            </ul>
                         </div>
 
                         <div class="mt-8 flex justify-between">
@@ -379,13 +352,9 @@
                             </div>
                             <h2 class="mt-4 text-2xl font-bold text-emerald-700">Pendaftaran Berhasil!</h2>
                             <p class="mt-2 text-sm text-gray-500 max-w-md">
-                                @if ($registrationType === 'perpanjangan')
-                                    Pendaftaran perpanjangan sertifikat berhasil dikirim. Silakan lakukan pembayaran sesuai instruksi dan tunggu verifikasi dari admin.
-                                @else
-                                    Pendaftaran skema baru berhasil dikirim. Silakan lakukan pembayaran sesuai instruksi dan tunggu verifikasi dari admin.
-                                @endif
+                                Pendaftaran berhasil dikirim. Dokumen Anda sedang dalam tahap verifikasi oleh Admin LSP. Silakan cek status secara berkala untuk instruksi pembayaran selanjutnya.
                             </p>
-                            <a href="{{ route('dashboard') }}" class="mt-6 inline-flex items-center gap-2 rounded-xl bg-gray-900 px-6 py-3 text-sm font-semibold text-white transition-all hover:bg-gray-800">
+                            <a href="{{ route($dashboardRouteName) }}" class="mt-6 inline-flex items-center gap-2 rounded-xl bg-gray-900 px-6 py-3 text-sm font-semibold text-white transition-all hover:bg-gray-800">
                                 Kembali ke Dashboard
                             </a>
                         </div>

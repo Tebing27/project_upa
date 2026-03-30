@@ -35,8 +35,7 @@ class User extends Authenticatable
         'pendidikan_terakhir',
         'total_sks',
         'status_semester',
-        'fakultas',
-        'program_studi',
+        'study_program_id',
         'role',
     ];
 
@@ -75,6 +74,11 @@ class User extends Authenticatable
             ->take(2)
             ->map(fn ($word) => Str::substr($word, 0, 1))
             ->implode('');
+    }
+
+    public function studyProgram()
+    {
+        return $this->belongsTo(StudyProgram::class, 'study_program_id');
     }
 
     /**

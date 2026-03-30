@@ -29,7 +29,11 @@ class AppServiceProvider extends ServiceProvider
         $this->configureDefaults();
 
         Gate::define('admin', function (User $user) {
-            return $user->role === 'admin';
+            return $user->role === 'admin_lsp';
+        });
+
+        Gate::define('asesor', function (User $user) {
+            return $user->role === 'asesor';
         });
 
         // Paksa HTTPS selalu (bukan hanya non-local)

@@ -20,6 +20,13 @@ class FortifyTwoFactorLoginResponse implements TwoFactorLoginResponseContract
 
     private function homePath(Request $request): string
     {
-        return route('dashboard');
+        $role = $request->user()->role;
+        if ($role === 'admin_lsp') {
+            return route('admin.dashboard');
+        } elseif ($role === 'asesor') {
+            return route('asesor.dashboard');
+        }
+
+        return route('student.dashboard');
     }
 }

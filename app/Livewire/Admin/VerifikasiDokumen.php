@@ -45,7 +45,7 @@ class VerifikasiDokumen extends Component
     {
         Registration::query()
             ->whereKey($registrationId)
-            ->where('status', 'dokumen_ok')
+            ->where('status', Registration::STATUS_DOCUMENT_APPROVED)
             ->firstOrFail();
 
         $this->redirectRoute('admin.jadwal', ['highlight' => $registrationId], navigate: true);
@@ -53,8 +53,8 @@ class VerifikasiDokumen extends Component
 
     public function render()
     {
-        $query = Registration::with(['user', 'scheme'])
-            ->where('status', '!=', 'draft');
+        $query = Registration::with(['user.studyProgram', 'scheme'])
+            ->where('status', '!=', Registration::STATUS_DRAFT);
 
         if ($this->search) {
             $query->whereHas('user', function (Builder $userQuery): void {
@@ -69,12 +69,20 @@ class VerifikasiDokumen extends Component
         }
 
         if ($this->tab === 'perlu_review') {
-            $query->whereIn('status', ['menunggu_verifikasi', 'pending_payment', 'paid']);
+            $query->whereIn('status', [Registration::STATUS_PENDING_VERIFICATION]);
         } elseif ($this->tab === 'dokumen_ok') {
-            $query->whereIn('status', ['dokumen_ok', 'terjadwal', 'kompeten', 'tidak_kompeten']);
+            $query->whereIn('status', [
+                Registration::STATUS_DOCUMENT_APPROVED,
+                Registration::STATUS_PENDING_PAYMENT,
+                Registration::STATUS_PAID,
+                Registration::STATUS_SCHEDULED,
+                Registration::STATUS_COMPETENT,
+                Registration::STATUS_INCOMPETENT,
+                Registration::STATUS_CERTIFICATE_ISSUED,
+            ]);
         } elseif ($this->tab === 'ditolak') {
             $query->where(function (Builder $rejectedQuery): void {
-                $rejectedQuery->whereIn('status', ['dokumen_ditolak', 'rejected']);
+                $rejectedQuery->whereIn('status', [Registration::STATUS_DOCUMENT_REJECTED]);
 
                 foreach ($this->rejectedDocumentFields() as $field) {
                     $rejectedQuery->orWhere("document_statuses->{$field}->status", 'rejected');

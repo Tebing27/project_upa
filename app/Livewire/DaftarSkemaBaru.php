@@ -24,10 +24,6 @@ class DaftarSkemaBaru extends Component
     #[Url(as: 'scheme')]
     public string $schemeId = '';
 
-    public string $faculty = '';
-
-    public string $studyProgram = '';
-
     /** @var TemporaryUploadedFile|null */
     public $frApl01;
 
@@ -58,20 +54,6 @@ class DaftarSkemaBaru extends Component
         if ($user->hasInProgressRegistration()) {
             $this->errorMessage = 'Anda masih memiliki pendaftaran yang sedang berjalan. Selesaikan pendaftaran tersebut terlebih dahulu.';
         }
-
-        $this->faculty = $user->fakultas ?? '';
-        $this->studyProgram = $user->program_studi ?? '';
-    }
-
-    public function updatedFaculty(): void
-    {
-        $this->studyProgram = '';
-        $this->schemeId = '';
-    }
-
-    public function updatedStudyProgram(): void
-    {
-        $this->schemeId = '';
     }
 
     public function nextStep(): void
@@ -186,8 +168,6 @@ class DaftarSkemaBaru extends Component
         $ktpPath = $this->ktp->store('documents/ktp', 'public');
         $passportPhotoPath = $this->passportPhoto->store('documents/photo', 'public');
 
-        $paymentReference = '98'.$user->nim;
-
         $user->registrations()->create([
             'scheme_id' => $schemeId,
             'type' => $this->registrationType,
@@ -198,9 +178,9 @@ class DaftarSkemaBaru extends Component
             'internship_certificate_path' => $internshipPath,
             'ktp_path' => $ktpPath,
             'passport_photo_path' => $passportPhotoPath,
-            'payment_reference' => $paymentReference,
+            'payment_reference' => null,
             'va_number' => null,
-            'status' => 'pending_payment',
+            'status' => Registration::STATUS_PENDING_VERIFICATION,
         ]);
 
         $this->currentStep = 4;
@@ -230,8 +210,9 @@ class DaftarSkemaBaru extends Component
         $excludeIds = array_unique(array_merge($existingSchemeIds, $inProgressSchemeIds));
 
         return Scheme::query()
-            ->when($this->faculty, fn ($q) => $q->where('faculty', $this->faculty))
-            ->when($this->studyProgram, fn ($q) => $q->where('study_program', $this->studyProgram))
+            ->whereHas('studyPrograms', function ($q) use ($user) {
+                $q->where('study_programs.id', $user->study_program_id);
+            })
             ->where('is_active', true)
             ->whereNotIn('id', $excludeIds)
             ->get();
@@ -268,26 +249,13 @@ class DaftarSkemaBaru extends Component
             ->all();
 
         return Scheme::query()
+            ->whereHas('studyPrograms', function ($q) use ($user) {
+                $q->where('study_programs.id', $user->study_program_id);
+            })
             ->where('is_active', true)
             ->whereIn('id', $renewableSchemeIds)
             ->whereNotIn('id', $inProgressSchemeIds)
             ->get();
-    }
-
-    public function getFaculties()
-    {
-        return Scheme::where('is_active', true)->whereNotNull('faculty')->distinct()->pluck('faculty')->sort()->values();
-    }
-
-    public function getStudyPrograms()
-    {
-        return Scheme::where('is_active', true)
-            ->where('faculty', $this->faculty)
-            ->whereNotNull('study_program')
-            ->distinct()
-            ->pluck('study_program')
-            ->sort()
-            ->values();
     }
 
     public function render()
@@ -295,15 +263,11 @@ class DaftarSkemaBaru extends Component
         $newSchemes = $this->getNewSchemes();
         $renewalSchemes = $this->getRenewalSchemes();
         $selectedScheme = $this->schemeId ? Scheme::find($this->schemeId) : null;
-        $faculties = $this->getFaculties();
-        $studyPrograms = $this->getStudyPrograms();
 
         return view('livewire.daftar-skema-baru', [
             'newSchemes' => $newSchemes,
             'renewalSchemes' => $renewalSchemes,
             'selectedScheme' => $selectedScheme,
-            'faculties' => $faculties,
-            'studyPrograms' => $studyPrograms,
         ]);
     }
 }

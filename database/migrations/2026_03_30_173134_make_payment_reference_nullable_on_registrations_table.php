@@ -11,11 +11,8 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('study_programs', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('faculty_id')->constrained()->cascadeOnDelete();
-            $table->string('name');
-            $table->timestamps();
+        Schema::table('registrations', function (Blueprint $table) {
+            $table->string('payment_reference')->nullable()->change();
         });
     }
 
@@ -24,6 +21,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('study_programs');
+        Schema::table('registrations', function (Blueprint $table) {
+            $table->string('payment_reference')->nullable(false)->change();
+        });
     }
 };

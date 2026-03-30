@@ -17,7 +17,7 @@ class SchemeSeeder extends Seeder
             [
                 'name' => 'Skema Sertifikasi Programmer',
                 'faculty' => 'Fakultas Ilmu Komputer',
-                'study_program' => 'Informatika',
+                'study_program' => 'S1 Informatika',
                 'description' => 'Sertifikasi kompetensi programmer level junior.',
                 'is_active' => true,
             ],
@@ -39,12 +39,15 @@ class SchemeSeeder extends Seeder
 
         foreach ($schemes as $scheme) {
             $studyProgramName = $scheme['study_program'];
+            $facultyName = $scheme['faculty'];
             unset($scheme['faculty'], $scheme['study_program']);
-            
+
             $createdScheme = Scheme::create($scheme);
-            
-            $studyProgram = StudyProgram::firstOrCreate(['name' => $studyProgramName]);
-            $createdScheme->studyPrograms()->attach($studyProgram->id);
+
+            $studyProgram = StudyProgram::where('name', $studyProgramName)->first();
+            if ($studyProgram) {
+                $createdScheme->studyPrograms()->attach($studyProgram->id);
+            }
         }
     }
 }

@@ -51,24 +51,26 @@
                             <h2 class="text-xl font-bold text-gray-900">{{ $reg->user->name }}</h2>
                             @php
                                 $statusColorMap = [
-                                    'dokumen_ok' => 'bg-teal-50 text-teal-700 border-teal-100',
-                                    'dokumen_ditolak' => 'bg-red-50 text-red-700 border-red-100',
-                                    'menunggu_verifikasi' => 'bg-amber-50 text-amber-700 border-amber-100',
-                                    'pending_payment' => 'bg-amber-50 text-amber-700 border-amber-100',
-                                    'paid' => 'bg-amber-50 text-amber-700 border-amber-100',
-                                    'terjadwal' => 'bg-blue-50 text-blue-700 border-blue-100',
-                                    'kompeten' => 'bg-emerald-50 text-emerald-700 border-emerald-100',
-                                    'tidak_kompeten' => 'bg-red-50 text-red-700 border-red-100',
+                                    \App\Models\Registration::STATUS_DOCUMENT_APPROVED => 'bg-teal-50 text-teal-700 border-teal-100',
+                                    \App\Models\Registration::STATUS_DOCUMENT_REJECTED => 'bg-red-50 text-red-700 border-red-100',
+                                    \App\Models\Registration::STATUS_PENDING_VERIFICATION => 'bg-amber-50 text-amber-700 border-amber-100',
+                                    \App\Models\Registration::STATUS_PENDING_PAYMENT => 'bg-amber-50 text-amber-700 border-amber-100',
+                                    \App\Models\Registration::STATUS_PAID => 'bg-amber-50 text-amber-700 border-amber-100',
+                                    \App\Models\Registration::STATUS_SCHEDULED => 'bg-blue-50 text-blue-700 border-blue-100',
+                                    \App\Models\Registration::STATUS_COMPETENT => 'bg-emerald-50 text-emerald-700 border-emerald-100',
+                                    \App\Models\Registration::STATUS_INCOMPETENT => 'bg-red-50 text-red-700 border-red-100',
+                                    \App\Models\Registration::STATUS_CERTIFICATE_ISSUED => 'bg-emerald-50 text-emerald-700 border-emerald-100',
                                 ];
                                 $statusClass =
                                     $statusColorMap[$reg->status] ?? 'bg-slate-50 text-slate-700 border-slate-100';
 
                                 $statusLabel = str_replace('_', ' ', Str::title($reg->status));
-                                if ($reg->status === 'dokumen_ok') {
-                                    $statusLabel = 'Draft OK';
-                                }
-                                if (in_array($reg->status, ['pending_payment', 'paid', 'menunggu_verifikasi'])) {
-                                    $statusLabel = 'Review';
+                                if ($reg->status === \App\Models\Registration::STATUS_DOCUMENT_APPROVED) {
+                                    $statusLabel = 'Dokumen Disetujui';
+                                } elseif ($reg->status === \App\Models\Registration::STATUS_DOCUMENT_REJECTED) {
+                                    $statusLabel = 'Dokumen Ditolak';
+                                } elseif (in_array($reg->status, [\App\Models\Registration::STATUS_PENDING_PAYMENT, \App\Models\Registration::STATUS_PAID, \App\Models\Registration::STATUS_PENDING_VERIFICATION])) {
+                                    $statusLabel = str_replace('_', ' ', Str::title($reg->status));
                                 }
                             @endphp
                             <span
@@ -87,7 +89,7 @@
                                 <span class="text-xs font-semibold uppercase tracking-wider text-gray-500">Program Studi
                                     / Skema</span>
                                 <span
-                                    class="mt-1.5 text-sm font-semibold text-gray-900 truncate">{{ $reg->user->program_studi ?? '-' }}
+                                    class="mt-1.5 text-sm font-semibold text-gray-900 truncate">{{ $reg->user->studyProgram->name ?? '-' }}
                                     / {{ optional($reg->scheme)->name ?? '-' }}</span>
                             </div>
                         </div>
@@ -97,7 +99,7 @@
                             class="inline-flex items-center justify-center gap-2 rounded-xl border border-gray-200 bg-white px-5 py-2.5 text-sm font-bold text-gray-700 hover:bg-gray-50">
                             Lihat Detail
                         </a>
-                        @if ($reg->status === 'dokumen_ok')
+                        @if ($reg->status === \App\Models\Registration::STATUS_DOCUMENT_APPROVED)
                             <button wire:click="lanjutkanKeJadwal({{ $reg->id }})"
                                 class="inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-400 px-5 py-2.5 text-sm font-bold text-black hover:bg-emerald-500">
                                 Beri Jadwal

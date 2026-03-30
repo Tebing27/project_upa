@@ -40,12 +40,26 @@ class Registration extends Model
     ];
 
     public const STATUS_DRAFT = 'draft';
+
     public const STATUS_PENDING_VERIFICATION = 'pending_verification';
+
+    public const STATUS_DOCUMENT_REJECTED = 'dokumen_ditolak';
+
     public const STATUS_PENDING_PAYMENT = 'pending_payment';
+
     public const STATUS_PAID = 'paid';
-    public const STATUS_COMPLETED = 'completed';
-    public const STATUS_CERTIFICATE_ISSUED = 'sertifikat_terbit';
+
+    public const STATUS_DOCUMENT_APPROVED = 'dokumen_ok';
+
+    public const STATUS_SCHEDULED = 'terjadwal';
+
+    public const STATUS_COMPLETED = 'completed'; // or kompeten? Let's just keep completed
+
+    public const STATUS_COMPETENT = 'kompeten';
+
     public const STATUS_INCOMPETENT = 'tidak_kompeten';
+
+    public const STATUS_CERTIFICATE_ISSUED = 'sertifikat_terbit';
 
     /**
      * Get the attributes that should be cast.

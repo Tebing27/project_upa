@@ -9,7 +9,16 @@
     x-data="{ sidebarOpen: false }">
     @php
         $isAdmin = auth()->user()?->can('admin') ?? false;
-        $homeRoute = route('dashboard');
+        
+        $dashboardRouteName = 'student.dashboard';
+        if (auth()->check()) {
+            if (auth()->user()->role === 'admin_lsp') {
+                $dashboardRouteName = 'admin.dashboard';
+            } elseif (auth()->user()->role === 'asesor') {
+                $dashboardRouteName = 'asesor.dashboard';
+            }
+        }
+        $homeRoute = route($dashboardRouteName);
     @endphp
 
     <div
@@ -24,12 +33,12 @@
                     <div class="mb-2 px-2 text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
                         {{ __('Platform') }}</div>
                     <div class="space-y-1">
-                        <a href="{{ route('dashboard') }}" wire:navigate @class([
+                        <a href="{{ route($dashboardRouteName) }}" wire:navigate @class([
                             'flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors',
                             'bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' => request()->routeIs(
-                                'dashboard'),
+                                $dashboardRouteName),
                             'text-zinc-600 hover:bg-emerald-50/50 hover:text-emerald-600 dark:text-zinc-400 dark:hover:bg-emerald-900/20 dark:hover:text-emerald-300' => !request()->routeIs(
-                                'dashboard'),
+                                $dashboardRouteName),
                         ])>
                             <svg class="size-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -74,12 +83,12 @@
                     <div class="mb-2 px-2 text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
                         {{ __('Admin Panel') }}</div>
                     <div class="space-y-1">
-                        <a href="{{ route('dashboard') }}" wire:navigate @class([
+                        <a href="{{ route($dashboardRouteName) }}" wire:navigate @class([
                             'flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors',
                             'bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' => request()->routeIs(
-                                'dashboard'),
+                                $dashboardRouteName),
                             'text-zinc-600 hover:bg-emerald-50/50 hover:text-emerald-600 dark:text-zinc-400 dark:hover:bg-emerald-900/20 dark:hover:text-emerald-300' => !request()->routeIs(
-                                'dashboard'),
+                                $dashboardRouteName),
                         ])>
                             <svg class="size-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -188,12 +197,12 @@
                     <div class="mb-2 px-2 text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
                         {{ __('Platform') }}</div>
                     <div class="space-y-1">
-                        <a href="{{ route('dashboard') }}" wire:navigate @class([
+                        <a href="{{ route($dashboardRouteName) }}" wire:navigate @class([
                             'flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors',
                             'bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' => request()->routeIs(
-                                'dashboard'),
+                                $dashboardRouteName),
                             'text-zinc-600 hover:bg-emerald-50/50 hover:text-emerald-600 dark:text-zinc-400 dark:hover:bg-emerald-900/20 dark:hover:text-emerald-300' => !request()->routeIs(
-                                'dashboard'),
+                                $dashboardRouteName),
                         ])>
                             <svg class="size-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -238,12 +247,12 @@
                     <div class="mb-2 px-2 text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
                         {{ __('Admin Panel') }}</div>
                     <div class="space-y-1">
-                        <a href="{{ route('dashboard') }}" wire:navigate @class([
+                        <a href="{{ route($dashboardRouteName) }}" wire:navigate @class([
                             'flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors',
                             'bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' => request()->routeIs(
-                                'dashboard'),
+                                $dashboardRouteName),
                             'text-zinc-600 hover:bg-emerald-50/50 hover:text-emerald-600 dark:text-zinc-400 dark:hover:bg-emerald-900/20 dark:hover:text-emerald-300' => !request()->routeIs(
-                                'dashboard'),
+                                $dashboardRouteName),
                         ])>
                             <svg class="size-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"

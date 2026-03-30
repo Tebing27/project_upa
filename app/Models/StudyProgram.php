@@ -6,5 +6,10 @@ use Illuminate\Database\Eloquent\Model;
 
 class StudyProgram extends Model
 {
-    protected $fillable = ['name'];
+    protected $fillable = ['name', 'faculty_id'];
+
+    public function faculty()
+    {
+        return $this->belongsTo(Faculty::class);
+    }
 }
