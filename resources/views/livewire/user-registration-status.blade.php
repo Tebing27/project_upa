@@ -201,6 +201,41 @@
             </div>
         @endif
 
+        @if (in_array($registration->status, [\App\Models\Registration::STATUS_SCHEDULED, \App\Models\Registration::STATUS_COMPLETED, \App\Models\Registration::STATUS_COMPETENT, \App\Models\Registration::STATUS_INCOMPETENT, \App\Models\Registration::STATUS_CERTIFICATE_ISSUED], true))
+            <div class="rounded-[1.25rem] border border-indigo-100 bg-indigo-50/50 p-6 md:p-8 shadow-[0_4px_20px_-4px_rgba(99,102,241,0.05)] mt-6">
+                <div class="flex items-center gap-3 mb-6">
+                    <div class="flex h-10 w-10 items-center justify-center rounded-full bg-indigo-100/80 text-indigo-600">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                        </svg>
+                    </div>
+                    <div>
+                        <h3 class="text-[1.15rem] font-bold text-slate-800">Detail Jadwal Ujian</h3>
+                        <p class="text-sm text-slate-500">Informasi pelaksanaan Ujian Sertifikasi Anda.</p>
+                    </div>
+                </div>
+
+                <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                    <div class="rounded-xl border border-indigo-100/60 bg-white p-4">
+                        <p class="text-[10px] font-bold uppercase tracking-wider text-indigo-400">Tanggal Ujian</p>
+                        <p class="mt-1.5 font-semibold text-slate-800">{{ $registration->exam_date?->translatedFormat('d F Y') ?? '-' }}</p>
+                    </div>
+                    <div class="rounded-xl border border-indigo-100/60 bg-white p-4">
+                        <p class="text-[10px] font-bold uppercase tracking-wider text-indigo-400">Jam Ujian</p>
+                        <p class="mt-1.5 font-semibold text-slate-800">{{ $registration->exam_date?->format('H:i') ?? '-' }}</p>
+                    </div>
+                    <div class="rounded-xl border border-indigo-100/60 bg-white p-4">
+                        <p class="text-[10px] font-bold uppercase tracking-wider text-indigo-400">Lokasi</p>
+                        <p class="mt-1.5 font-semibold text-slate-800">{{ $registration->exam_location ?? '-' }}</p>
+                    </div>
+                    <div class="rounded-xl border border-indigo-100/60 bg-white p-4">
+                        <p class="text-[10px] font-bold uppercase tracking-wider text-indigo-400">Asesor</p>
+                        <p class="mt-1.5 font-semibold text-slate-800">{{ $registration->assessor->name ?? '-' }}</p>
+                    </div>
+                </div>
+            </div>
+        @endif
+
         <!-- Main Content Grid -->
         <div class="grid grid-cols-1 gap-6 lg:grid-cols-[1.8fr_1fr]">
             <!-- Dokumen Section -->

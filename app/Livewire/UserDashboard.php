@@ -12,7 +12,7 @@ class UserDashboard extends Component
     {
         $user = auth()->user();
         $allRegistrations = $user->registrations()
-            ->with('scheme')
+            ->with(['scheme', 'assessor'])
             ->latest()
             ->get();
         $latestRegistration = $allRegistrations->first();
@@ -33,9 +33,10 @@ class UserDashboard extends Component
     public function getStepProgress(?string $status): int
     {
         return match ($status) {
-            'menunggu_verifikasi', 'dokumen_kurang', 'dokumen_ditolak', 'dokumen_ok', 'rejected' => 2,
-            'terjadwal' => 3,
-            'selesai_uji', 'kompeten', 'tidak_kompeten', 'sertifikat_terbit' => 4,
+            Registration::STATUS_PENDING_VERIFICATION, Registration::STATUS_DOCUMENT_REJECTED => 2,
+            Registration::STATUS_DOCUMENT_APPROVED, Registration::STATUS_PENDING_PAYMENT, Registration::STATUS_PAID => 3,
+            Registration::STATUS_SCHEDULED, Registration::STATUS_COMPLETED => 4,
+            Registration::STATUS_COMPETENT, Registration::STATUS_INCOMPETENT, Registration::STATUS_CERTIFICATE_ISSUED => 5,
             default => 1,
         };
     }
@@ -43,17 +44,17 @@ class UserDashboard extends Component
     public function getStatusLabel(?string $status): string
     {
         return match ($status) {
-            'pending_payment' => 'Menunggu Bayar',
-            'menunggu_verifikasi' => 'Verifikasi Dokumen',
-            'dokumen_kurang' => 'Dokumen Kurang',
-            'dokumen_ditolak', 'rejected' => 'Dokumen Ditolak',
-            'dokumen_ok' => 'Dokumen Terverifikasi',
-            'terjadwal' => 'Jadwal Ujian Terbit',
-            'selesai_uji' => 'Ujian Selesai',
-            'kompeten' => 'Kompeten',
-            'tidak_kompeten' => 'Belum Kompeten',
-            'sertifikat_terbit' => 'Sertifikat Terbit',
-            'draft' => 'Daftar',
+            Registration::STATUS_PENDING_PAYMENT => 'Menunggu Pembayaran',
+            Registration::STATUS_PENDING_VERIFICATION => 'Verifikasi Dokumen',
+            Registration::STATUS_DOCUMENT_REJECTED => 'Dokumen Ditolak',
+            Registration::STATUS_DOCUMENT_APPROVED => 'Dokumen Terverifikasi',
+            Registration::STATUS_PAID => 'Pembayaran Lunas',
+            Registration::STATUS_SCHEDULED => 'Jadwal Ujian Terbit',
+            Registration::STATUS_COMPLETED => 'Ujian Selesai',
+            Registration::STATUS_COMPETENT => 'Kompeten',
+            Registration::STATUS_INCOMPETENT => 'Belum Kompeten',
+            Registration::STATUS_CERTIFICATE_ISSUED => 'Sertifikat Terbit',
+            Registration::STATUS_DRAFT => 'Daftar',
             default => Str::title(str_replace('_', ' ', (string) $status)),
         };
     }

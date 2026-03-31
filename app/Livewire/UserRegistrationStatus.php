@@ -34,13 +34,13 @@ class UserRegistrationStatus extends Component
             abort(403);
         }
 
-        $this->registration = $registration->load(['scheme', 'user.studyProgram.faculty']);
+        $this->registration = $registration->load(['scheme', 'user.studyProgram.faculty', 'assessor']);
     }
 
     public function render()
     {
         $this->registration->refresh();
-        $this->registration->load(['scheme', 'user.studyProgram.faculty']);
+        $this->registration->load(['scheme', 'user.studyProgram.faculty', 'assessor']);
 
         return view('livewire.user-registration-status', [
             'registration' => $this->registration,
@@ -93,9 +93,9 @@ class UserRegistrationStatus extends Component
     {
         return match ($status) {
             Registration::STATUS_PENDING_VERIFICATION, Registration::STATUS_DOCUMENT_REJECTED => 2,
-            Registration::STATUS_DOCUMENT_APPROVED, Registration::STATUS_PENDING_PAYMENT => 3,
-            Registration::STATUS_PAID, Registration::STATUS_SCHEDULED => 4,
-            Registration::STATUS_COMPLETED, Registration::STATUS_COMPETENT, Registration::STATUS_INCOMPETENT, Registration::STATUS_CERTIFICATE_ISSUED => 5,
+            Registration::STATUS_DOCUMENT_APPROVED, Registration::STATUS_PENDING_PAYMENT, Registration::STATUS_PAID => 3,
+            Registration::STATUS_SCHEDULED, Registration::STATUS_COMPLETED => 4,
+            Registration::STATUS_COMPETENT, Registration::STATUS_INCOMPETENT, Registration::STATUS_CERTIFICATE_ISSUED => 5,
             default => 1,
         };
     }
@@ -196,6 +196,15 @@ class UserRegistrationStatus extends Component
                     : 'Dokumen sedang diperiksa oleh admin.',
                 'date' => $registration->updated_at?->translatedFormat('d M Y'),
                 'color' => 'amber',
+            ];
+        }
+
+        if (in_array($registration->status, [Registration::STATUS_PAID, Registration::STATUS_SCHEDULED, Registration::STATUS_COMPLETED, Registration::STATUS_COMPETENT, Registration::STATUS_INCOMPETENT, Registration::STATUS_CERTIFICATE_ISSUED], true)) {
+            $history[] = [
+                'title' => 'Pembayaran dikonfirmasi',
+                'description' => 'Pembayaran sertifikasi telah divalidasi oleh sistem.',
+                'date' => $registration->updated_at?->translatedFormat('d M Y'),
+                'color' => 'blue',
             ];
         }
 

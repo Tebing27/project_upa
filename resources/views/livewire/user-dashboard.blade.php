@@ -8,8 +8,9 @@
         $steps = [
             1 => 'Daftar',
             2 => 'Verifikasi Data & Dokumen',
-            3 => 'Jadwal Ujian',
-            4 => $latestRegistration?->status === 'tidak_kompeten' ? 'Tidak Lolos Ujian' : 'Sertifikat Terbit',
+            3 => 'Pembayaran',
+            4 => 'Ujian Sertifikasi',
+            5 => $latestRegistration?->status === \App\Models\Registration::STATUS_INCOMPETENT ? 'Tidak Lolos Ujian' : 'Sertifikat Terbit',
         ];
 
         $statusBadgeClasses = match ($latestRegistration?->status) {
@@ -132,10 +133,12 @@
                 @php
                     $progressWidth = 0;
                     if ($currentStep === 2) {
-                        $progressWidth = 33.3333;
+                        $progressWidth = 25;
                     } elseif ($currentStep === 3) {
-                        $progressWidth = 66.6666;
-                    } elseif ($currentStep >= 4) {
+                        $progressWidth = 50;
+                    } elseif ($currentStep === 4) {
+                        $progressWidth = 75;
+                    } elseif ($currentStep >= 5) {
                         $progressWidth = 100;
                     }
                 @endphp
@@ -154,8 +157,8 @@
                             $isCurrent = $stepNumber === $currentStep;
                             $isRejectedStep =
                                 ($stepNumber === 2 &&
-                                    in_array($latestRegistration?->status, ['dokumen_ditolak', 'rejected'], true)) ||
-                                ($stepNumber === 4 && $latestRegistration?->status === 'tidak_kompeten');
+                                    in_array($latestRegistration?->status, [\App\Models\Registration::STATUS_DOCUMENT_REJECTED], true)) ||
+                                ($stepNumber === 5 && $latestRegistration?->status === \App\Models\Registration::STATUS_INCOMPETENT);
 
                             $displayLabel = str_replace(' & ', "\n& ", $stepLabel);
                         @endphp
@@ -315,7 +318,7 @@
                         <div class="rounded-xl border border-blue-100 bg-blue-50/40 p-4">
                             <p class="text-[10px] font-bold uppercase tracking-wider text-blue-400">Asesor</p>
                             <p class="mt-1.5 font-semibold text-gray-900">
-                                {{ $latestRegistration->assessor_name ?? '-' }}
+                                {{ $latestRegistration->assessor->name ?? '-' }}
                             </p>
                         </div>
                     </div>
