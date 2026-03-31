@@ -3,27 +3,27 @@
         $steps = [
             1 => 'Daftar',
             2 => 'Verifikasi Data & Dokumen',
-            3 => 'Jadwal Ujian',
-            4 => $registration?->status === 'tidak_kompeten' ? 'Tidak Lolos Ujian' : 'Sertifikat Terbit',
+            3 => 'Pembayaran',
+            4 => 'Ujian Sertifikasi',
+            5 => $registration?->status === \App\Models\Registration::STATUS_INCOMPETENT ? 'Tidak Lolos Ujian' : 'Hasil & Sertifikat',
         ];
 
         $statusBadgeClasses = match ($registration?->status) {
-            'dokumen_ditolak', 'rejected', 'tidak_kompeten' => 'bg-red-50 text-red-700 border-red-100',
-            'terjadwal',
-            'selesai_uji',
-            'kompeten',
-            'sertifikat_terbit'
-                => 'bg-[#d1fae5] text-emerald-700 border-[#a7f3d0]/50',
-            'dokumen_ok', 'menunggu_verifikasi' => 'bg-teal-50 text-teal-700 border-teal-100',
-            'pending_payment' => 'bg-amber-50 text-amber-700 border-amber-100',
+            \App\Models\Registration::STATUS_DOCUMENT_REJECTED, \App\Models\Registration::STATUS_INCOMPETENT => 'bg-red-50 text-red-700 border-red-100',
+            \App\Models\Registration::STATUS_SCHEDULED,
+            \App\Models\Registration::STATUS_COMPLETED,
+            \App\Models\Registration::STATUS_COMPETENT,
+            \App\Models\Registration::STATUS_CERTIFICATE_ISSUED => 'bg-[#d1fae5] text-emerald-700 border-[#a7f3d0]/50',
+            \App\Models\Registration::STATUS_DOCUMENT_APPROVED, \App\Models\Registration::STATUS_PENDING_VERIFICATION => 'bg-teal-50 text-teal-700 border-teal-100',
+            \App\Models\Registration::STATUS_PENDING_PAYMENT, \App\Models\Registration::STATUS_PAID => 'bg-amber-50 text-amber-700 border-amber-100',
             default => 'bg-slate-50 text-slate-700 border-slate-200',
         };
 
         $statusBadgeDot = match ($registration?->status) {
-            'dokumen_ditolak', 'rejected', 'tidak_kompeten' => 'bg-red-500',
-            'terjadwal', 'selesai_uji', 'kompeten', 'sertifikat_terbit' => 'bg-[#10b981]',
-            'dokumen_ok', 'menunggu_verifikasi' => 'bg-teal-500',
-            'pending_payment' => 'bg-amber-500',
+            \App\Models\Registration::STATUS_DOCUMENT_REJECTED, \App\Models\Registration::STATUS_INCOMPETENT => 'bg-red-500',
+            \App\Models\Registration::STATUS_SCHEDULED, \App\Models\Registration::STATUS_COMPLETED, \App\Models\Registration::STATUS_COMPETENT, \App\Models\Registration::STATUS_CERTIFICATE_ISSUED => 'bg-[#10b981]',
+            \App\Models\Registration::STATUS_DOCUMENT_APPROVED, \App\Models\Registration::STATUS_PENDING_VERIFICATION => 'bg-teal-500',
+            \App\Models\Registration::STATUS_PENDING_PAYMENT, \App\Models\Registration::STATUS_PAID => 'bg-amber-500',
             default => 'bg-slate-400',
         };
 
@@ -114,10 +114,12 @@
                 <div class="relative flex w-full px-8"> @php
                     $progressWidth = 0;
                     if ($currentStep === 2) {
-                        $progressWidth = 33.3333;
+                        $progressWidth = 25;
                     } elseif ($currentStep === 3) {
-                        $progressWidth = 66.6666;
-                    } elseif ($currentStep >= 4) {
+                        $progressWidth = 50;
+                    } elseif ($currentStep === 4) {
+                        $progressWidth = 75;
+                    } elseif ($currentStep >= 5) {
                         $progressWidth = 100;
                     }
                 @endphp
@@ -134,8 +136,8 @@
                                 $isCurrent = $stepNumber === $currentStep;
                                 $isRejectedStep =
                                     ($stepNumber === 2 &&
-                                        in_array($registration?->status, ['dokumen_ditolak', 'rejected'], true)) ||
-                                    ($stepNumber === 4 && $registration?->status === 'tidak_kompeten');
+                                        in_array($registration?->status, [\App\Models\Registration::STATUS_DOCUMENT_REJECTED], true)) ||
+                                    ($stepNumber === 5 && $registration?->status === \App\Models\Registration::STATUS_INCOMPETENT);
 
                                 $displayLabel = str_replace(' & ', "\n& ", $stepLabel);
                             @endphp
@@ -183,6 +185,21 @@
                 </div>
             </div>
         </section>
+
+        @if ($registration?->status === \App\Models\Registration::STATUS_PENDING_PAYMENT)
+            <div class="rounded-[1.25rem] border border-blue-100 bg-blue-50/50 p-6 md:p-8 shadow-[0_4px_20px_-4px_rgba(37,99,235,0.05)] mt-6 text-center">
+                <svg class="w-12 h-12 text-blue-500 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <h3 class="text-xl font-bold text-gray-900 mb-2">Instruksi Pembayaran</h3>
+                <p class="text-slate-600 mb-6">Silakan lakukan pembayaran Sertifikasi ke Nomor Virtual Account (VA) berikut ini. Setelah membayar, mohon tunggu admin mengkonfirmasi dan memperbarui status pendaftaran Anda menjadi Lunas.</p>
+                
+                <div class="inline-flex flex-col items-center justify-center p-6 bg-white rounded-2xl border border-blue-200 shadow-sm mb-4">
+                    <span class="text-xs font-bold uppercase tracking-widest text-slate-400 mb-2">Kode Pembayaran Sertifikasi</span>
+                    <span class="font-mono text-3xl font-bold text-blue-600 tracking-wider select-all">{{ $registration->payment_reference }}</span>
+                </div>
+            </div>
+        @endif
 
         <!-- Main Content Grid -->
         <div class="grid grid-cols-1 gap-6 lg:grid-cols-[1.8fr_1fr]">

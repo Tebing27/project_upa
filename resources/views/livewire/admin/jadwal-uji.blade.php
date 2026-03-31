@@ -68,10 +68,10 @@
                         <tr wire:key="registration-{{ $registration->id }}" @class([
                             'bg-emerald-50/20' =>
                                 $highlight === $registration->id &&
-                                $registration->status === 'dokumen_ok',
+                                $registration->status === \App\Models\Registration::STATUS_PAID,
                             'bg-blue-50/20' =>
                                 $highlight === $registration->id &&
-                                $registration->status === 'terjadwal',
+                                $registration->status === \App\Models\Registration::STATUS_SCHEDULED,
                             'hover:bg-gray-50/30 transition-colors' => $highlight !== $registration->id,
                         ])>
                             <td class="px-6 py-5">
@@ -82,18 +82,18 @@
                             </td>
                             <td class="px-6 py-5">
                                 <p class="text-sm font-semibold text-gray-600 leading-none">
-                                    {{ $registration->user->program_studi ?: '-' }}</p>
+                                    {{ $registration->user->studyProgram->name ?? '-' }}</p>
                                 <p class="mt-2 text-xs text-gray-500">{{ $registration->scheme?->name ?: '-' }}</p>
                             </td>
                             <td class="px-6 py-5 text-center">
                                 <span @class([
                                     'inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold',
                                     'bg-emerald-50 text-emerald-700 border-emerald-100' =>
-                                        $registration->status === 'dokumen_ok',
+                                        $registration->status === \App\Models\Registration::STATUS_PAID,
                                     'bg-blue-50 text-blue-700 border-blue-100' =>
-                                        $registration->status === 'terjadwal',
+                                        $registration->status === \App\Models\Registration::STATUS_SCHEDULED,
                                 ])>
-                                    {{ $registration->status === 'terjadwal' ? 'Terjadwal' : 'Draft OK' }}
+                                    {{ $registration->status === \App\Models\Registration::STATUS_SCHEDULED ? 'Terjadwal' : 'Draft OK' }}
                                 </span>
                                 <div class="mt-2.5 flex flex-col items-center gap-1.5">
                                     <span
@@ -108,11 +108,11 @@
                             <td class="px-6 py-5">
                                 <p class="text-sm font-semibold text-gray-600 leading-none">
                                     {{ $registration->exam_location ?: '-' }}</p>
-                                <p class="mt-2 text-xs text-gray-500">{{ $registration->assessor_name ?: '-' }}</p>
+                                <p class="mt-2 text-xs text-gray-500">{{ $registration->assessor->name ?? '-' }}</p>
                             </td>
                             <td class="px-6 py-5 text-right whitespace-nowrap">
                                 <div class="flex justify-end gap-2">
-                                    @if ($registration->status === 'terjadwal')
+                                    @if ($registration->status === \App\Models\Registration::STATUS_SCHEDULED)
                                         <button wire:click="openScheduleModal({{ $registration->id }})"
                                             class="text-sm font-semibold text-emerald-600 hover:text-emerald-700 transition-colors mr-3">
                                             Edit
@@ -171,7 +171,7 @@
                             <div class="mb-6 flex items-start justify-between">
                                 <div>
                                     <h3 class="text-xl font-bold text-gray-900">
-                                        {{ $selectedScheduleRegistration?->status === 'terjadwal' ? 'Edit Jadwal Uji' : 'Atur Jadwal Uji' }}
+                                        {{ $selectedScheduleRegistration?->status === \App\Models\Registration::STATUS_SCHEDULED ? 'Edit Jadwal Uji' : 'Atur Jadwal Uji' }}
                                     </h3>
                                     <p class="mt-1 text-sm text-gray-500 font-medium">
                                         {{ $selectedScheduleRegistration?->user?->name ?: '-' }}
@@ -226,10 +226,14 @@
                                     <label
                                         class="block text-xs font-semibold uppercase tracking-wider text-gray-500 mb-2.5">Nama
                                         Penguji</label>
-                                    <input wire:model="assessorName" type="text"
-                                        class="block w-full px-4 py-3.5 rounded-xl border border-slate-200 bg-slate-50/50 text-sm font-semibold text-gray-900 outline-none transition-all hover:bg-white hover:border-slate-300 focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 focus:bg-white"
-                                        placeholder="Contoh: Dr. John Doe, M.Kom" />
-                                    @error('assessorName')
+                                    <select wire:model="assessorId"
+                                        class="block w-full px-4 py-3.5 rounded-xl border border-slate-200 bg-slate-50/50 text-sm font-semibold text-gray-900 outline-none transition-all hover:bg-white hover:border-slate-300 focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 focus:bg-white">
+                                        <option value="">-- Pilih Asesor --</option>
+                                        @foreach ($this->assessors as $assessor)
+                                            <option value="{{ $assessor->id }}">{{ $assessor->name }}</option>
+                                        @endforeach
+                                    </select>
+                                    @error('assessorId')
                                         <p class="mt-2 text-xs font-medium text-red-600">{{ $message }}</p>
                                     @enderror
                                 </div>

@@ -71,8 +71,21 @@ class DetailDokumen extends Component
 
     public function lanjutkanKeJadwal(): void
     {
-        if ($this->registration->status === 'dokumen_ok') {
+        if ($this->registration->status === Registration::STATUS_PAID) {
             $this->redirectRoute('admin.jadwal', ['highlight' => $this->registration->id], navigate: true);
+        }
+    }
+
+    public function simulasiPembayaranLunas(): void
+    {
+        // Pastikan hanya bisa dieksekusi di local environment
+        if (! app()->isLocal()) {
+            abort(403, 'Unauthorized action.');
+        }
+
+        if ($this->registration->status === Registration::STATUS_PENDING_PAYMENT) {
+            $this->registration->status = Registration::STATUS_PAID;
+            $this->registration->save();
         }
     }
 
@@ -86,7 +99,6 @@ class DetailDokumen extends Component
             'internship_certificate_path',
             'ktp_path',
             'passport_photo_path',
-            'payment_reference',
         ];
 
         $statuses = $this->registration->document_statuses ?? [];
@@ -113,11 +125,15 @@ class DetailDokumen extends Component
         }
 
         if ($allVerified) {
-            $this->registration->status = 'dokumen_ok';
+            $this->registration->status = Registration::STATUS_PENDING_PAYMENT;
+            // Generate VA otomatis saat dokumen valid
+            if (empty($this->registration->payment_reference)) {
+                $this->registration->payment_reference = '98'.$this->registration->user->nim;
+            }
         } elseif ($anyRejected) {
-            $this->registration->status = 'dokumen_ditolak';
+            $this->registration->status = Registration::STATUS_DOCUMENT_REJECTED;
         } else {
-            $this->registration->status = 'menunggu_verifikasi';
+            $this->registration->status = Registration::STATUS_PENDING_VERIFICATION;
         }
 
         $this->registration->save();

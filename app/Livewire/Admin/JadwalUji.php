@@ -3,6 +3,7 @@
 namespace App\Livewire\Admin;
 
 use App\Models\Registration;
+use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
@@ -21,7 +22,7 @@ class JadwalUji extends Component
 
     public string $examLocation = '';
 
-    public string $assessorName = '';
+    public ?int $assessorId = null;
 
     public string $search = '';
 
@@ -35,7 +36,7 @@ class JadwalUji extends Component
     {
         $registration = Registration::query()->findOrFail($registrationId);
 
-        if (! in_array($registration->status, ['dokumen_ok', 'terjadwal'], true)) {
+        if (! in_array($registration->status, [Registration::STATUS_PAID, Registration::STATUS_SCHEDULED], true)) {
             return;
         }
 
@@ -44,7 +45,7 @@ class JadwalUji extends Component
         $this->examDate = $registration->exam_date?->format('Y-m-d') ?? '';
         $this->examTime = $registration->exam_date?->format('H:i') ?? '';
         $this->examLocation = $registration->exam_location ?? '';
-        $this->assessorName = $registration->assessor_name ?? '';
+        $this->assessorId = $registration->assessor_id ?? null;
 
         $this->dispatch('open-modal', id: 'modal-jadwal');
     }
@@ -56,12 +57,12 @@ class JadwalUji extends Component
             'examDate' => 'required|date',
             'examTime' => 'required|date_format:H:i',
             'examLocation' => 'required|string|max:255',
-            'assessorName' => 'required|string|max:255',
+            'assessorId' => 'required|exists:users,id',
         ]);
 
         $registration = Registration::query()->findOrFail($validated['scheduleRegistrationId']);
 
-        if (! in_array($registration->status, ['dokumen_ok', 'terjadwal'], true)) {
+        if (! in_array($registration->status, [Registration::STATUS_PAID, Registration::STATUS_SCHEDULED], true)) {
             return;
         }
 
@@ -70,8 +71,8 @@ class JadwalUji extends Component
         $registration->update([
             'exam_date' => $examDateTime,
             'exam_location' => $validated['examLocation'],
-            'assessor_name' => $validated['assessorName'],
-            'status' => 'terjadwal',
+            'assessor_id' => $validated['assessorId'],
+            'status' => Registration::STATUS_SCHEDULED,
         ]);
 
         $this->resetScheduleForm();
@@ -94,20 +95,25 @@ class JadwalUji extends Component
 
         $registration = Registration::query()->findOrFail($this->deleteRegistrationId);
 
-        if ($registration->status !== 'terjadwal') {
+        if ($registration->status !== Registration::STATUS_SCHEDULED) {
             return;
         }
 
         $registration->update([
             'exam_date' => null,
             'exam_location' => null,
-            'assessor_name' => null,
-            'status' => 'dokumen_ok',
+            'assessor_id' => null,
+            'status' => Registration::STATUS_PAID,
         ]);
 
         $this->deleteRegistrationId = null;
         $this->dispatch('toast', ['message' => 'Jadwal uji berhasil dihapus.', 'type' => 'success']);
         $this->dispatch('close-modal', id: 'modal-hapus-jadwal');
+    }
+
+    public function getAssessorsProperty()
+    {
+        return User::where('role', 'asesor')->get();
     }
 
     public function render(): View
@@ -116,8 +122,8 @@ class JadwalUji extends Component
 
         return view('livewire.admin.jadwal-uji', [
             'registrations' => $registrations,
-            'readyRegistrationsCount' => $registrations->where('status', 'dokumen_ok')->count(),
-            'scheduledRegistrationsCount' => $registrations->where('status', 'terjadwal')->count(),
+            'readyRegistrationsCount' => $registrations->where('status', Registration::STATUS_PAID)->count(),
+            'scheduledRegistrationsCount' => $registrations->where('status', Registration::STATUS_SCHEDULED)->count(),
             'selectedScheduleRegistration' => $this->scheduleRegistration(),
             'selectedDeleteRegistration' => $this->deleteRegistration(),
         ]);
@@ -131,16 +137,16 @@ class JadwalUji extends Component
         return $this->registrationsQuery()
             ->where(function (Builder $query): void {
                 $query
-                    ->where('status', 'dokumen_ok')
+                    ->where('status', Registration::STATUS_PAID)
                     ->orWhere(function (Builder $scheduledQuery): void {
                         $scheduledQuery
-                            ->where('status', 'terjadwal')
+                            ->where('status', Registration::STATUS_SCHEDULED)
                             ->when($this->filterDate !== '', function (Builder $query): void {
                                 $query->whereDate('exam_date', $this->filterDate);
                             });
                     });
             })
-            ->orderByRaw("case when status = 'dokumen_ok' then 0 else 1 end")
+            ->orderByRaw("case when status = '".Registration::STATUS_PAID."' then 0 else 1 end")
             ->orderBy('exam_date')
             ->latest('id')
             ->get();
@@ -153,7 +159,7 @@ class JadwalUji extends Component
         }
 
         return Registration::query()
-            ->with(['user', 'scheme'])
+            ->with(['user.studyProgram', 'scheme', 'assessor'])
             ->find($this->scheduleRegistrationId);
     }
 
@@ -164,7 +170,7 @@ class JadwalUji extends Component
         }
 
         return Registration::query()
-            ->with(['user', 'scheme'])
+            ->with(['user.studyProgram', 'scheme', 'assessor'])
             ->find($this->deleteRegistrationId);
     }
 
@@ -174,13 +180,13 @@ class JadwalUji extends Component
         $this->examDate = '';
         $this->examTime = '';
         $this->examLocation = '';
-        $this->assessorName = '';
+        $this->assessorId = null;
     }
 
     private function registrationsQuery(): Builder
     {
         return Registration::query()
-            ->with(['user', 'scheme'])
+            ->with(['user.studyProgram', 'scheme', 'assessor'])
             ->when($this->search !== '', function (Builder $query): void {
                 $query->whereHas('user', function (Builder $userQuery): void {
                     $userQuery

@@ -20,24 +20,26 @@
                         <h2 class="text-2xl font-bold text-gray-900">{{ $registration->user->name }}</h2>
                         @php
                             $statusColorMap = [
-                                'dokumen_ok' => 'bg-teal-50 text-teal-700 border-teal-100',
-                                'dokumen_ditolak' => 'bg-red-50 text-red-700 border-red-100',
-                                'menunggu_verifikasi' => 'bg-amber-50 text-amber-700 border-amber-100',
-                                'pending_payment' => 'bg-amber-50 text-amber-700 border-amber-100',
-                                'paid' => 'bg-amber-50 text-amber-700 border-amber-100',
-                                'terjadwal' => 'bg-blue-50 text-blue-700 border-blue-100',
-                                'kompeten' => 'bg-emerald-50 text-emerald-700 border-emerald-100',
-                                'tidak_kompeten' => 'bg-red-50 text-red-700 border-red-100',
+                                \App\Models\Registration::STATUS_DOCUMENT_APPROVED => 'bg-teal-50 text-teal-700 border-teal-100',
+                                \App\Models\Registration::STATUS_DOCUMENT_REJECTED => 'bg-red-50 text-red-700 border-red-100',
+                                \App\Models\Registration::STATUS_PENDING_VERIFICATION => 'bg-amber-50 text-amber-700 border-amber-100',
+                                \App\Models\Registration::STATUS_PENDING_PAYMENT => 'bg-amber-50 text-amber-700 border-amber-100',
+                                \App\Models\Registration::STATUS_PAID => 'bg-amber-50 text-amber-700 border-amber-100',
+                                \App\Models\Registration::STATUS_SCHEDULED => 'bg-blue-50 text-blue-700 border-blue-100',
+                                \App\Models\Registration::STATUS_COMPETENT => 'bg-emerald-50 text-emerald-700 border-emerald-100',
+                                \App\Models\Registration::STATUS_INCOMPETENT => 'bg-red-50 text-red-700 border-red-100',
+                                \App\Models\Registration::STATUS_CERTIFICATE_ISSUED => 'bg-emerald-50 text-emerald-700 border-emerald-100',
                             ];
                             $statusClass =
                                 $statusColorMap[$registration->status] ?? 'bg-slate-50 text-slate-700 border-slate-100';
 
                             $statusLabel = str_replace('_', ' ', \Illuminate\Support\Str::title($registration->status));
-                            if ($registration->status === 'dokumen_ok') {
-                                $statusLabel = 'Draft OK';
-                            }
-                            if (in_array($registration->status, ['pending_payment', 'paid', 'menunggu_verifikasi'])) {
-                                $statusLabel = 'Review';
+                            if ($registration->status === \App\Models\Registration::STATUS_DOCUMENT_APPROVED) {
+                                $statusLabel = 'Dokumen Disetujui';
+                            } elseif ($registration->status === \App\Models\Registration::STATUS_DOCUMENT_REJECTED) {
+                                $statusLabel = 'Dokumen Ditolak';
+                            } elseif (in_array($registration->status, [\App\Models\Registration::STATUS_PENDING_PAYMENT, \App\Models\Registration::STATUS_PAID, \App\Models\Registration::STATUS_PENDING_VERIFICATION])) {
+                                $statusLabel = str_replace('_', ' ', \Illuminate\Support\Str::title($registration->status));
                             }
                         @endphp
                         <span
@@ -56,13 +58,23 @@
                             <span class="text-xs font-semibold uppercase tracking-wider text-gray-500">Program Studi /
                                 Skema</span>
                             <span
-                                class="mt-1.5 text-sm font-semibold text-gray-900 truncate">{{ $registration->user->program_studi }}
+                                class="mt-1.5 text-sm font-semibold text-gray-900 truncate">{{ $registration->user->studyProgram->name ?? '-' }}
                                 / {{ optional($registration->scheme)->name }}</span>
                         </div>
                     </div>
                 </div>
-                <div class="mt-6 md:mt-0">
-                    @if ($registration->status === 'dokumen_ok')
+                <div class="mt-6 md:mt-0 flex gap-2">
+                    @if ($registration->status === \App\Models\Registration::STATUS_PENDING_PAYMENT && app()->isLocal())
+                        <button wire:click="simulasiPembayaranLunas"
+                            class="inline-flex items-center gap-2 rounded-xl bg-blue-500 px-6 py-3 text-sm font-bold text-white shadow-lg shadow-blue-100 transition-all hover:bg-blue-600">
+                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            [Simulasi] Bayar Lunas
+                        </button>
+                    @endif
+
+                    @if ($registration->status === \App\Models\Registration::STATUS_PAID)
                         <button wire:click="lanjutkanKeJadwal"
                             class="inline-flex items-center gap-2 rounded-xl bg-emerald-400 px-6 py-3 text-sm font-bold text-black shadow-lg shadow-emerald-100 transition-all hover:bg-emerald-500">
                             Lanjutkan ke Penjadwalan
@@ -103,9 +115,9 @@
                             'No. WhatsApp' => $registration->user->no_wa ?: '-',
                             'Pendidikan' => $registration->user->pendidikan_terakhir ?: '-',
                             'Fakultas / Prodi' =>
-                                ($registration->user->fakultas ?: '-') .
+                                ($registration->user->studyProgram->faculty->name ?? '-') .
                                 ' / ' .
-                                ($registration->user->program_studi ?: '-'),
+                                ($registration->user->studyProgram->name ?? '-'),
                             'SKS / Semester' =>
                                 ($registration->user->total_sks ?: '-') .
                                 ' SKS (' .
@@ -146,7 +158,6 @@
                     'internship_certificate_path' => 'Sertifikat Magang',
                     'ktp_path' => 'KTP',
                     'passport_photo_path' => 'Pas Foto 3x4',
-                    'payment_reference' => 'Bukti UKT / Pembayaran',
                 ];
                 $statuses = $registration->document_statuses ?? [];
             @endphp

@@ -34,13 +34,13 @@ class UserRegistrationStatus extends Component
             abort(403);
         }
 
-        $this->registration = $registration->load('scheme');
+        $this->registration = $registration->load(['scheme', 'user.studyProgram.faculty']);
     }
 
     public function render()
     {
         $this->registration->refresh();
-        $this->registration->load('scheme');
+        $this->registration->load(['scheme', 'user.studyProgram.faculty']);
 
         return view('livewire.user-registration-status', [
             'registration' => $this->registration,
@@ -81,7 +81,7 @@ class UserRegistrationStatus extends Component
         ];
 
         $registration->document_statuses = $documentStatuses;
-        $registration->status = 'menunggu_verifikasi';
+        $registration->status = Registration::STATUS_PENDING_VERIFICATION;
         $registration->save();
 
         unset($this->reuploadFiles[$documentField]);
@@ -92,9 +92,10 @@ class UserRegistrationStatus extends Component
     public function getStepProgress(?string $status): int
     {
         return match ($status) {
-            'menunggu_verifikasi', 'dokumen_kurang', 'dokumen_ditolak', 'dokumen_ok', 'rejected' => 2,
-            'terjadwal' => 3,
-            'selesai_uji', 'kompeten', 'tidak_kompeten', 'sertifikat_terbit' => 4,
+            Registration::STATUS_PENDING_VERIFICATION, Registration::STATUS_DOCUMENT_REJECTED => 2,
+            Registration::STATUS_DOCUMENT_APPROVED, Registration::STATUS_PENDING_PAYMENT => 3,
+            Registration::STATUS_PAID, Registration::STATUS_SCHEDULED => 4,
+            Registration::STATUS_COMPLETED, Registration::STATUS_COMPETENT, Registration::STATUS_INCOMPETENT, Registration::STATUS_CERTIFICATE_ISSUED => 5,
             default => 1,
         };
     }
@@ -102,17 +103,17 @@ class UserRegistrationStatus extends Component
     public function getStatusLabel(?string $status): string
     {
         return match ($status) {
-            'pending_payment' => 'Menunggu Bayar',
-            'menunggu_verifikasi' => 'Verifikasi Dokumen',
-            'dokumen_kurang' => 'Dokumen Kurang',
-            'dokumen_ditolak', 'rejected' => 'Dokumen Ditolak',
-            'dokumen_ok' => 'Dokumen Terverifikasi',
-            'terjadwal' => 'Jadwal Ujian Terbit',
-            'selesai_uji' => 'Ujian Selesai',
-            'kompeten' => 'Kompeten',
-            'tidak_kompeten' => 'Belum Kompeten',
-            'sertifikat_terbit' => 'Sertifikat Terbit',
-            'draft' => 'Daftar',
+            Registration::STATUS_PENDING_PAYMENT => 'Menunggu Pembayaran',
+            Registration::STATUS_PENDING_VERIFICATION => 'Verifikasi Dokumen',
+            Registration::STATUS_DOCUMENT_REJECTED => 'Dokumen Ditolak',
+            Registration::STATUS_DOCUMENT_APPROVED => 'Dokumen Terverifikasi',
+            Registration::STATUS_PAID => 'Pembayaran Lunas',
+            Registration::STATUS_SCHEDULED => 'Jadwal Ujian Terbit',
+            Registration::STATUS_COMPLETED => 'Ujian Selesai',
+            Registration::STATUS_COMPETENT => 'Kompeten',
+            Registration::STATUS_INCOMPETENT => 'Belum Kompeten',
+            Registration::STATUS_CERTIFICATE_ISSUED => 'Sertifikat Terbit',
+            Registration::STATUS_DRAFT => 'Daftar',
             default => 'Belum ada pendaftaran',
         };
     }
@@ -183,7 +184,7 @@ class UserRegistrationStatus extends Component
                 'date' => $rejectedDocuments->pluck('verified_at')->filter()->sort()->last(),
                 'color' => 'red',
             ];
-        } elseif (in_array($registration->status, ['menunggu_verifikasi', 'dokumen_ok', 'terjadwal', 'kompeten', 'sertifikat_terbit'], true)) {
+        } elseif (in_array($registration->status, [Registration::STATUS_PENDING_VERIFICATION, Registration::STATUS_DOCUMENT_APPROVED, Registration::STATUS_PENDING_PAYMENT, Registration::STATUS_PAID, Registration::STATUS_SCHEDULED, Registration::STATUS_COMPLETED, Registration::STATUS_COMPETENT, Registration::STATUS_CERTIFICATE_ISSUED], true)) {
             $verifiedCount = collect($registration->document_statuses ?? [])
                 ->where('status', 'verified')
                 ->count();
@@ -207,20 +208,20 @@ class UserRegistrationStatus extends Component
             ];
         }
 
-        if (in_array($registration->status, ['kompeten', 'tidak_kompeten', 'sertifikat_terbit'], true)) {
+        if (in_array($registration->status, [Registration::STATUS_COMPETENT, Registration::STATUS_INCOMPETENT, Registration::STATUS_CERTIFICATE_ISSUED], true)) {
             $history[] = [
-                'title' => $registration->status === 'tidak_kompeten' ? 'Hasil ujian belum kompeten' : 'Hasil ujian kompeten',
-                'description' => $registration->status === 'tidak_kompeten'
+                'title' => $registration->status === Registration::STATUS_INCOMPETENT ? 'Hasil ujian belum kompeten' : 'Hasil ujian kompeten',
+                'description' => $registration->status === Registration::STATUS_INCOMPETENT
                     ? 'Silahkan download file hasil ujian dan lakukan pendaftaran ulang.'
                     : ($registration->score !== null
                         ? 'Nilai akhir: '.$registration->score
                         : 'Hasil ujian telah diproses.'),
                 'date' => $registration->updated_at?->translatedFormat('d M Y'),
-                'color' => $registration->status === 'tidak_kompeten' ? 'red' : 'emerald',
+                'color' => $registration->status === Registration::STATUS_INCOMPETENT ? 'red' : 'emerald',
             ];
         }
 
-        if ($registration->status === 'sertifikat_terbit') {
+        if ($registration->status === Registration::STATUS_CERTIFICATE_ISSUED) {
             $history[] = [
                 'title' => 'Sertifikat terbit',
                 'description' => 'Sertifikat aktif sudah tersedia untuk diunduh.',
