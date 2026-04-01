@@ -12,13 +12,13 @@
                     <option value="{{ $facultyOption }}">{{ $facultyOption }}</option>
                 @endforeach
             </select>
-            <button wire:click="create"
-                class="inline-flex items-center gap-2 rounded-xl bg-emerald-400 px-5 py-2.5 text-sm font-semibold text-black hover:bg-emerald-500">
+            <a href="{{ route('admin.schemes.create') }}" wire:navigate
+                class="inline-flex items-center gap-2 rounded-xl bg-emerald-400 px-5 py-2.5 text-sm font-semibold text-black hover:bg-emerald-500 transition-colors">
                 <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
                 </svg>
                 Tambah Skema
-            </button>
+            </a>
         </div>
     </div>
 
@@ -65,6 +65,9 @@
                                                 <td class="px-6 py-4">
                                                     <div class="text-sm font-semibold text-gray-900">{{ $scheme->name }}
                                                     </div>
+                                                    @if ($scheme->kode_skema)
+                                                        <p class="text-xs text-gray-400">{{ $scheme->kode_skema }}</p>
+                                                    @endif
                                                 </td>
                                                 <td class="px-6 py-4">
                                                     <p class="text-xs text-gray-500 line-clamp-1">
@@ -80,8 +83,8 @@
                                                     @endif
                                                 </td>
                                                 <td class="px-6 py-4 text-right whitespace-nowrap">
-                                                    <button wire:click="edit({{ $scheme->id }})"
-                                                        class="text-sm font-semibold text-emerald-600 hover:text-emerald-700 transition-colors mr-4">Edit</button>
+                                                    <a href="{{ route('admin.schemes.edit', $scheme) }}" wire:navigate
+                                                        class="text-sm font-semibold text-emerald-600 hover:text-emerald-700 transition-colors mr-4">Edit</a>
                                                     <button wire:click="confirmDelete({{ $scheme->id }})"
                                                         class="text-sm font-semibold text-red-600 hover:text-red-700 transition-colors">Hapus</button>
                                                 </td>
@@ -107,123 +110,6 @@
                     data skema uji.</p>
             </div>
         @endforelse
-    </div>
-
-    {{-- Modal Form (Create/Edit) --}}
-    <div x-data="{ show: false }"
-        x-on:open-modal.window="let n = $event.detail?.name || (Array.isArray($event.detail) ? $event.detail[0] : $event.detail); if (n === 'modal-scheme-form') show = true"
-        x-on:close-modal.window="let n = $event.detail?.name || (Array.isArray($event.detail) ? $event.detail[0] : $event.detail); if (n === 'modal-scheme-form') show = false"
-        x-on:keydown.escape.window="show = false" x-show="show" class="relative z-50" style="display: none;">
-
-        <div x-show="show" x-transition.opacity class="fixed inset-0 bg-black/40 transition-opacity"></div>
-
-        <div class="fixed inset-0 z-10 w-screen overflow-y-auto">
-            <div class="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
-                <div x-show="show" x-transition:enter="ease-out duration-300"
-                    x-transition:enter-start="opacity-0 translate-y-8 sm:scale-95"
-                    x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100"
-                    x-transition:leave="ease-in duration-200"
-                    x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
-                    x-transition:leave-end="opacity-0 translate-y-8 sm:scale-95" @click.outside="show = false"
-                    class="relative w-full overflow-hidden rounded-[2rem] bg-white text-left shadow-2xl transition-all sm:my-8 sm:max-w-xl">
-
-                    <form wire:submit="save" class="flex flex-col">
-                        <div class="p-6 md:p-8">
-                            <div class="mb-6 flex items-center justify-between">
-                                <h2 class="text-xl font-bold text-gray-900">
-                                    {{ $schemeId ? 'Edit Skema' : 'Tambah Skema Baru' }}
-                                </h2>
-                                <button type="button" @click="show = false" class="text-gray-400 hover:text-gray-500">
-                                    <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                            d="M6 18L18 6M6 6l12 12" />
-                                    </svg>
-                                </button>
-                            </div>
-
-                            <div class="space-y-5">
-                                <div>
-                                    <label
-                                        class="block text-xs font-semibold uppercase tracking-wider text-gray-500 mb-2">Nama
-                                        Skema <span class="text-red-500">*</span></label>
-                                    <input wire:model="name" type="text"
-                                        class="block w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50/50 text-sm font-semibold text-gray-900 outline-none transition-all hover:bg-white hover:border-slate-300 focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 focus:bg-white"
-                                        required placeholder="Masukkan nama skema" />
-                                    @error('name')
-                                        <p class="mt-2 text-xs font-medium text-red-600">{{ $message }}</p>
-                                    @enderror
-                                </div>
-
-                                <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
-                                    <div>
-                                        <label
-                                            class="block text-xs font-semibold uppercase tracking-wider text-gray-500 mb-2">Fakultas
-                                            <span class="text-red-500">*</span></label>
-                                        <input wire:model="faculty" type="text"
-                                            class="block w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50/50 text-sm font-semibold text-gray-900 outline-none transition-all hover:bg-white hover:border-slate-300 focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 focus:bg-white"
-                                            required placeholder="Fakultas Ilmu Komputer" />
-                                        @error('faculty')
-                                            <p class="mt-2 text-xs font-medium text-red-600">{{ $message }}</p>
-                                        @enderror
-                                    </div>
-                                    <div>
-                                        <label
-                                            class="block text-xs font-semibold uppercase tracking-wider text-gray-500 mb-2">Program
-                                            Studi <span class="text-red-500">*</span></label>
-                                        <input wire:model="study_program" type="text"
-                                            class="block w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50/50 text-sm font-semibold text-gray-900 outline-none transition-all hover:bg-white hover:border-slate-300 focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 focus:bg-white"
-                                            required placeholder="Sistem Informasi" />
-                                        @error('study_program')
-                                            <p class="mt-2 text-xs font-medium text-red-600">{{ $message }}</p>
-                                        @enderror
-                                    </div>
-                                </div>
-
-                                <div>
-                                    <label
-                                        class="block text-xs font-semibold uppercase tracking-wider text-gray-500 mb-2">Deskripsi</label>
-                                    <textarea wire:model="description" rows="3"
-                                        class="block w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50/50 text-sm font-semibold text-gray-900 outline-none transition-all hover:bg-white hover:border-slate-300 focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 focus:bg-white"
-                                        placeholder="Opsional: masukkan deskripsi skema"></textarea>
-                                    @error('description')
-                                        <p class="mt-2 text-xs font-medium text-red-600">{{ $message }}</p>
-                                    @enderror
-                                </div>
-
-                                <div class="flex items-center gap-2">
-                                    <div class="flex h-5 items-center">
-                                        <input wire:model="is_active" id="is_active" type="checkbox"
-                                            class="h-5 w-5 rounded-lg border-gray-300 text-emerald-600 focus:ring-emerald-500">
-                                    </div>
-                                    <label for="is_active" class="text-sm font-semibold text-gray-700">
-                                        Aktifkan Skema
-                                    </label>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div
-                            class="flex items-center justify-end gap-4 bg-slate-50/50 px-6 py-5 md:px-8 border-t border-slate-100">
-                            <button type="button" @click="show = false"
-                                class="inline-flex items-center justify-center rounded-xl border border-gray-200 bg-white px-6 py-3 text-sm font-bold text-gray-700 hover:bg-gray-50 transition-colors">
-                                Batal
-                            </button>
-                            <button type="submit"
-                                class="group relative inline-flex items-center justify-center px-8 py-3.5 font-bold text-black bg-emerald-400 rounded-2xl hover:bg-emerald-500">
-                                <span wire:loading.remove wire:target="save">Simpan Skema</span>
-                                <span wire:loading wire:target="save">Menyimpan...</span>
-                                <svg wire:loading.remove wire:target="save"
-                                    class="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" fill="none"
-                                    stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M14 5l7 7-7 7M3 12h18" />
-                                </svg>
-                            </button>
-                        </div>
-                    </form>
-                </div>
-            </div>
-        </div>
     </div>
 
     {{-- Modal Delete --}}
@@ -272,5 +158,10 @@
                             class="group relative inline-flex items-center justify-center px-8 py-3.5 font-bold text-white bg-red-600 rounded-2xl hover:bg-red-700 transition-all shadow-lg shadow-red-500/20">
                             <span wire:loading.remove wire:target="delete">Ya, Hapus Skema</span>
                             <span wire:loading wire:target="delete">Menghapus...</span>
+                        </button>
                     </div>
                 </div>
+            </div>
+        </div>
+    </div>
+</div>
