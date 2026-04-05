@@ -53,7 +53,7 @@
                 </p>
                 <div class="flex flex-wrap gap-5">
                     <!-- Primary CTA -->
-                    <a href="/daftar"
+                    <a href="{{ route('register') }}"
                         class="bg-[#ea580c] hover:bg-[#c2410c] text-white px-8 py-3.5 rounded-full font-bold transition flex items-center gap-3 text-sm tracking-wide shadow-lg shadow-orange-500/30">
                         <span class="w-1.5 h-1.5 bg-white rounded-full"></span>
                         DAFTAR
