@@ -2,10 +2,25 @@
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}" class="scroll-smooth">
 
 <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    
+    <!-- SEO & Metadata -->
+    <title>{{ config('app.name', 'LSP UPN Veteran Jakarta') }} - Lembaga Sertifikasi Profesi</title>
+    <meta name="description" content="Unit Penunjang Akademik - Layanan Uji Kompetensi (UPA-LUK) UPN Veteran Jakarta melayani uji kompetensi bersertifikat BNSP untuk mahasiswa.">
+    
+    <!-- Open Graph Tags -->
+    <meta property="og:title" content="{{ config('app.name', 'LSP UPN Veteran Jakarta') }} - Terlisensi BNSP">
+    <meta property="og:description" content="Dapatkan sertifikat kompetensi dari BNSP melalui UPA-LUK UPN Veteran Jakarta. Skema sertifikasi lengkap.">
+    <meta property="og:image" content="{{ asset('assets/logo.webp') }}">
+    <meta property="og:url" content="{{ url()->current() }}">
+    <meta property="og:type" content="website">
+
     @include('partials.head')
     @livewireStyles
+    
     <style>
-        /* Gradient hero background similar to the image */
+        /* Gradient hero background */
         .hero-gradient {
             background: linear-gradient(135deg, #2b4c7e 0%, #1a9bc3 100%);
         }
@@ -13,12 +28,6 @@
         /* Slanted top section */
         .slanted-top {
             clip-path: polygon(0 4vw, 100% 0, 100% 100%, 0 100%);
-            margin-top: -4vw;
-            padding-top: 8vw;
-        }
-
-        .slanted-top-reverse {
-            clip-path: polygon(0 0, 100% 4vw, 100% 100%, 0 100%);
             margin-top: -4vw;
             padding-top: 8vw;
         }
@@ -35,7 +44,7 @@
         <div class="max-w-[85rem] mx-auto w-full grid lg:grid-cols-12 gap-12 items-center relative z-10">
             <div class="text-white lg:col-span-7">
                 <h1 class="text-5xl lg:text-[4rem] font-bold mb-6 leading-tight">Welcome To UPA - LUK</h1>
-                <p class="text-lg lg:text-xl mb-10 leading-relaxed text-blue-50/90 font-medium max-w-2xl">
+                <p class="text-lg lg:text-xl mb-10 leading-relaxed text-gray-100 font-medium max-w-2xl drop-shadow-sm">
                     UPN "Veteran" Jakarta Competency Test Service Academic Support Unit or commonly known as LSP has
                     the task of carrying out training and competency test services to students. Students have the
                     opportunity to choose certification according to their competence. Certification to UPN
@@ -43,17 +52,17 @@
                     declared competent will get a Certificate of Competence from BNSP and are valid nationally.
                 </p>
                 <div class="flex flex-wrap gap-5">
+                    <!-- Primary CTA -->
                     <a href="/daftar"
-                        class="bg-[#0ea5e9] hover:bg-[#0284c7] text-white px-8 py-3.5 rounded-full font-bold transition flex items-center gap-3 text-sm tracking-wide shadow-lg shadow-cyan-500/30">
+                        class="bg-[#ea580c] hover:bg-[#c2410c] text-white px-8 py-3.5 rounded-full font-bold transition flex items-center gap-3 text-sm tracking-wide shadow-lg shadow-orange-500/30">
                         <span class="w-1.5 h-1.5 bg-white rounded-full"></span>
-                        MASUK
+                        DAFTAR
                         <span class="w-1.5 h-1.5 bg-white rounded-full"></span>
                     </a>
+                    <!-- Secondary CTA -->
                     <a href="{{ route('login') }}"
-                        class="bg-white hover:bg-gray-50 text-gray-900 px-8 py-3.5 rounded-full font-bold transition flex items-center gap-3 text-sm tracking-wide shadow-lg shadow-black/10">
-                        <span class="w-1.5 h-1.5 bg-[#f97316] rounded-full"></span>
-                        DAFTAR
-                        <span class="w-1.5 h-1.5 bg-[#f97316] rounded-full"></span>
+                        class="bg-transparent border-2 border-white/70 hover:bg-white/10 hover:border-white text-white px-8 py-3.5 rounded-full font-bold transition flex items-center gap-3 text-sm tracking-wide">
+                        MASUK
                     </a>
                 </div>
             </div>
@@ -69,7 +78,7 @@
     </div>
 
     <!-- Selamat Datang Section -->
-    <div class="py-24 px-6 lg:px-16 bg-white slanted-top" style="z-index: 5; position: relative;">
+    <div class="py-24 px-6 lg:px-16 bg-white slanted-top relative z-10">
         <div class="max-w-[85rem] mx-auto w-full">
             <div class="grid lg:grid-cols-2 gap-16 items-center">
                 <div class="pr-0 lg:pr-8">
@@ -91,7 +100,7 @@
                 <div class="overflow-hidden rounded-2xl border-4 border-gray-100 shadow-2xl">
                     <div class="aspect-video w-full bg-slate-950">
                         <iframe class="h-full w-full"
-                            src="https://www.youtube.com/embed/shb_YrytjFM?si=4xpRRIaGDjW62dj9"
+                            src="{{ config('services.youtube.intro_video', 'https://www.youtube.com/embed/shb_YrytjFM') }}"
                             title="Video Pengenalan Aplikasi LSP"
                             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                             referrerpolicy="strict-origin-when-cross-origin" allowfullscreen>
@@ -119,9 +128,9 @@
     </div>
 
     <!-- Registration Section -->
-    <div class="bg-[#2A3F5C] text-white py-32 px-6 lg:px-16 slanted-top relative">
+    <div class="bg-[#2A3F5C] text-white py-32 px-6 lg:px-16 slanted-top relative z-10">
         <div class="max-w-4xl mx-auto w-full text-center z-10 relative">
-            <h4 class="text-[#3b82f6] font-bold tracking-widest mb-4 text-sm uppercase">PENDAFATARAN DIBUKA</h4>
+            <h4 class="text-[#3b82f6] font-bold tracking-widest mb-4 text-sm uppercase">PENDAFTARAN DIBUKA</h4>
             <h2 class="text-4xl md:text-5xl font-bold mb-8">Registrasi Sertifikasi Di Buka</h2>
             <p class="text-lg text-gray-300 mb-12 leading-relaxed">
                 Unit Penunjang Akademik-layanan Uji Kompetensi (UPA-LUK) UPN "Veteran"<br>
@@ -151,15 +160,12 @@
         </div>
     </div>
 
-    <!-- Skema Section (Replacing Berita) -->
-    @php
-        $latestSchemes = \App\Models\Scheme::latest()->take(3)->get();
-    @endphp
-    <div class="bg-gray-50 py-32 px-6 lg:px-16 slanted-top relative" style="margin-top: -3vw; z-index: 5;">
+    <!-- Skema Section -->
+    <div class="bg-gray-50 py-32 px-6 lg:px-16 slanted-top relative z-10 -mt-12">
         <div class="max-w-[85rem] mx-auto w-full">
             <h2 class="text-4xl font-bold text-center mb-16 text-gray-900">Skema Sertifikasi</h2>
 
-            @if ($latestSchemes->isEmpty())
+            @if (empty($latestSchemes) || $latestSchemes->isEmpty())
                 <div class="text-center text-gray-500 py-10 bg-white rounded-2xl shadow-sm border border-gray-100">
                     <p class="font-medium">Belum ada skema tersedia.</p>
                 </div>
@@ -250,7 +256,7 @@
                     @endforeach
                 </div>
 
-                <!-- If less than 3 schemes, fill with dummy cards to match the design (optional, but good for preview) -->
+                <!-- If less than 3 schemes, fill with dummy cards -->
                 @if ($latestSchemes->count() < 3)
                     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mt-8">
                         @for ($i = 0; $i < 3 - $latestSchemes->count(); $i++)
@@ -305,3 +311,4 @@
 </body>
 
 </html>
+
