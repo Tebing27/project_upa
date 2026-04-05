@@ -48,6 +48,36 @@ class SchemeManager extends Component
         $this->dispatch('open-modal', name: 'modal-scheme-delete');
     }
 
+    public function toggleActive(int $id): void
+    {
+        $scheme = Scheme::query()->findOrFail($id);
+        $scheme->update([
+            'is_active' => ! $scheme->is_active,
+        ]);
+
+        unset($this->groupedSchemes);
+
+        $this->dispatch('toast', [
+            'message' => $scheme->is_active ? 'Skema berhasil diaktifkan.' : 'Skema berhasil dinonaktifkan.',
+            'type' => 'success',
+        ]);
+    }
+
+    public function togglePopular(int $id): void
+    {
+        $scheme = Scheme::query()->findOrFail($id);
+        $scheme->update([
+            'is_popular' => ! $scheme->is_popular,
+        ]);
+
+        unset($this->groupedSchemes);
+
+        $this->dispatch('toast', [
+            'message' => $scheme->is_popular ? 'Skema ditandai populer.' : 'Status populer skema dihapus.',
+            'type' => 'success',
+        ]);
+    }
+
     public function delete(): void
     {
         $scheme = Scheme::query()->findOrFail($this->schemeId);

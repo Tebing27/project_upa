@@ -60,7 +60,6 @@ it('can create a new scheme with full details', function () {
         ->set('faculty', 'Fakultas Teknik')
         ->set('study_program', 'Sistem Informasi')
         ->set('description', 'Deskripsi Skema')
-        ->set('is_active', true)
         ->set('unitKompetensis', [
             ['kode_unit' => 'J.611000.004.01', 'nama_unit' => 'Merancang Pengalamatan Jaringan', 'nama_unit_en' => 'Designing Network Addressing'],
         ])
@@ -85,6 +84,7 @@ it('can create a new scheme with full details', function () {
         'faculty' => 'Fakultas Teknik',
         'study_program' => 'Sistem Informasi',
         'is_active' => true,
+        'is_popular' => false,
     ]);
 
     $this->assertDatabaseHas('scheme_unit_kompetensis', [
@@ -118,14 +118,33 @@ it('can update an existing scheme', function () {
         ->test(SchemeForm::class, ['scheme' => $scheme])
         ->assertSet('name', 'Skema Lama')
         ->set('name', 'Skema Diupdate')
-        ->set('is_active', true)
         ->call('save')
         ->assertDispatched('toast');
 
     $this->assertDatabaseHas('schemes', [
         'id' => $scheme->id,
         'name' => 'Skema Diupdate',
+        'is_active' => false,
+    ]);
+});
+
+it('can toggle active and popular states from the scheme manager', function () {
+    $admin = User::factory()->create(['role' => 'admin']);
+    $scheme = Scheme::factory()->create([
         'is_active' => true,
+        'is_popular' => false,
+    ]);
+
+    Livewire::actingAs($admin)
+        ->test(SchemeManager::class)
+        ->call('toggleActive', $scheme->id)
+        ->call('togglePopular', $scheme->id)
+        ->assertDispatched('toast');
+
+    $this->assertDatabaseHas('schemes', [
+        'id' => $scheme->id,
+        'is_active' => false,
+        'is_popular' => true,
     ]);
 });
 

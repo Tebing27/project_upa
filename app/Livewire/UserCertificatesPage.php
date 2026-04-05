@@ -3,6 +3,8 @@
 namespace App\Livewire;
 
 use App\Models\Scheme;
+use Illuminate\Support\Collection;
+use Illuminate\View\View;
 use Livewire\Component;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
@@ -33,7 +35,7 @@ class UserCertificatesPage extends Component
         ]);
     }
 
-    public function getFacultiesProperty()
+    public function getFacultiesProperty(): Collection
     {
         $schemeIds = auth()->user()->certificates()->pluck('scheme_id')->filter()->unique();
 
@@ -50,11 +52,14 @@ class UserCertificatesPage extends Component
             ->values();
     }
 
-    public function render()
+    public function render(): View
     {
         $user = auth()->user();
 
         $allCertificates = $user->certificates()->with('scheme')->latest()->get();
+
+        // Get only the latest certificate for each scheme
+        $allCertificates = $allCertificates->unique('scheme_id')->values();
 
         $certificates = $allCertificates;
 

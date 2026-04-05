@@ -46,6 +46,12 @@ class UploadHasilUji extends Component
             return;
         }
 
+        if ($registration->status === 'terjadwal' && ! $registration->hasPublishedExamSchedule()) {
+            $this->dispatch('toast', ['message' => 'Peserta harus dijadwalkan lengkap terlebih dahulu sebelum upload hasil uji.', 'type' => 'error']);
+
+            return;
+        }
+
         $this->uploadRegistrationId = $registration->id;
         $this->highlight = $registration->id;
         $this->certificateFile = null;
@@ -87,6 +93,12 @@ class UploadHasilUji extends Component
             ->findOrFail($this->uploadRegistrationId);
 
         if (! in_array($registration->status, ['terjadwal', 'sertifikat_terbit', 'tidak_kompeten'], true)) {
+            return;
+        }
+
+        if ($registration->status === 'terjadwal' && ! $registration->hasPublishedExamSchedule()) {
+            $this->addError('uploadRegistrationId', 'Peserta harus dijadwalkan lengkap terlebih dahulu sebelum upload hasil uji.');
+
             return;
         }
 
@@ -262,11 +274,24 @@ class UploadHasilUji extends Component
         return Registration::query()
             ->with(['user', 'scheme'])
             ->whereIn('status', ['terjadwal', 'sertifikat_terbit', 'tidak_kompeten'])
+            ->where(function (Builder $query): void {
+                $query->where('status', '!=', 'sertifikat_terbit')
+                    ->orWhereNotExists(function (\Illuminate\Database\Query\Builder $sub): void {
+                        $sub->selectRaw(1)
+                            ->from('registrations as r2')
+                            ->whereColumn('r2.user_id', 'registrations.user_id')
+                            ->whereColumn('r2.scheme_id', 'registrations.scheme_id')
+                            ->whereColumn('r2.id', '>', 'registrations.id')
+                            ->where('r2.type', 'perpanjangan')
+                            ->whereIn('r2.status', ['terjadwal', 'sertifikat_terbit', 'tidak_kompeten']);
+                    });
+            })
             ->when($this->search !== '', function (Builder $query): void {
                 $query->whereHas('user', function (Builder $userQuery): void {
                     $userQuery
                         ->where('name', 'like', '%'.$this->search.'%')
-                        ->orWhere('nim', 'like', '%'.$this->search.'%');
+                        ->orWhere('nim', 'like', '%'.$this->search.'%')
+                        ->orWhere('no_ktp', 'like', '%'.$this->search.'%');
                 });
             })
             ->when($this->filterDate !== '', function (Builder $query): void {

@@ -53,7 +53,10 @@
                                                 Deskripsi</th>
                                             <th
                                                 class="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-gray-500 text-center w-32">
-                                                Status</th>
+                                                Aktif</th>
+                                            <th
+                                                class="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-gray-500 text-center w-32">
+                                                Populer</th>
                                             <th
                                                 class="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-gray-500 text-right w-36">
                                                 Aksi</th>
@@ -74,13 +77,28 @@
                                                         {{ $scheme->description ?: '-' }}</p>
                                                 </td>
                                                 <td class="px-6 py-4 text-center">
-                                                    @if ($scheme->is_active)
-                                                        <span
-                                                            class="inline-flex items-center rounded-full border border-emerald-100 bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">Aktif</span>
-                                                    @else
-                                                        <span
-                                                            class="inline-flex items-center rounded-full border border-gray-100 bg-gray-50 px-3 py-1 text-xs font-semibold text-gray-400">Nonaktif</span>
-                                                    @endif
+                                                    <button type="button" wire:click="toggleActive({{ $scheme->id }})"
+                                                        wire:loading.attr="disabled"
+                                                        wire:target="toggleActive({{ $scheme->id }})"
+                                                        @class([
+                                                            'inline-flex h-7 w-12 items-center rounded-full border px-1 transition',
+                                                            'justify-end border-emerald-200 bg-emerald-500' => $scheme->is_active,
+                                                            'justify-start border-slate-200 bg-slate-300' => ! $scheme->is_active,
+                                                        ])>
+                                                        <span class="h-5 w-5 rounded-full bg-white shadow-sm"></span>
+                                                    </button>
+                                                </td>
+                                                <td class="px-6 py-4 text-center">
+                                                    <button type="button" wire:click="togglePopular({{ $scheme->id }})"
+                                                        wire:loading.attr="disabled"
+                                                        wire:target="togglePopular({{ $scheme->id }})"
+                                                        @class([
+                                                            'inline-flex h-7 w-12 items-center rounded-full border px-1 transition',
+                                                            'justify-end border-amber-200 bg-amber-400' => $scheme->is_popular,
+                                                            'justify-start border-slate-200 bg-slate-300' => ! $scheme->is_popular,
+                                                        ])>
+                                                        <span class="h-5 w-5 rounded-full bg-white shadow-sm"></span>
+                                                    </button>
                                                 </td>
                                                 <td class="px-6 py-4 text-right whitespace-nowrap">
                                                     <a href="{{ route('admin.schemes.edit', $scheme) }}" wire:navigate

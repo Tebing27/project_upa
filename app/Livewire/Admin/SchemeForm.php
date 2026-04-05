@@ -34,8 +34,6 @@ class SchemeForm extends Component
 
     public string $description = '';
 
-    public bool $is_active = true;
-
     /** @var TemporaryUploadedFile|null */
     public $gambar;
 
@@ -74,8 +72,6 @@ class SchemeForm extends Component
             $this->faculty = $scheme->faculty;
             $this->study_program = $scheme->study_program;
             $this->description = $scheme->description ?? '';
-            $this->is_active = $scheme->is_active;
-
             $this->unitKompetensis = $scheme->unitKompetensis->map(fn ($uk) => [
                 'kode_unit' => $uk->kode_unit,
                 'nama_unit' => $uk->nama_unit,
@@ -107,7 +103,6 @@ class SchemeForm extends Component
             'faculty' => 'required|string|max:255',
             'study_program' => 'required|string|max:255',
             'description' => 'nullable|string',
-            'is_active' => 'boolean',
             'gambar' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
             'dokumen_skema' => 'nullable|file|mimes:pdf|max:4096',
             'unitKompetensis.*.kode_unit' => 'required|string|max:255',
@@ -189,7 +184,6 @@ class SchemeForm extends Component
             'faculty' => $this->faculty,
             'study_program' => $this->study_program,
             'description' => $this->description ?: null,
-            'is_active' => $this->is_active ?? false,
         ];
 
         if ($gambarPath) {

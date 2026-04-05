@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\AppSetting;
 use App\Models\Certificate;
 use App\Models\Registration;
 use App\Models\Scheme;
@@ -23,16 +24,20 @@ it('renders the user dashboard with the new summary cards', function () {
     $this->actingAs($user)
         ->get('/dashboard')
         ->assertOk()
+        ->assertSee('UPA LUK')
         ->assertSee('Sertifikat Aktif')
         ->assertSee('Status Pendaftaran')
         ->assertSee('Kode Referensi')
         ->assertSee('REF-2024-0042')
         ->assertSee('Progress Pendaftaran')
-        ->assertSee('Tahap 1 dari 4')
+        ->assertSee('Tahap 3 dari 5')
         ->assertSee('Daftar')
-        ->assertSee('Verifikasi')
+        ->assertSee('Pembayaran')
         ->assertSee('Detail Pendaftaran')
-        ->assertSee('Tidak ada pendaftaran aktif');
+        ->assertSee('Tahap Pembayaran')
+        ->assertSee('Kelola Pembayaran')
+        ->assertSee('Daftar Skema Baru')
+        ->assertSee('Selesaikan satu skema sertifikasi hingga tahap sertifikat terbit terlebih dahulu sebelum mendaftar skema baru.');
 });
 
 it('displays the active certificate summary from the database', function () {
@@ -78,7 +83,7 @@ it('shows rejected document details in progress step two', function () {
         ->assertSee('Lihat status pendaftaran');
 });
 
-it('shows the exam schedule in progress step three', function () {
+it('shows the exam schedule in progress step four', function () {
     $user = User::factory()->create();
     $scheme = Scheme::factory()->create(['name' => 'Junior Web Developer']);
 
@@ -91,6 +96,8 @@ it('shows the exam schedule in progress step three', function () {
         'assessor_name' => 'Budi Santoso',
     ]);
 
+    AppSetting::put('whatsapp_channel_link', 'https://chat.whatsapp.com/dashboard-jadwal');
+
     $this->actingAs($user)
         ->get('/dashboard')
         ->assertOk()
@@ -99,7 +106,9 @@ it('shows the exam schedule in progress step three', function () {
         ->assertSee('Jam Ujian')
         ->assertSee('Jam 09:00')
         ->assertSee('Lab Sertifikasi Gedung A')
-        ->assertSee('Budi Santoso');
+        ->assertSee('Budi Santoso')
+        ->assertSee('Link WhatsApp')
+        ->assertSee('Buka Grup / Chat');
 });
 
 it('shows certificate and exam result download actions when files are available', function () {
@@ -123,6 +132,8 @@ it('shows certificate and exam result download actions when files are available'
     $this->actingAs($user)
         ->get('/dashboard')
         ->assertOk()
+        ->assertSee('Daftar Skema Baru')
+        ->assertSee(route('dashboard.skema'), false)
         ->assertSee('Unduh Sertifikat')
         ->assertSee('Unduh Hasil Ujian');
 });
@@ -141,8 +152,17 @@ it('shows Daftar Ulang button when status is tidak_kompeten', function () {
     $this->actingAs($user)
         ->get('/dashboard')
         ->assertOk()
+        ->assertSee('Daftar Skema Baru')
+        ->assertSee('Selesaikan satu skema sertifikasi hingga tahap sertifikat terbit terlebih dahulu sebelum mendaftar skema baru.')
+        ->assertSee('Tahap 5 dari 5')
+        ->assertSee('Hasil Ujian')
         ->assertSee('Belum Kompeten')
         ->assertSee('Unduh Hasil Ujian')
+        ->assertSee(route('dashboard.daftar-skema', [
+            'type' => 'perpanjangan',
+            'scheme' => $scheme->id,
+            'source' => 'dashboard-skema',
+        ]), false)
         ->assertSee('Daftar Ulang Skema Ini');
 });
 
@@ -162,4 +182,37 @@ it('shows review status when documents are being verified', function () {
         ->assertSee('Tahap Review')
         ->assertSee('Sedang Direview')
         ->assertSee('Lihat Detail Status');
+});
+
+it('shows payment instructions and recent scheme history during payment stage', function () {
+    $user = User::factory()->create();
+    $scheme = Scheme::factory()->create(['name' => 'Junior Web Developer']);
+
+    Registration::factory()->create([
+        'user_id' => $user->id,
+        'scheme_id' => $scheme->id,
+        'status' => 'dokumen_ok',
+        'payment_reference' => 'PAY-001',
+    ]);
+
+    $this->actingAs($user)
+        ->get('/dashboard')
+        ->assertOk()
+        ->assertSee('Tahap Pembayaran')
+        ->assertSee('Kode Instruksi Pembayaran')
+        ->assertSee('PAY-001')
+        ->assertSee('Riwayat Skema')
+        ->assertSee('Junior Web Developer');
+});
+
+it('shows biodata completion call to action for incomplete general users', function () {
+    $user = User::factory()->general()->create();
+
+    $this->actingAs($user)
+        ->get('/dashboard')
+        ->assertOk()
+        ->assertSee('Biodata Belum Lengkap')
+        ->assertSee('Lengkapi biodata di tahap kedua daftar skema')
+        ->assertSee('Lihat Skema')
+        ->assertSee('Daftar Skema');
 });

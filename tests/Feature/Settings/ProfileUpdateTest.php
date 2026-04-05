@@ -32,6 +32,40 @@ test('profile information can be updated', function () {
     expect($user->email_verified_at)->toBeNull();
 });
 
+test('general user can complete biodata from profile page', function () {
+    $user = User::factory()->general()->create([
+        'email_verified_at' => now(),
+    ]);
+
+    $this->actingAs($user);
+
+    Livewire::test('pages::settings.profile')
+        ->set('name', 'Peserta Umum')
+        ->set('email', 'umum@example.com')
+        ->set('no_ktp', '3174000000000001')
+        ->set('jenis_kelamin', 'L')
+        ->set('tempat_lahir', 'Jakarta')
+        ->set('tanggal_lahir', '1998-04-10')
+        ->set('alamat_rumah', 'Jl. Contoh No. 1')
+        ->set('domisili_provinsi', 'DKI Jakarta')
+        ->set('domisili_kota', 'Jakarta Selatan')
+        ->set('domisili_kecamatan', 'Setiabudi')
+        ->set('no_wa', '081234567890')
+        ->set('pendidikan_terakhir', 'S1')
+        ->set('nama_institusi', 'Universitas Contoh')
+        ->set('program_studi', 'Teknik Informatika')
+        ->set('pekerjaan', 'Karyawan Swasta')
+        ->call('updateProfileInformation')
+        ->assertHasNoErrors();
+
+    $user->refresh();
+
+    expect($user->hasCompletedProfile())->toBeTrue()
+        ->and($user->profile_completed_at)->not->toBeNull()
+        ->and($user->nama_institusi)->toBe('Universitas Contoh')
+        ->and($user->pekerjaan)->toBe('Karyawan Swasta');
+});
+
 test('email verification status is unchanged when email address is unchanged', function () {
     $user = User::factory()->create();
 

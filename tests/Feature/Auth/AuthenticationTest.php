@@ -39,6 +39,23 @@ test('admins are redirected to the admin dashboard after login', function () {
     $this->assertAuthenticated();
 });
 
+test('users can authenticate using email on the login screen', function () {
+    $user = User::factory()->create([
+        'email' => 'user@example.com',
+    ]);
+
+    $response = $this->post(route('login.store'), [
+        'nim' => 'user@example.com',
+        'password' => 'password',
+    ]);
+
+    $response
+        ->assertSessionHasNoErrors()
+        ->assertRedirect(route('dashboard', absolute: false));
+
+    $this->assertAuthenticatedAs($user);
+});
+
 test('users can not authenticate with invalid password', function () {
     $user = User::factory()->create();
 

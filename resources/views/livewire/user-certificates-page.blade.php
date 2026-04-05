@@ -7,7 +7,7 @@
     @endphp
 
     <div>
-        <h1 class="text-[1.75rem] font-bold text-gray-900">Sertifikat Saya</h1>
+        <h1 class="text-[1.75rem] font-bold text-gray-900">Sertifikat</h1>
         <p class="mt-1.5 text-sm text-gray-500">Lihat sertifikat aktif dan riwayat sertifikat yang sudah diterbitkan.</p>
     </div>
 
@@ -105,7 +105,7 @@
                                 </p>
                             </td>
                             <td class="px-6 py-4 font-mono text-[13px] text-gray-600">
-                                {{ 'CERT-' . str_pad((string) $certificate->id, 5, '0', STR_PAD_LEFT) }}
+                                {{ $certificate->displayNumber() }}
                             </td>
                             <td class="px-6 py-4 text-[13px] text-gray-600">
                                 {{ $certificate->created_at ? $certificate->created_at->translatedFormat('d F Y') : '-' }}
@@ -115,13 +115,30 @@
                             </td>
                             <td class="px-6 py-4">
                                 @php
-                                    $badgeClasses = $certificate->is_active
-                                        ? 'bg-emerald-50 text-[#1b8a6b] ring-emerald-200/50'
-                                        : 'bg-red-50 text-red-600 ring-red-200/50';
+                                    $inProgress = auth()
+                                        ->user()
+                                        ->hasInProgressRegistrationForScheme($certificate->scheme_id ?? 0);
+                                    $hasFailedLatest = auth()
+                                        ->user()
+                                        ->hasFailedLatestRegistrationForScheme($certificate->scheme_id ?? 0);
+
+                                    if ($certificate->is_active) {
+                                        $badgeClasses = 'bg-emerald-50 text-[#1b8a6b] ring-emerald-200/50';
+                                        $statusText = 'Aktif';
+                                    } elseif ($inProgress) {
+                                        $badgeClasses = 'bg-amber-50 text-amber-600 ring-amber-200/50';
+                                        $statusText = 'Proses Perpanjangan';
+                                    } elseif ($hasFailedLatest) {
+                                        $badgeClasses = 'bg-red-50 text-red-600 ring-red-200/50';
+                                        $statusText = 'Tidak Lolos';
+                                    } else {
+                                        $badgeClasses = 'bg-red-50 text-red-600 ring-red-200/50';
+                                        $statusText = 'Kedaluwarsa';
+                                    }
                                 @endphp
                                 <span
                                     class="inline-flex items-center rounded-full px-3 py-1 text-[11px] font-semibold ring-1 ring-inset {{ $badgeClasses }}">
-                                    {{ $certificate->is_active ? 'Aktif' : 'Kedaluwarsa' }}
+                                    {{ $statusText }}
                                 </span>
                             </td>
                             <td class="px-6 py-4 md:px-8">
@@ -137,7 +154,8 @@
                                                         d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                                                 </svg>
                                                 <span wire:loading.remove
-                                                    wire:target="downloadCertificateAsPdf({{ $certificate->id }})">Unduh Sertifikat</span>
+                                                    wire:target="downloadCertificateAsPdf({{ $certificate->id }})">Unduh
+                                                    Sertifikat</span>
                                                 <span wire:loading
                                                     wire:target="downloadCertificateAsPdf({{ $certificate->id }})">Memproses...</span>
                                             </button>
@@ -160,15 +178,29 @@
                                             <span class="text-[13px] text-gray-400">Tidak ada</span>
                                         @endif
                                     @else
-                                        <a href="{{ route('dashboard.daftar-skema', ['type' => 'perpanjangan', 'scheme' => $certificate->scheme_id]) }}"
-                                            class="inline-flex items-center justify-center gap-1.5 rounded-xl px-3 py-2.5 text-sm font-semibold text-black bg-emerald-400 hover:bg-emerald-500">
-                                            <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24"
-                                                stroke="currentColor">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                    d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                                            </svg>
-                                            Perpanjangan
-                                        </a>
+                                        @if ($inProgress)
+                                            <button disabled
+                                                class="inline-flex items-center justify-center gap-1.5 rounded-xl px-3 py-2.5 text-sm font-semibold text-gray-500 bg-gray-100 cursor-not-allowed">
+                                                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24"
+                                                    stroke="currentColor">
+                                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                                        stroke-width="2"
+                                                        d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                                </svg>
+                                                Proses Perpanjangan
+                                            </button>
+                                        @else
+                                            <a href="{{ route('dashboard.daftar-skema', ['type' => 'perpanjangan', 'scheme' => $certificate->scheme_id ?? 0]) }}"
+                                                class="inline-flex items-center justify-center gap-1.5 rounded-xl px-3 py-2.5 text-sm font-semibold text-black bg-emerald-400 hover:bg-emerald-500">
+                                                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24"
+                                                    stroke="currentColor">
+                                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                                        stroke-width="2"
+                                                        d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                                                </svg>
+                                                Perpanjangan
+                                            </a>
+                                        @endif
                                     @endif
                                 </div>
                             </td>

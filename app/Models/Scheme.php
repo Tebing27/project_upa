@@ -19,10 +19,18 @@ class Scheme extends Model
      */
     protected $fillable = [
         'name',
+        'kode_skema',
+        'jenis_skema',
+        'izin_nirkertas',
+        'harga',
+        'dokumen_skema_path',
+        'ringkasan_skema',
+        'gambar_path',
         'faculty',
         'study_program',
         'description',
         'is_active',
+        'is_popular',
     ];
 
     /**
@@ -34,6 +42,8 @@ class Scheme extends Model
     {
         return [
             'is_active' => 'boolean',
+            'is_popular' => 'boolean',
+            'harga' => 'decimal:2',
         ];
     }
 
@@ -43,5 +53,29 @@ class Scheme extends Model
     public function registrations(): HasMany
     {
         return $this->hasMany(Registration::class);
+    }
+
+    /**
+     * Get the unit kompetensi for the scheme.
+     */
+    public function unitKompetensis(): HasMany
+    {
+        return $this->hasMany(SchemeUnitKompetensi::class)->orderBy('order');
+    }
+
+    /**
+     * Get the persyaratan dasar for the scheme.
+     */
+    public function persyaratanDasars(): HasMany
+    {
+        return $this->hasMany(SchemePersyaratanDasar::class)->orderBy('order');
+    }
+
+    /**
+     * Get the persyaratan administrasi for the scheme.
+     */
+    public function persyaratanAdministrasis(): HasMany
+    {
+        return $this->hasMany(SchemePersyaratanAdministrasi::class)->orderBy('order');
     }
 }

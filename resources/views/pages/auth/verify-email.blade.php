@@ -1,12 +1,12 @@
 <x-layouts.auth :title="__('Email verification')">
     <div class="mt-4 flex flex-col gap-6">
         <p class="text-center text-sm text-zinc-900 dark:text-white">
-            {{ __('Please verify your email address by clicking on the link we just emailed to you.') }}
+            Verifikasi email Anda dengan klik tautan yang baru saja kami kirim. Setelah email terverifikasi, Anda bisa melanjutkan ke dashboard.
         </p>
 
         @if (session('status') == 'verification-link-sent')
             <p class="text-center text-sm font-medium text-green-600 dark:text-green-400">
-                {{ __('A new verification link has been sent to the email address you provided during registration.') }}
+                Link verifikasi baru sudah dikirim ke email Anda.
             </p>
         @endif
 

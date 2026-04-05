@@ -22,6 +22,7 @@ class Certificate extends Model
         'user_id',
         'scheme_id',
         'scheme_name',
+        'certificate_number',
         'level',
         'status',
         'expired_date',
@@ -35,6 +36,15 @@ class Certificate extends Model
      * @var list<string>
      */
     protected $appends = ['is_expired'];
+
+    protected static function booted(): void
+    {
+        static::creating(function (self $certificate): void {
+            if (blank($certificate->certificate_number)) {
+                $certificate->certificate_number = $certificate->generateCertificateNumber();
+            }
+        });
+    }
 
     /**
      * Get the attributes that should be cast.
@@ -69,6 +79,26 @@ class Certificate extends Model
     }
 
     /**
+     * Get the display number for the certificate.
+     */
+    public function displayNumber(): string
+    {
+        if (filled($this->certificate_number)) {
+            return $this->certificate_number;
+        }
+
+        if ($this->user?->isGeneralUser()) {
+            $nik = preg_replace('/\D+/', '', (string) $this->user->no_ktp);
+
+            return 'CERT-'.substr(str_pad($nik, 12, '0', STR_PAD_LEFT), -12);
+        }
+
+        $identifier = trim((string) ($this->user?->nim ?? ''));
+
+        return $identifier !== '' ? 'CERT-'.$identifier : '-';
+    }
+
+    /**
      * Scope a query to only include active certificates (status active and not expired).
      */
     public function scopeActive(Builder $query): Builder
@@ -94,5 +124,35 @@ class Certificate extends Model
     public function scheme(): BelongsTo
     {
         return $this->belongsTo(Scheme::class);
+    }
+
+    /**
+     * Generate a certificate number based on the owner type.
+     */
+    private function generateCertificateNumber(): string
+    {
+        $user = $this->relationLoaded('user') ? $this->user : $this->user()->first();
+
+        if ($user?->isGeneralUser()) {
+            $nik = preg_replace('/\D+/', '', (string) $user->no_ktp);
+
+            return 'CERT-'.substr(str_pad($nik, 12, '0', STR_PAD_LEFT), -12);
+        }
+
+        $nim = trim((string) ($user?->nim ?? ''));
+
+        if ($nim !== '') {
+            return 'CERT-'.$nim;
+        }
+
+        return 'CERT-'.$this->generateRandomSuffix();
+    }
+
+    /**
+     * Generate a 12-digit random suffix for certificate numbers.
+     */
+    private function generateRandomSuffix(): string
+    {
+        return str_pad((string) random_int(0, 999999999999), 12, '0', STR_PAD_LEFT);
     }
 }

@@ -2,13 +2,15 @@
 
 namespace App\Livewire;
 
+use App\Models\AppSetting;
 use App\Models\Registration;
 use Illuminate\Support\Str;
+use Illuminate\View\View;
 use Livewire\Component;
 
 class UserDashboard extends Component
 {
-    public function render()
+    public function render(): View
     {
         $user = auth()->user();
         $allRegistrations = $user->registrations()
@@ -27,35 +29,26 @@ class UserDashboard extends Component
             'activeCertificate' => $activeCertificate,
             'rejectedDocuments' => $this->getRejectedDocuments($latestRegistration),
             'hasInProgressRegistration' => $hasInProgressRegistration,
+            'globalWhatsappLink' => AppSetting::whatsappChannelLink(),
         ]);
     }
 
     public function getStepProgress(?string $status): int
     {
-        return match ($status) {
-            'menunggu_verifikasi', 'dokumen_kurang', 'dokumen_ditolak', 'dokumen_ok', 'rejected' => 2,
-            'terjadwal' => 3,
-            'selesai_uji', 'kompeten', 'tidak_kompeten', 'sertifikat_terbit' => 4,
-            default => 1,
-        };
+        if (! $status) {
+            return 1;
+        }
+
+        return new Registration(['status' => $status])->progressStep();
     }
 
     public function getStatusLabel(?string $status): string
     {
-        return match ($status) {
-            'pending_payment' => 'Menunggu Bayar',
-            'menunggu_verifikasi' => 'Verifikasi Dokumen',
-            'dokumen_kurang' => 'Dokumen Kurang',
-            'dokumen_ditolak', 'rejected' => 'Dokumen Ditolak',
-            'dokumen_ok' => 'Dokumen Terverifikasi',
-            'terjadwal' => 'Jadwal Ujian Terbit',
-            'selesai_uji' => 'Ujian Selesai',
-            'kompeten' => 'Kompeten',
-            'tidak_kompeten' => 'Belum Kompeten',
-            'sertifikat_terbit' => 'Sertifikat Terbit',
-            'draft' => 'Daftar',
-            default => Str::title(str_replace('_', ' ', (string) $status)),
-        };
+        if (! $status) {
+            return 'Daftar';
+        }
+
+        return new Registration(['status' => $status])->statusLabel();
     }
 
     public function getTypeLabel(?string $type): string
@@ -76,14 +69,8 @@ class UserDashboard extends Component
         }
 
         $labels = [
-            'fr_apl_01_path' => 'FR APL 01',
-            'fr_apl_02_path' => 'FR APL 02',
-            'ktm_path' => 'KTM',
-            'khs_path' => 'KHS',
-            'internship_certificate_path' => 'Sertifikat Magang',
-            'ktp_path' => 'KTP / Scan Foto',
-            'passport_photo_path' => 'Pas Foto 3x4',
-            'payment_reference' => 'Bukti UKT / Pembayaran',
+            ...Registration::documentLabels(),
+            'payment_proof_path' => 'Bukti Pembayaran',
         ];
 
         return collect($registration->document_statuses ?? [])

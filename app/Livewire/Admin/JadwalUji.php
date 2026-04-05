@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Admin;
 
+use App\Models\AppSetting;
 use App\Models\Registration;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
@@ -11,6 +12,8 @@ use Livewire\Component;
 
 class JadwalUji extends Component
 {
+    private const WHATSAPP_CHANNEL_SETTING_KEY = 'whatsapp_channel_link';
+
     public ?int $scheduleRegistrationId = null;
 
     public ?int $deleteRegistrationId = null;
@@ -22,6 +25,10 @@ class JadwalUji extends Component
     public string $examLocation = '';
 
     public string $assessorName = '';
+
+    public string $whatsappLink = '';
+
+    public ?int $editingWhatsappSettingId = null;
 
     public string $search = '';
 
@@ -35,7 +42,7 @@ class JadwalUji extends Component
     {
         $registration = Registration::query()->findOrFail($registrationId);
 
-        if (! in_array($registration->status, ['dokumen_ok', 'terjadwal'], true)) {
+        if (! in_array($registration->status, ['paid', 'terjadwal'], true)) {
             return;
         }
 
@@ -47,6 +54,67 @@ class JadwalUji extends Component
         $this->assessorName = $registration->assessor_name ?? '';
 
         $this->dispatch('open-modal', id: 'modal-jadwal');
+    }
+
+    public function saveWhatsappLink(): void
+    {
+        $validated = $this->validate([
+            'whatsappLink' => 'required|url|max:255',
+        ]);
+
+        AppSetting::query()->updateOrCreate(
+            ['key' => self::WHATSAPP_CHANNEL_SETTING_KEY],
+            ['value' => $validated['whatsappLink']],
+        );
+
+        $this->editingWhatsappSettingId = AppSetting::query()
+            ->where('key', self::WHATSAPP_CHANNEL_SETTING_KEY)
+            ->value('id');
+
+        $this->dispatch('toast', ['message' => 'Link WhatsApp berhasil disimpan.', 'type' => 'success']);
+        $this->dispatch('close-modal', id: 'modal-whatsapp-link');
+    }
+
+    public function openWhatsappLinkModal(?int $settingId = null): void
+    {
+        if ($settingId === null) {
+            $this->resetWhatsappLinkForm();
+            $this->dispatch('open-modal', id: 'modal-whatsapp-link');
+
+            return;
+        }
+
+        $setting = AppSetting::query()->findOrFail($settingId);
+
+        if ($setting->key !== self::WHATSAPP_CHANNEL_SETTING_KEY) {
+            return;
+        }
+
+        $this->editingWhatsappSettingId = $setting->id;
+        $this->whatsappLink = (string) $setting->value;
+        $this->dispatch('open-modal', id: 'modal-whatsapp-link');
+    }
+
+    public function deleteWhatsappLink(int $settingId): void
+    {
+        $setting = AppSetting::query()->findOrFail($settingId);
+
+        if ($setting->key !== self::WHATSAPP_CHANNEL_SETTING_KEY) {
+            return;
+        }
+
+        $setting->delete();
+
+        $this->editingWhatsappSettingId = null;
+        $this->whatsappLink = '';
+        $this->dispatch('toast', ['message' => 'Link WhatsApp berhasil dihapus.', 'type' => 'success']);
+    }
+
+    public function resetWhatsappLinkForm(): void
+    {
+        $this->editingWhatsappSettingId = null;
+        $this->whatsappLink = '';
+        $this->resetErrorBag('whatsappLink');
     }
 
     public function saveSchedule(): void
@@ -61,7 +129,7 @@ class JadwalUji extends Component
 
         $registration = Registration::query()->findOrFail($validated['scheduleRegistrationId']);
 
-        if (! in_array($registration->status, ['dokumen_ok', 'terjadwal'], true)) {
+        if (! in_array($registration->status, ['paid', 'terjadwal'], true)) {
             return;
         }
 
@@ -102,7 +170,7 @@ class JadwalUji extends Component
             'exam_date' => null,
             'exam_location' => null,
             'assessor_name' => null,
-            'status' => 'dokumen_ok',
+            'status' => 'paid',
         ]);
 
         $this->deleteRegistrationId = null;
@@ -116,10 +184,15 @@ class JadwalUji extends Component
 
         return view('livewire.admin.jadwal-uji', [
             'registrations' => $registrations,
-            'readyRegistrationsCount' => $registrations->where('status', 'dokumen_ok')->count(),
+            'readyRegistrationsCount' => $registrations->where('status', 'paid')->count(),
             'scheduledRegistrationsCount' => $registrations->where('status', 'terjadwal')->count(),
             'selectedScheduleRegistration' => $this->scheduleRegistration(),
             'selectedDeleteRegistration' => $this->deleteRegistration(),
+            'globalWhatsappLink' => AppSetting::whatsappChannelLink(),
+            'whatsappSettings' => AppSetting::query()
+                ->where('key', self::WHATSAPP_CHANNEL_SETTING_KEY)
+                ->latest('id')
+                ->get(),
         ]);
     }
 
@@ -131,7 +204,7 @@ class JadwalUji extends Component
         return $this->registrationsQuery()
             ->where(function (Builder $query): void {
                 $query
-                    ->where('status', 'dokumen_ok')
+                    ->where('status', 'paid')
                     ->orWhere(function (Builder $scheduledQuery): void {
                         $scheduledQuery
                             ->where('status', 'terjadwal')
@@ -140,7 +213,7 @@ class JadwalUji extends Component
                             });
                     });
             })
-            ->orderByRaw("case when status = 'dokumen_ok' then 0 else 1 end")
+            ->orderByRaw("case when status = 'paid' then 0 else 1 end")
             ->orderBy('exam_date')
             ->latest('id')
             ->get();
@@ -185,7 +258,8 @@ class JadwalUji extends Component
                 $query->whereHas('user', function (Builder $userQuery): void {
                     $userQuery
                         ->where('name', 'like', '%'.$this->search.'%')
-                        ->orWhere('nim', 'like', '%'.$this->search.'%');
+                        ->orWhere('nim', 'like', '%'.$this->search.'%')
+                        ->orWhere('no_ktp', 'like', '%'.$this->search.'%');
                 });
             });
     }

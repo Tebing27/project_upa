@@ -197,13 +197,6 @@
                     </div>
                 </div>
 
-                <div class="flex items-center gap-3">
-                    <input wire:model="is_active" id="is_active" type="checkbox"
-                        class="h-5 w-5 rounded-lg border-gray-300 text-emerald-600 focus:ring-emerald-500">
-                    <label for="is_active" class="text-sm font-semibold text-gray-700">
-                        Aktifkan Skema
-                    </label>
-                </div>
             </div>
         </div>
 

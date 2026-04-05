@@ -5,6 +5,7 @@ namespace App\Livewire\Admin;
 use App\Models\Registration;
 use App\Models\Scheme;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\View\View;
 use Livewire\Component;
 use Livewire\WithPagination;
 
@@ -48,10 +49,10 @@ class VerifikasiDokumen extends Component
             ->where('status', 'dokumen_ok')
             ->firstOrFail();
 
-        $this->redirectRoute('admin.jadwal', ['highlight' => $registrationId], navigate: true);
+        $this->redirectRoute('admin.payment', ['highlight' => $registrationId], navigate: true);
     }
 
-    public function render()
+    public function render(): View
     {
         $query = Registration::with(['user', 'scheme'])
             ->where('status', '!=', 'draft');
@@ -60,7 +61,8 @@ class VerifikasiDokumen extends Component
             $query->whereHas('user', function (Builder $userQuery): void {
                 $userQuery
                     ->where('name', 'like', '%'.$this->search.'%')
-                    ->orWhere('nim', 'like', '%'.$this->search.'%');
+                    ->orWhere('nim', 'like', '%'.$this->search.'%')
+                    ->orWhere('no_ktp', 'like', '%'.$this->search.'%');
             });
         }
 
@@ -69,9 +71,9 @@ class VerifikasiDokumen extends Component
         }
 
         if ($this->tab === 'perlu_review') {
-            $query->whereIn('status', ['menunggu_verifikasi', 'pending_payment', 'paid']);
+            $query->whereIn('status', ['menunggu_verifikasi', 'dokumen_ditolak']);
         } elseif ($this->tab === 'dokumen_ok') {
-            $query->whereIn('status', ['dokumen_ok', 'terjadwal', 'kompeten', 'tidak_kompeten']);
+            $query->whereIn('status', ['dokumen_ok', 'pending_payment', 'paid', 'terjadwal', 'kompeten', 'tidak_kompeten']);
         } elseif ($this->tab === 'ditolak') {
             $query->where(function (Builder $rejectedQuery): void {
                 $rejectedQuery->whereIn('status', ['dokumen_ditolak', 'rejected']);
@@ -96,15 +98,6 @@ class VerifikasiDokumen extends Component
      */
     private function rejectedDocumentFields(): array
     {
-        return [
-            'fr_apl_01_path',
-            'fr_apl_02_path',
-            'ktm_path',
-            'khs_path',
-            'internship_certificate_path',
-            'ktp_path',
-            'passport_photo_path',
-            'payment_reference',
-        ];
+        return Registration::allDocumentFields();
     }
 }

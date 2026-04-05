@@ -4,29 +4,36 @@ namespace App\Livewire\Admin;
 
 use App\Models\Certificate;
 use App\Models\Registration;
+use Illuminate\View\View;
 use Livewire\Component;
 
 class Dashboard extends Component
 {
-    public function render()
+    public function render(): View
     {
-        $monthlyRegistrations = Registration::where('status', '!=', 'draft', 'and')
-            ->whereMonth('created_at', '=', now()->month, 'and')
-            ->whereYear('created_at', '=', now()->year, 'and')
-            ->count('*');
+        $monthlyRegistrations = Registration::query()
+            ->where('status', '!=', 'draft')
+            ->whereMonth('created_at', now()->month)
+            ->whereYear('created_at', now()->year)
+            ->count();
 
-        $waitingReview = Registration::where('status', '=', 'dokumen_ok', 'and')->count('*');
+        $waitingReview = Registration::query()
+            ->whereIn('status', ['menunggu_verifikasi', 'pending_payment'])
+            ->count();
 
-        $monthlyCertificates = Certificate::whereMonth('created_at', '=', now()->month, 'and')
-            ->whereYear('created_at', '=', now()->year, 'and')
-            ->count('*');
+        $monthlyCertificates = Certificate::query()
+            ->whereMonth('created_at', now()->month)
+            ->whereYear('created_at', now()->year)
+            ->count();
 
-        $recentRegistrations = Registration::with(['user', 'scheme'])
+        $recentRegistrations = Registration::query()
+            ->with(['user', 'scheme'])
             ->latest()
             ->take(5)
             ->get();
 
-        $upcomingSchedules = Registration::where('status', '=', 'terjadwal', 'and')
+        $upcomingSchedules = Registration::query()
+            ->where('status', 'terjadwal')
             ->select('exam_date', 'exam_location', 'scheme_id')
             ->selectRaw('count(*) as participant_count')
             ->with('scheme')

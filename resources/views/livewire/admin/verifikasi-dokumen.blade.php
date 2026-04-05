@@ -1,7 +1,7 @@
 <div class="space-y-6 bg-slate-50/50 p-6 min-h-screen">
     <div>
         <h1 class="text-2xl font-bold tracking-tight text-gray-900">Verifikasi Dokumen</h1>
-        <p class="mt-1 text-sm text-gray-500">Tinjau dan verifikasi kelengkapan dokumen pendaftaran mahasiswa.</p>
+        <p class="mt-1 text-sm text-gray-500">Tinjau data dan dokumen peserta sebelum masuk ke tahap pembayaran.</p>
     </div>
 
     <div class="flex flex-col lg:flex-row gap-4 justify-between items-start lg:items-center">
@@ -25,7 +25,7 @@
                             d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                     </svg>
                 </div>
-                <input wire:model.live.debounce.300ms="search" type="text" placeholder="Cari Nama / NIM..."
+                <input wire:model.live.debounce.300ms="search" type="text" placeholder="Cari Nama / NIM / NIK..."
                     class="block w-full px-4 py-3 pl-10 rounded-xl border border-slate-200 bg-white text-sm font-semibold text-slate-700 outline-none transition-all hover:bg-slate-50/50 hover:border-slate-300 focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 focus:bg-white">
             </div>
 
@@ -49,6 +49,10 @@
                     <div class="flex-1">
                         <div class="flex items-center gap-3 mb-4">
                             <h2 class="text-xl font-bold text-gray-900">{{ $reg->user->name }}</h2>
+                            @if ($reg->type === 'perpanjangan')
+                                <span
+                                    class="inline-flex items-center rounded-full bg-blue-50 px-2 py-0.5 text-xs font-bold text-blue-600 border border-blue-100">Perpanjangan</span>
+                            @endif
                             @php
                                 $statusColorMap = [
                                     'dokumen_ok' => 'bg-teal-50 text-teal-700 border-teal-100',
@@ -65,10 +69,10 @@
 
                                 $statusLabel = str_replace('_', ' ', Str::title($reg->status));
                                 if ($reg->status === 'dokumen_ok') {
-                                    $statusLabel = 'Draft OK';
+                                    $statusLabel = 'Terverifikasi';
                                 }
-                                if (in_array($reg->status, ['pending_payment', 'paid', 'menunggu_verifikasi'])) {
-                                    $statusLabel = 'Review';
+                                if ($reg->status === 'dokumen_ok') {
+                                    $statusLabel = 'Siap Pembayaran';
                                 }
                             @endphp
                             <span
@@ -78,9 +82,11 @@
                         </div>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div class="rounded-xl border border-gray-50 bg-gray-50/30 p-4 flex flex-col">
-                                <span class="text-xs font-semibold uppercase tracking-wider text-gray-500">NIM / No.
-                                    Pendaftaran</span>
-                                <span class="mt-1.5 text-sm font-semibold text-gray-900">{{ $reg->user->nim ?? '-' }} /
+                                <span class="text-xs font-semibold uppercase tracking-wider text-gray-500">
+                                    {{ $reg->user->isGeneralUser() ? 'NIK' : 'NIM' }} / No. Pendaftaran
+                                </span>
+                                <span class="mt-1.5 text-sm font-semibold text-gray-900">
+                                    {{ $reg->user->isGeneralUser() ? ($reg->user->no_ktp ?: '-') : ($reg->user->nim ?: '-') }} /
                                     {{ $reg->payment_reference ?? '-' }}</span>
                             </div>
                             <div class="rounded-xl border border-gray-50 bg-gray-50/30 p-4 flex flex-col">
@@ -100,7 +106,7 @@
                         @if ($reg->status === 'dokumen_ok')
                             <button wire:click="lanjutkanKeJadwal({{ $reg->id }})"
                                 class="inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-400 px-5 py-2.5 text-sm font-bold text-black hover:bg-emerald-500">
-                                Beri Jadwal
+                                Lanjut ke Pembayaran
                             </button>
                         @endif
                     </div>

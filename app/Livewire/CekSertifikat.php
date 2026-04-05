@@ -3,12 +3,15 @@
 namespace App\Livewire;
 
 use App\Models\Certificate;
+use Illuminate\View\View;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
 
-#[Layout('components.layouts.guest')]
+#[Layout('components.layouts.public')]
 class CekSertifikat extends Component
 {
+    public string $name = '';
+
     public string $search = '';
 
     public bool $hasSearched = false;
@@ -19,22 +22,30 @@ class CekSertifikat extends Component
     public function cekSertifikat(): void
     {
         $this->validate([
+            'name' => ['required', 'string'],
             'search' => ['required', 'string', 'min:2'],
         ], [
-            'search.required' => 'Masukkan nama atau nomor sertifikat.',
+            'name.required' => 'Masukkan nama lengkap.',
+            'search.required' => 'Masukkan nomor sertifikat / registrasi.',
             'search.min' => 'Minimal 2 karakter.',
         ]);
 
+        $name = trim($this->name);
         $keyword = trim($this->search);
+        $identifier = $this->extractIdentifierFromCertNumber($keyword);
         $this->hasSearched = true;
 
         $certificates = Certificate::query()
             ->with(['user', 'scheme'])
-            ->where(function ($query) use ($keyword): void {
-                $query->where('id', $this->extractCertificateId($keyword))
-                    ->orWhereHas('user', function ($q) use ($keyword): void {
-                        $q->where('name', 'like', "%{$keyword}%");
+            ->where(function ($query) use ($keyword, $identifier): void {
+                $query->where('certificate_number', $keyword)
+                    ->orWhereHas('user', function ($userQuery) use ($identifier): void {
+                        $userQuery->where('nim', $identifier)
+                            ->orWhere('no_ktp', $identifier);
                     });
+            })
+            ->whereHas('user', function ($query) use ($name): void {
+                $query->where('name', 'like', '%'.$name.'%');
             })
             ->latest()
             ->limit(20)
@@ -42,7 +53,7 @@ class CekSertifikat extends Component
 
         $this->results = $certificates->map(fn (Certificate $cert): array => [
             'id' => $cert->id,
-            'nomor' => 'CERT-'.str_pad((string) $cert->id, 5, '0', STR_PAD_LEFT),
+            'nomor' => $cert->displayNumber(),
             'nama_pemilik' => $cert->user?->name ?? '-',
             'skema' => $cert->scheme_name,
             'fakultas' => $cert->scheme?->faculty ?? 'Umum',
@@ -57,22 +68,18 @@ class CekSertifikat extends Component
     }
 
     /**
-     * Extract certificate ID from formatted number like CERT-00001.
+     * Extract the owner identifier from a certificate number.
      */
-    private function extractCertificateId(string $keyword): int
+    private function extractIdentifierFromCertNumber(string $keyword): string
     {
-        if (preg_match('/^CERT-?(\d+)$/i', $keyword, $matches)) {
-            return (int) $matches[1];
+        if (preg_match('/^CERT-(.+?)(?:-\d{12})?$/i', $keyword, $matches)) {
+            return $matches[1];
         }
 
-        if (is_numeric($keyword)) {
-            return (int) $keyword;
-        }
-
-        return 0;
+        return $keyword;
     }
 
-    public function render()
+    public function render(): View
     {
         return view('livewire.cek-sertifikat');
     }

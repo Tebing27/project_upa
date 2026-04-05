@@ -1,38 +1,43 @@
 <div class="space-y-6 bg-slate-50/50 p-6 min-h-screen">
     @php
-        $currentStep = $latestRegistration ? $this->getStepProgress($latestRegistration->status) : 4;
-        $registrationStatusLabel = $latestRegistration
-            ? $this->getStatusLabel($latestRegistration->status)
-            : 'Sertifikat Terbit';
+        $currentStep = $latestRegistration ? $this->getStepProgress($latestRegistration->status) : 1;
+        $registrationStatusLabel = $latestRegistration ? $this->getStatusLabel($latestRegistration->status) : 'Daftar';
 
         $steps = [
             1 => 'Daftar',
             2 => 'Verifikasi Data & Dokumen',
-            3 => 'Jadwal Ujian',
-            4 => $latestRegistration?->status === 'tidak_kompeten' ? 'Tidak Lolos Ujian' : 'Sertifikat Terbit',
+            3 => 'Pembayaran',
+            4 => 'Jadwal Ujian',
+            5 => in_array($latestRegistration?->status, ['selesai_uji', 'kompeten', 'tidak_kompeten'], true)
+                ? 'Hasil Ujian'
+                : 'Sertifikat Terbit',
         ];
 
         $statusBadgeClasses = match ($latestRegistration?->status) {
             'dokumen_ditolak', 'rejected', 'tidak_kompeten' => 'bg-red-50 text-red-700 border-red-100',
-            'terjadwal',
-            'selesai_uji',
-            'kompeten',
-            'sertifikat_terbit'
-                => 'bg-[#d1fae5] text-emerald-700 border-[#a7f3d0]/50',
-            'dokumen_ok', 'menunggu_verifikasi' => 'bg-teal-50 text-teal-700 border-teal-100',
-            'pending_payment' => 'bg-amber-50 text-amber-700 border-amber-100',
+            'sertifikat_terbit' => 'bg-[#d1fae5] text-emerald-700 border-[#a7f3d0]/50',
+            'terjadwal', 'selesai_uji', 'kompeten' => 'bg-blue-50 text-blue-700 border-blue-100',
+            'dokumen_ok', 'pending_payment', 'paid' => 'bg-amber-50 text-amber-700 border-amber-100',
+            'menunggu_verifikasi' => 'bg-teal-50 text-teal-700 border-teal-100',
             default => 'bg-slate-50 text-slate-700 border-slate-200',
         };
 
         $statusBadgeDot = match ($latestRegistration?->status) {
             'dokumen_ditolak', 'rejected', 'tidak_kompeten' => 'bg-red-500',
-            'terjadwal', 'selesai_uji', 'kompeten', 'sertifikat_terbit' => 'bg-[#10b981]',
-            'dokumen_ok', 'menunggu_verifikasi' => 'bg-teal-500',
-            'pending_payment' => 'bg-amber-500',
+            'sertifikat_terbit' => 'bg-[#10b981]',
+            'terjadwal', 'selesai_uji', 'kompeten' => 'bg-blue-500',
+            'dokumen_ok', 'pending_payment', 'paid' => 'bg-amber-500',
+            'menunggu_verifikasi' => 'bg-teal-500',
             default => 'bg-slate-400',
         };
 
         $registrationDate = $latestRegistration?->created_at?->translatedFormat('d F Y') ?? '16 Maret 2026';
+        $dashboardUser = auth()->user();
+        $profileComplete = $dashboardUser->hasCompletedProfile();
+        $isGeneralUser = $dashboardUser->isGeneralUser();
+        $canRegisterNewScheme = $latestRegistration?->status === 'sertifikat_terbit';
+        $newSchemeAlertMessage =
+            'Selesaikan satu skema sertifikasi hingga tahap sertifikat terbit terlebih dahulu sebelum mendaftar skema baru.';
     @endphp
 
     {{-- Top Cards Section --}}
@@ -62,7 +67,7 @@
                 <div>
                     <p class="text-[11px] font-bold uppercase tracking-wider text-gray-500">Status Pendaftaran</p>
                     <p class="mt-2 text-2xl font-bold text-gray-900">{{ $registrationStatusLabel }}</p>
-                    <p class="mt-2 text-[13px] text-gray-500">Tahap {{ $currentStep }} dari 4</p>
+                    <p class="mt-2 text-[13px] text-gray-500">Tahap {{ $currentStep }} dari 5</p>
                 </div>
                 <div class="flex h-10 w-10 items-center justify-center rounded-full bg-emerald-50 text-emerald-600">
                     <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -105,18 +110,17 @@
                     {{ $registrationStatusLabel }}
                 </div>
 
-                @if ($hasInProgressRegistration)
-                    <button type="button"
-                        onclick="alert('Jika ingin daftar skema baru, kamu harus menyelesaikan skema saat ini')"
-                        class="inline-flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold bg-gray-100 text-gray-400 hover:bg-gray-200">
+                @if (!$canRegisterNewScheme)
+                    <button type="button" onclick="alert('{{ $newSchemeAlertMessage }}')"
+                        class="inline-flex items-center gap-2 rounded-xl bg-gray-100 px-5 py-2.5 text-sm font-semibold text-gray-400 transition hover:bg-gray-200">
                         <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
                         </svg>
                         Daftar Skema Baru
                     </button>
                 @else
-                    <a href="{{ route('dashboard.daftar-skema') }}"
-                        class="inline-flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold text-black bg-emerald-400 hover:bg-emerald-500">
+                    <a href="{{ route('dashboard.skema') }}"
+                        class="inline-flex items-center gap-2 rounded-xl bg-emerald-400 px-5 py-2.5 text-sm font-semibold text-black hover:bg-emerald-500">
                         <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
                         </svg>
@@ -131,13 +135,13 @@
             <div class="relative flex w-full px-2 md:px-8">
                 @php
                     $progressWidth = 0;
-                    if ($currentStep === 2) {
-                        $progressWidth = 33.3333;
-                    } elseif ($currentStep === 3) {
-                        $progressWidth = 66.6666;
-                    } elseif ($currentStep >= 4) {
-                        $progressWidth = 100;
-                    }
+                    $progressWidth = match ($currentStep) {
+                        2 => 25,
+                        3 => 50,
+                        4 => 75,
+                        5 => 100,
+                        default => 0,
+                    };
                 @endphp
 
                 {{-- Background Line --}}
@@ -155,7 +159,7 @@
                             $isRejectedStep =
                                 ($stepNumber === 2 &&
                                     in_array($latestRegistration?->status, ['dokumen_ditolak', 'rejected'], true)) ||
-                                ($stepNumber === 4 && $latestRegistration?->status === 'tidak_kompeten');
+                                ($stepNumber === 5 && $latestRegistration?->status === 'tidak_kompeten');
 
                             $displayLabel = str_replace(' & ', "\n& ", $stepLabel);
                         @endphp
@@ -254,7 +258,7 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
                         </svg>
                     </a>
-                @elseif (in_array($latestRegistration?->status, ['menunggu_verifikasi', 'dokumen_kurang', 'dokumen_ok'], true))
+                @elseif (in_array($latestRegistration?->status, ['menunggu_verifikasi', 'dokumen_kurang'], true))
                     {{-- STATUS: Tahap Review --}}
                     <div class="flex items-center justify-between">
                         <p class="text-[11px] font-bold uppercase tracking-wider text-amber-600">Tahap Review</p>
@@ -284,6 +288,51 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
                         </svg>
                     </a>
+                @elseif (in_array($latestRegistration?->status, ['dokumen_ok', 'pending_payment', 'paid'], true))
+                    <div class="flex items-center justify-between">
+                        <p class="text-[11px] font-bold uppercase tracking-wider text-amber-600">Tahap Pembayaran</p>
+                        <span class="rounded-full bg-amber-50 px-3 py-1 text-[11px] font-semibold text-amber-600">
+                            {{ $registrationStatusLabel }}
+                        </span>
+                    </div>
+
+                    <div class="mt-5 space-y-3">
+                        <div class="rounded-xl border border-amber-100 bg-amber-50/40 p-4">
+                            <p class="text-[10px] font-bold uppercase tracking-wider text-amber-500">Kode Instruksi
+                                Pembayaran</p>
+                            <p class="mt-1.5 font-mono text-lg font-bold text-gray-900">
+                                {{ $latestRegistration->payment_reference }}</p>
+                        </div>
+                        <div class="rounded-xl border border-amber-100 bg-amber-50/40 p-4">
+                            <p class="text-[10px] font-bold uppercase tracking-wider text-amber-500">Riwayat Skema</p>
+                            <div class="mt-2 space-y-2">
+                                @forelse ($allRegistrations->take(3) as $registrationHistory)
+                                    <div
+                                        class="flex items-center justify-between rounded-lg bg-white/80 px-3 py-2 text-sm">
+                                        <span
+                                            class="font-medium text-gray-900">{{ $registrationHistory->scheme?->name ?: '-' }}</span>
+                                        <span
+                                            class="text-gray-500">{{ $registrationHistory->created_at?->translatedFormat('d M Y') }}</span>
+                                    </div>
+                                @empty
+                                    <p class="text-sm text-gray-500">Belum ada riwayat skema.</p>
+                                @endforelse
+                            </div>
+                        </div>
+                        @if (($latestRegistration->document_statuses['payment_proof_path']['note'] ?? null) !== null)
+                            <div class="rounded-xl border border-red-100 bg-red-50/50 p-4 text-sm text-red-700">
+                                {{ $latestRegistration->document_statuses['payment_proof_path']['note'] }}
+                            </div>
+                        @endif
+                    </div>
+
+                    <a href="{{ route('dashboard.status', $latestRegistration) }}"
+                        class="mt-6 flex w-full items-center justify-center gap-1 rounded-xl border border-amber-200 bg-amber-50/50 px-4 py-3.5 text-sm font-semibold text-amber-700 transition-all hover:bg-amber-100">
+                        Kelola Pembayaran
+                        <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                        </svg>
+                    </a>
                 @elseif ($latestRegistration?->status === 'terjadwal')
                     {{-- STATUS: Jadwal Ujian --}}
                     <div class="flex items-center justify-between">
@@ -294,6 +343,17 @@
                     </div>
 
                     <div class="mt-5 space-y-3">
+                        <div class="rounded-xl border border-blue-100 bg-blue-50/40 p-4">
+                            <p class="text-[10px] font-bold uppercase tracking-wider text-blue-400">Link WhatsApp</p>
+                            @if ($globalWhatsappLink)
+                                <a href="{{ $globalWhatsappLink }}" target="_blank" rel="noopener noreferrer"
+                                    class="mt-2 inline-flex items-center gap-2 rounded-xl bg-blue-200 px-4 py-2.5 text-sm font-semibold text-black ">
+                                    Buka Grup / Chat
+                                </a>
+                            @else
+                                <p class="mt-1.5 font-semibold text-gray-900">-</p>
+                            @endif
+                        </div>
                         <div class="rounded-xl border border-blue-100 bg-blue-50/40 p-4">
                             <p class="text-[10px] font-bold uppercase tracking-wider text-blue-400">Tanggal Ujian</p>
                             <p class="mt-1.5 font-semibold text-gray-900">
@@ -318,6 +378,7 @@
                                 {{ $latestRegistration->assessor_name ?? '-' }}
                             </p>
                         </div>
+
                     </div>
                 @elseif (in_array($latestRegistration?->status, ['selesai_uji', 'kompeten', 'tidak_kompeten'], true))
                     {{-- STATUS: Hasil Ujian --}}
@@ -371,7 +432,7 @@
                                 </a>
                             @endif
 
-                            <a href="{{ route('dashboard.daftar-skema', ['type' => 'baru', 'scheme' => $latestRegistration->scheme_id]) }}"
+                            <a href="{{ route('dashboard.daftar-skema', ['type' => 'perpanjangan', 'scheme' => $latestRegistration->scheme_id, 'source' => 'dashboard-skema']) }}"
                                 class="mt-3 flex w-full items-center justify-center gap-2 rounded-xl bg-red-600 px-4 py-3.5 text-sm font-semibold text-white transition-all hover:bg-red-700">
                                 <svg class="h-4.5 w-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -448,9 +509,10 @@
                                     d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                             </svg>
                         </div>
-                        <h3 class="mt-4 text-lg font-bold text-gray-900">Tidak ada pendaftaran aktif</h3>
+                        <h3 class="mt-4 text-lg font-bold text-gray-900">Mulai pendaftaran Anda</h3>
                         <p class="mt-2 text-sm text-gray-500">
-                            Anda belum memiliki pendaftaran sertifikasi yang aktif saat ini.
+                            Anda belum memiliki pendaftaran sertifikasi yang aktif saat ini. Pilih skema untuk memulai
+                            tahap daftar.
                         </p>
                     </div>
                 @endif
@@ -460,42 +522,92 @@
             <div class="rounded-[1.25rem] bg-white p-6 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] md:p-8">
                 <div class="flex items-center justify-between">
                     <h2 class="text-[1.35rem] font-bold text-gray-900">Detail Pendaftaran</h2>
-                    <a href="{{ route('profile.edit') }}" wire:navigate
-                        class="inline-flex items-center gap-2 rounded-xl bg-gray-100 px-4 py-2 text-sm font-semibold text-gray-700 transition-all hover:bg-gray-200">
-                        Detail Biodata
-                    </a>
+                    @if ($profileComplete)
+                        <a href="{{ route('profile.edit') }}" wire:navigate
+                            class="inline-flex items-center gap-2 rounded-xl bg-gray-100 px-4 py-2 text-sm font-semibold text-gray-700 transition-all hover:bg-gray-200">
+                            Detail Biodata
+                        </a>
+                    @endif
                 </div>
 
-                <div class="mt-6 grid gap-4 sm:grid-cols-2">
-                    <div class="rounded-xl border border-gray-200 bg-white p-4">
-                        <p class="text-[10px] font-bold uppercase tracking-wider text-gray-400">Nama</p>
-                        <p class="mt-1.5 font-medium text-gray-900">{{ auth()->user()->name ?? 'Asa' }}</p>
+                @if (!$profileComplete)
+                    <div class="mt-6 rounded-3xl border border-dashed border-emerald-200 bg-emerald-50/60 p-6">
+                        <div class="flex flex-col gap-4">
+                            <div>
+                                <p class="text-xs font-bold uppercase tracking-[0.2em] text-emerald-700">Biodata Belum
+                                    Lengkap</p>
+                                <h3 class="mt-2 text-lg font-bold text-gray-900">Lengkapi biodata di tahap kedua daftar
+                                    skema</h3>
+                                <p class="mt-2 max-w-xl text-sm text-gray-600">
+                                    Ringkasan detail pendaftaran masih kosong karena biodata peserta umum belum
+                                    dilengkapi.
+                                    Sekarang biodata dilengkapi langsung di halaman daftar skema pada tahap kedua,
+                                    setelah pemilihan skema.
+                                </p>
+                            </div>
+
+                            <div class="flex flex-col gap-3 sm:flex-row">
+                                <a href="{{ route('dashboard.skema') }}" wire:navigate
+                                    class="inline-flex items-center justify-center gap-2 rounded-xl border border-emerald-200 bg-white px-5 py-3 text-sm font-semibold text-emerald-700 transition hover:bg-emerald-50">
+                                    Lihat Skema
+                                    <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M9 5l7 7-7 7" />
+                                    </svg>
+                                </a>
+                                <a href="{{ route('dashboard.daftar-skema') }}" wire:navigate
+                                    class="inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-500 px-5 py-3 text-sm font-semibold text-black transition hover:bg-emerald-400">
+                                    Daftar Skema
+                                    <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M9 5l7 7-7 7" />
+                                    </svg>
+                                </a>
+                            </div>
+                        </div>
                     </div>
-                    <div class="rounded-xl border border-gray-200 bg-white p-4">
-                        <p class="text-[10px] font-bold uppercase tracking-wider text-gray-400">NIM</p>
-                        <p class="mt-1.5 font-medium text-gray-900">{{ auth()->user()->nim ?? '2410501080' }}</p>
+                @else
+                    <div class="mt-6 grid gap-4 sm:grid-cols-2">
+                        <div class="rounded-xl border border-gray-200 bg-white p-4">
+                            <p class="text-[10px] font-bold uppercase tracking-wider text-gray-400">Nama</p>
+                            <p class="mt-1.5 font-medium text-gray-900">{{ $dashboardUser->name }}</p>
+                        </div>
+                        <div class="rounded-xl border border-gray-200 bg-white p-4">
+                            <p class="text-[10px] font-bold uppercase tracking-wider text-gray-400">
+                                {{ $isGeneralUser ? 'NIK' : 'NIM' }}</p>
+                            <p class="mt-1.5 font-medium text-gray-900">
+                                {{ $isGeneralUser ? ($dashboardUser->no_ktp ?: '-') : ($dashboardUser->nim ?: '-') }}
+                            </p>
+                        </div>
+                        <div class="rounded-xl border border-gray-200 bg-white p-4">
+                            <p class="text-[10px] font-bold uppercase tracking-wider text-gray-400">
+                                {{ $isGeneralUser ? 'Instansi Pendidikan' : 'Program Studi' }}</p>
+                            <p class="mt-1.5 font-medium text-gray-900">
+                                {{ $isGeneralUser ? ($dashboardUser->nama_institusi ?: '-') : ($dashboardUser->program_studi ?: '-') }}
+                            </p>
+                        </div>
+                        <div class="rounded-xl border border-gray-200 bg-white p-4">
+                            <p class="text-[10px] font-bold uppercase tracking-wider text-gray-400">
+                                {{ $isGeneralUser ? 'Jurusan / Program Studi' : 'Skema' }}</p>
+                            <p class="mt-1.5 font-medium text-gray-900">
+                                {{ $isGeneralUser ? ($dashboardUser->program_studi ?: '-') : ($latestRegistration?->scheme?->name ?: '-') }}
+                            </p>
+                        </div>
+                        <div class="rounded-xl border border-gray-200 bg-white p-4">
+                            <p class="text-[10px] font-bold uppercase tracking-wider text-gray-400">
+                                {{ $isGeneralUser ? 'Pekerjaan' : 'Tanggal Daftar' }}</p>
+                            <p class="mt-1.5 font-medium text-gray-900">
+                                {{ $isGeneralUser ? ($dashboardUser->pekerjaan ?: '-') : $registrationDate }}</p>
+                        </div>
+                        <div class="rounded-xl border border-gray-200 bg-white p-4">
+                            <p class="text-[10px] font-bold uppercase tracking-wider text-gray-400">
+                                {{ $isGeneralUser ? 'No. WhatsApp' : 'Kode Referensi' }}</p>
+                            <p class="mt-1.5 font-medium text-gray-900">
+                                {{ $isGeneralUser ? ($dashboardUser->no_wa ?: '-') : ($latestRegistration?->payment_reference ?: '-') }}
+                            </p>
+                        </div>
                     </div>
-                    <div class="rounded-xl border border-gray-200 bg-white p-4">
-                        <p class="text-[10px] font-bold uppercase tracking-wider text-gray-400">Program Studi</p>
-                        <p class="mt-1.5 font-medium text-gray-900">
-                            {{ auth()->user()->program_studi ?? 'Informatika' }}
-                        </p>
-                    </div>
-                    <div class="rounded-xl border border-gray-200 bg-white p-4">
-                        <p class="text-[10px] font-bold uppercase tracking-wider text-gray-400">Skema</p>
-                        <p class="mt-1.5 font-medium text-gray-900">
-                            {{ $latestRegistration?->scheme?->name ?? 'Skema Sertifikasi Programmer' }}</p>
-                    </div>
-                    <div class="rounded-xl border border-gray-200 bg-white p-4">
-                        <p class="text-[10px] font-bold uppercase tracking-wider text-gray-400">Tanggal Daftar</p>
-                        <p class="mt-1.5 font-medium text-gray-900">{{ $registrationDate }}</p>
-                    </div>
-                    <div class="rounded-xl border border-gray-200 bg-white p-4">
-                        <p class="text-[10px] font-bold uppercase tracking-wider text-gray-400">Kode Referensi</p>
-                        <p class="mt-1.5 font-medium text-gray-900">
-                            {{ $latestRegistration?->payment_reference ?? '-' }}</p>
-                    </div>
-                </div>
+                @endif
             </div>
 
         </div>

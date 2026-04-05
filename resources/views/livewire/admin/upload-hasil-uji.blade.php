@@ -32,7 +32,7 @@
                                 d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                         </svg>
                     </div>
-                    <input wire:model.live.debounce.300ms="search" type="text" placeholder="Cari Nama / NIM..."
+                    <input wire:model.live.debounce.300ms="search" type="text" placeholder="Cari Nama / NIM / NIK..."
                         class="block w-full px-4 py-3 pl-10 rounded-xl border border-slate-200 bg-white text-sm font-semibold text-slate-700 outline-none transition-all hover:bg-slate-50/50 hover:border-slate-300 focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 focus:bg-white">
                 </div>
 
@@ -94,10 +94,16 @@
                             'hover:bg-gray-50/30 transition-colors' => $highlight !== $registration->id,
                         ])>
                             <td class="px-6 py-5">
-                                <div class="text-sm font-semibold text-gray-900 leading-none">
-                                    {{ $registration->user->name }}</div>
+                                <div class="flex items-center gap-2">
+                                    <span class="text-sm font-semibold text-gray-900 leading-none">
+                                        {{ $registration->user->name }}</span>
+                                    @if ($registration->type === 'perpanjangan')
+                                        <span
+                                            class="inline-flex items-center rounded-full bg-blue-50 px-2 py-0.5 text-xs font-bold text-blue-600 border border-blue-100">Perpanjangan</span>
+                                    @endif
+                                </div>
                                 <p class="mt-2 text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                                    {{ $registration->user->nim ?: '-' }} • {{ $registration->scheme?->name ?: '-' }}
+                                    {{ $registration->user->isGeneralUser() ? ($registration->user->no_ktp ?: '-') : ($registration->user->nim ?: '-') }} • {{ $registration->scheme?->name ?: '-' }}
                                 </p>
                             </td>
                             <td class="px-6 py-5 text-center">
@@ -164,7 +170,7 @@
                             </td>
                             <td class="px-6 py-5 text-right whitespace-nowrap">
                                 <div class="flex justify-end items-center gap-2">
-                                    @if ($registration->active_certificate_id !== null)
+                                    @if (in_array($registration->status, ['sertifikat_terbit', 'tidak_kompeten']))
                                         <button wire:click="openUploadModal({{ $registration->id }})"
                                             class="text-xs font-semibold text-emerald-600 hover:text-emerald-700 transition-colors mr-3">
                                             Edit
@@ -174,10 +180,23 @@
                                             Hapus
                                         </button>
                                     @else
-                                        <button wire:click="openUploadModal({{ $registration->id }})"
-                                            class="inline-flex items-center gap-2 rounded-xl bg-emerald-400 px-5 py-2.5 text-sm font-semibold text-black hover:bg-emerald-500">
-                                            Upload Sekarang
-                                        </button>
+                                        @if ($registration->type === 'perpanjangan')
+                                            <button wire:click="openUploadModal({{ $registration->id }})"
+                                                class="inline-flex items-center gap-1.5 rounded-xl bg-blue-500 px-5 py-2.5 text-sm font-semibold text-white hover:bg-blue-600 transition-colors shadow-sm">
+                                                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24"
+                                                    stroke="currentColor">
+                                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                                        stroke-width="2"
+                                                        d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                                                </svg>
+                                                Perpanjangan
+                                            </button>
+                                        @else
+                                            <button wire:click="openUploadModal({{ $registration->id }})"
+                                                class="inline-flex items-center gap-2 rounded-xl bg-emerald-400 px-5 py-2.5 text-sm font-semibold text-black hover:bg-emerald-500 transition-colors shadow-sm">
+                                                Upload Sekarang
+                                            </button>
+                                        @endif
                                     @endif
                                 </div>
                             </td>

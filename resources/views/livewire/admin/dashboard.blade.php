@@ -27,9 +27,9 @@
         <div class="rounded-[1.25rem] bg-white p-6 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)]">
             <div class="flex items-start justify-between">
                 <div>
-                    <p class="text-xs font-bold uppercase tracking-wider text-gray-500">Menunggu Verifikasi</p>
+                    <p class="text-xs font-bold uppercase tracking-wider text-gray-500">Perlu Review</p>
                     <p class="mt-2 text-3xl font-bold text-gray-900">{{ $waitingReview }}</p>
-                    <p class="mt-2 text-sm text-gray-500">Perlu ditinjau segera</p>
+                    <p class="mt-2 text-sm text-gray-500">Dokumen dan pembayaran yang perlu diproses</p>
                 </div>
                 <div class="flex h-10 w-10 items-center justify-center rounded-full bg-amber-50 text-amber-600">
                     <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -80,7 +80,7 @@
                             <tr>
                                 <th
                                     class="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider text-gray-500">
-                                    Mahasiswa</th>
+                                    Peserta</th>
                                 <th
                                     class="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider text-gray-500">
                                     Prodi / Skema</th>
@@ -97,7 +97,9 @@
                                 <tr class="group transition-colors hover:bg-gray-50/30">
                                     <td class="px-6 py-4 whitespace-nowrap">
                                         <div class="font-bold text-gray-900">{{ $reg->user->name }}</div>
-                                        <div class="text-xs text-gray-500">{{ $reg->user->nim }}</div>
+                                        <div class="text-xs text-gray-500">
+                                            {{ $reg->user->isGeneralUser() ? ($reg->user->no_ktp ?: '-') : ($reg->user->nim ?: '-') }}
+                                        </div>
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap">
                                         <div class="text-sm font-medium text-gray-700">
@@ -109,20 +111,16 @@
                                         @php
                                             $colorMap = [
                                                 'draft' => 'bg-slate-50 text-slate-700 border-slate-100',
-                                                'menunggu_verifikasi' => 'bg-amber-50 text-amber-700 border-amber-100',
-                                                'dokumen_ok' => 'bg-teal-50 text-teal-700 border-teal-100',
+                                                'menunggu_verifikasi' => 'bg-teal-50 text-teal-700 border-teal-100',
+                                                'dokumen_ok' => 'bg-amber-50 text-amber-700 border-amber-100',
+                                                'pending_payment' => 'bg-amber-50 text-amber-700 border-amber-100',
+                                                'paid' => 'bg-blue-50 text-blue-700 border-blue-100',
                                                 'terjadwal' => 'bg-blue-50 text-blue-700 border-blue-100',
                                                 'kompeten' => 'bg-emerald-50 text-emerald-700 border-emerald-100',
                                                 'tidak_kompeten' => 'bg-red-50 text-red-700 border-red-100',
                                             ];
                                             $colorClass = $colorMap[$reg->status] ?? $colorMap['draft'];
-                                            $label = str_replace('_', ' ', Str::title($reg->status));
-                                            if ($reg->status === 'dokumen_ok') {
-                                                $label = 'Draft OK';
-                                            }
-                                            if ($reg->status === 'menunggu_verifikasi') {
-                                                $label = 'Review';
-                                            }
+                                            $label = $reg->statusLabel();
                                         @endphp
                                         <span
                                             class="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-bold {{ $colorClass }}">
@@ -130,7 +128,7 @@
                                         </span>
                                     </td>
                                     <td class="px-6 py-4 text-right whitespace-nowrap">
-                                        <a href="{{ route('admin.verifikasi.detail', $reg) }}" wire:navigate
+                                        <a href="{{ in_array($reg->status, ['dokumen_ok', 'pending_payment', 'paid', 'terjadwal', 'sertifikat_terbit', 'tidak_kompeten'], true) ? route('admin.payment.detail', $reg) : route('admin.verifikasi.detail', $reg) }}" wire:navigate
                                             class="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-bold text-gray-700 transition-all hover:border-gray-300 hover:bg-gray-50">
                                             Review
                                         </a>

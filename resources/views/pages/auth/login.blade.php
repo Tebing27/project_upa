@@ -16,7 +16,7 @@
 
                 <div>
                     <label for="nim"
-                        class="block text-sm font-bold text-gray-700 dark:text-zinc-300 mb-2">{{ __('NIM') }}</label>
+                        class="block text-sm font-bold text-gray-700 dark:text-zinc-300 mb-2">{{ __('NIM atau Email') }}</label>
                     <div class="relative group">
                         <div
                             class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400 group-focus-within:text-emerald-500 transition-colors">
@@ -26,7 +26,7 @@
                             </svg>
                         </div>
                         <input type="text" name="nim" id="nim" value="{{ old('nim') }}"
-                            autocomplete="username" placeholder="Masukkan NIM Anda" required autofocus
+                            autocomplete="username" placeholder="Masukkan NIM atau email Anda" required autofocus
                             class="block w-full pl-11 pr-4 py-3 rounded-xl border border-slate-200 dark:border-zinc-800 dark:bg-zinc-950 dark:text-white focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 transition-all outline-none placeholder:text-slate-400">
                     </div>
                     @error('nim')
@@ -87,11 +87,11 @@
             @if (Route::has('register'))
                 <div class="mt-8 pt-6 border-t border-slate-100 dark:border-zinc-800 text-center">
                     <p class="text-sm text-slate-500 dark:text-zinc-400">
-                        Belum punya akun?
+                        Bukan mahasiswa atau belum punya akun?
                         <a href="{{ route('register') }}"
                             class="font-bold text-emerald-600 hover:text-emerald-700 underline underline-offset-4 decoration-emerald-200 hover:decoration-emerald-500 transition-all"
                             wire:navigate>
-                            Daftar Sertifikasi Sekarang
+                            Register dengan Email
                         </a>
                     </p>
                 </div>

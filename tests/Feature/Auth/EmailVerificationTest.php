@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\User;
+use App\Notifications\VerifyEmailNotification;
 use Illuminate\Auth\Events\Verified;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\URL;
@@ -69,4 +70,16 @@ test('already verified user visiting verification link is redirected without fir
 
     expect($user->fresh()->hasVerifiedEmail())->toBeTrue();
     Event::assertNotDispatched(Verified::class);
+});
+
+test('verification email notification can be rendered', function () {
+    $user = User::factory()->unverified()->create();
+
+    $renderedMail = (string) (new VerifyEmailNotification)->toMail($user)->render();
+
+    expect($renderedMail)
+        ->toContain('Verifikasi Email Anda')
+        ->toContain('verify/')
+        ->toContain('&signature=')
+        ->not->toContain('&amp;signature=');
 });

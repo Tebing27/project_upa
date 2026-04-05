@@ -18,6 +18,7 @@ class SchemeFactory extends Factory
             'study_program' => fake()->word(),
             'description' => fake()->sentence(),
             'is_active' => true,
+            'is_popular' => false,
         ];
     }
 }

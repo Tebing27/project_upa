@@ -34,7 +34,7 @@
 
                             $statusLabel = str_replace('_', ' ', \Illuminate\Support\Str::title($registration->status));
                             if ($registration->status === 'dokumen_ok') {
-                                $statusLabel = 'Draft OK';
+                                $statusLabel = 'Terverifikasi';
                             }
                             if (in_array($registration->status, ['pending_payment', 'paid', 'menunggu_verifikasi'])) {
                                 $statusLabel = 'Review';
@@ -47,9 +47,11 @@
                     </div>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-3">
                         <div class="flex flex-col">
-                            <span class="text-xs font-semibold uppercase tracking-wider text-gray-500">NIM / No.
-                                Pendaftaran</span>
-                            <span class="mt-1.5 text-sm font-semibold text-gray-900">{{ $registration->user->nim }} /
+                            <span class="text-xs font-semibold uppercase tracking-wider text-gray-500">
+                                {{ $registration->user->isGeneralUser() ? 'NIK' : 'NIM' }} / No. Pendaftaran
+                            </span>
+                            <span class="mt-1.5 text-sm font-semibold text-gray-900">
+                                {{ $registration->user->isGeneralUser() ? ($registration->user->no_ktp ?: '-') : ($registration->user->nim ?: '-') }} /
                                 {{ $registration->payment_reference ?: '-' }}</span>
                         </div>
                         <div class="flex flex-col">
@@ -65,7 +67,7 @@
                     @if ($registration->status === 'dokumen_ok')
                         <button wire:click="lanjutkanKeJadwal"
                             class="inline-flex items-center gap-2 rounded-xl bg-emerald-400 px-6 py-3 text-sm font-bold text-black shadow-lg shadow-emerald-100 transition-all hover:bg-emerald-500">
-                            Lanjutkan ke Penjadwalan
+                            Lanjutkan ke Validasi Pembayaran
                         </button>
                     @endif
                 </div>
@@ -82,36 +84,68 @@
                 </h3>
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     @php
-                        $biodata = [
-                            'Nama Lengkap' => $registration->user->name,
-                            'NIM / NIK' => $registration->user->nim ?: '-',
-                            'No KTP' => $registration->user->no_ktp ?: '-',
-                            'Tempat, Tgl Lahir' =>
-                                ($registration->user->tempat_lahir ?: '-') .
-                                ', ' .
-                                ($registration->user->tanggal_lahir
+                        $biodata = $registration->user->isGeneralUser()
+                            ? [
+                                'Nama Lengkap' => $registration->user->name ?: '-',
+                                'Email' => $registration->user->email ?: '-',
+                                'NIK' => $registration->user->no_ktp ?: '-',
+                                'Tempat Lahir' => $registration->user->tempat_lahir ?: '-',
+                                'Tanggal Lahir' => $registration->user->tanggal_lahir
                                     ? \Carbon\Carbon::parse($registration->user->tanggal_lahir)->translatedFormat(
-                                        'd F Y',
+                                        'd M Y',
                                     )
-                                    : '-'),
-                            'Jenis Kelamin' =>
-                                $registration->user->jenis_kelamin === 'L'
-                                    ? 'Laki-laki'
-                                    : ($registration->user->jenis_kelamin === 'P'
-                                        ? 'Perempuan'
+                                    : '-',
+                                'Jenis Kelamin' =>
+                                    $registration->user->jenis_kelamin === 'L'
+                                        ? 'Laki-laki'
+                                        : ($registration->user->jenis_kelamin === 'P'
+                                            ? 'Perempuan'
+                                            : '-'),
+                                'Nomor WhatsApp' => $registration->user->no_wa ?: '-',
+                                'Provinsi Domisili' => $registration->user->domisili_provinsi ?: '-',
+                                'Kota Domisili' => $registration->user->domisili_kota ?: '-',
+                                'Kecamatan Domisili' => $registration->user->domisili_kecamatan ?: '-',
+                                'Pendidikan Terakhir' => $registration->user->pendidikan_terakhir ?: '-',
+                                'Institusi' => $registration->user->nama_institusi ?: '-',
+                                'Fakultas' => $registration->user->fakultas ?: '-',
+                                'Program Studi' => $registration->user->program_studi ?: '-',
+                                'Pekerjaan' => $registration->user->pekerjaan ?: '-',
+                                'Nama Perusahaan' => $registration->user->nama_perusahaan ?: '-',
+                                'Jabatan' => $registration->user->jabatan ?: '-',
+                                'Alamat Perusahaan' => $registration->user->alamat_perusahaan ?: '-',
+                                'Kode Pos Perusahaan' => $registration->user->kode_pos_perusahaan ?: '-',
+                                'Telepon Perusahaan' => $registration->user->no_telp_perusahaan ?: '-',
+                                'Email Perusahaan' => $registration->user->email_perusahaan ?: '-',
+                            ]
+                            : [
+                                'Nama Lengkap' => $registration->user->name ?: '-',
+                                'NIM' => $registration->user->nim ?: '-',
+                                'Tempat, Tgl Lahir' =>
+                                    ($registration->user->tempat_lahir ?: '-') .
+                                    ', ' .
+                                    ($registration->user->tanggal_lahir
+                                        ? \Carbon\Carbon::parse($registration->user->tanggal_lahir)->translatedFormat(
+                                            'd F Y',
+                                        )
                                         : '-'),
-                            'No. WhatsApp' => $registration->user->no_wa ?: '-',
-                            'Pendidikan' => $registration->user->pendidikan_terakhir ?: '-',
-                            'Fakultas / Prodi' =>
-                                ($registration->user->fakultas ?: '-') .
-                                ' / ' .
-                                ($registration->user->program_studi ?: '-'),
-                            'SKS / Semester' =>
-                                ($registration->user->total_sks ?: '-') .
-                                ' SKS (' .
-                                ($registration->user->status_semester ?: '-') .
-                                ')',
-                        ];
+                                'Jenis Kelamin' =>
+                                    $registration->user->jenis_kelamin === 'L'
+                                        ? 'Laki-laki'
+                                        : ($registration->user->jenis_kelamin === 'P'
+                                            ? 'Perempuan'
+                                            : '-'),
+                                'No. WhatsApp' => $registration->user->no_wa ?: '-',
+                                'Pendidikan' => $registration->user->pendidikan_terakhir ?: '-',
+                                'Fakultas / Prodi' =>
+                                    ($registration->user->fakultas ?: '-') .
+                                    ' / ' .
+                                    ($registration->user->program_studi ?: '-'),
+                                'SKS / Semester' =>
+                                    ($registration->user->total_sks ?: '-') .
+                                    ' SKS (' .
+                                    ($registration->user->status_semester ?: '-') .
+                                    ')',
+                            ];
                     @endphp
                     @foreach ($biodata as $label => $value)
                         <div class="flex flex-col p-5 rounded-2xl bg-gray-50/50 border border-gray-50">
@@ -138,25 +172,41 @@
             </h3>
 
             @php
-                $docs = [
-                    'fr_apl_01_path' => 'Formulir APL-01',
-                    'fr_apl_02_path' => 'Formulir APL-02',
-                    'ktm_path' => 'KTM',
-                    'khs_path' => 'KHS / Transkrip',
-                    'internship_certificate_path' => 'Sertifikat Magang',
-                    'ktp_path' => 'KTP',
-                    'passport_photo_path' => 'Pas Foto 3x4',
-                    'payment_reference' => 'Bukti UKT / Pembayaran',
-                ];
+                $verifiableDocs = $registration->reviewableDocumentFields();
+                $docs = collect($registration->visibleDocumentFields())
+                    ->mapWithKeys(function (string $field): array {
+                        return [
+                            $field => match ($field) {
+                                'fr_apl_01_path' => 'Formulir APL-01',
+                                'fr_apl_02_path' => 'Formulir APL-02',
+                                'ktm_path' => 'KTM',
+                                'khs_path' => 'KHS / Transkrip',
+                                'internship_certificate_path' => 'Sertifikat Magang',
+                                'ktp_path' => 'KTP',
+                                'passport_photo_path' => 'Pas Foto 3x4',
+                                default => \Illuminate\Support\Str::title(str_replace('_', ' ', $field)),
+                            },
+                        ];
+                    })
+                    ->all();
                 $statuses = $registration->document_statuses ?? [];
             @endphp
+
+            @if ($registration->usesSimplifiedDocumentFlow())
+                <div class="mb-6 rounded-2xl border border-blue-100 bg-blue-50/70 p-4 text-sm text-blue-800">
+                    Peserta ini menggunakan alur pendaftaran skema baru lanjutan. Dokumen yang direview hanya FR APL 01 dan FR APL 02.
+                </div>
+            @endif
 
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 @foreach ($docs as $docField => $docName)
                     @php
                         $docData = $statuses[$docField] ?? null;
-                        $docStatus = $docData['status'] ?? 'pending';
                         $hasFile = !empty($registration->$docField);
+                        $canBeVerified = in_array($docField, $verifiableDocs, true);
+                        $docStatus = $canBeVerified
+                            ? ($docData['status'] ?? 'pending')
+                            : ($hasFile ? 'supporting' : 'missing');
                     @endphp
 
                     <div
@@ -183,6 +233,11 @@
                                                 d="M6 18L18 6M6 6l12 12" />
                                         </svg>
                                     </span>
+                                @elseif($docStatus === 'supporting')
+                                    <span
+                                        class="inline-flex items-center rounded-full bg-slate-100 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-slate-500">
+                                        Pendukung
+                                    </span>
                                 @else
                                     <span
                                         class="flex h-5 w-5 items-center justify-center rounded-full bg-amber-50 text-amber-600">
@@ -206,20 +261,25 @@
                                         Lihat
                                     </a>
 
-                                    @if ($docStatus !== 'verified')
+                                    @if ($canBeVerified && $docStatus !== 'verified')
                                         <button wire:click="verifikasiDokumen('{{ $docField }}')"
                                             class="flex-1 inline-flex items-center justify-center gap-1.5 rounded-xl bg-emerald-400 py-3 text-xs font-semibold text-black shadow-sm transition-all hover:bg-emerald-500">
                                             Verifikasi
                                         </button>
                                     @endif
 
-                                    @if ($docStatus !== 'rejected')
+                                    @if ($canBeVerified && $docStatus !== 'rejected')
                                         <button wire:click="bukaModalTolak('{{ $docField }}')"
                                             class="flex-1 inline-flex items-center justify-center gap-1.5 rounded-xl bg-red-600 py-3 text-xs font-semibold text-white shadow-sm transition-all hover:bg-red-700">
                                             Tolak
                                         </button>
                                     @endif
                                 </div>
+                                @if (! $canBeVerified)
+                                    <div class="mt-3 rounded-xl bg-slate-50 p-3 text-xs font-medium text-slate-500">
+                                        Dokumen pendukung ini ikut ditampilkan, tetapi tidak memerlukan verifikasi admin.
+                                    </div>
+                                @endif
                                 @if ($docStatus === 'rejected' && !empty($docData['note']))
                                     <div class="mt-3 rounded-xl bg-red-50 p-3">
                                         <p class="text-xs leading-relaxed text-red-700 font-medium">

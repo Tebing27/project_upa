@@ -4,6 +4,7 @@ namespace App\Livewire\Admin;
 
 use App\Models\Registration;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\View\View;
 use Livewire\Component;
 
 class DetailDokumen extends Component
@@ -72,31 +73,27 @@ class DetailDokumen extends Component
     public function lanjutkanKeJadwal(): void
     {
         if ($this->registration->status === 'dokumen_ok') {
-            $this->redirectRoute('admin.jadwal', ['highlight' => $this->registration->id], navigate: true);
+            $this->redirectRoute('admin.payment', ['highlight' => $this->registration->id], navigate: true);
         }
     }
 
     private function cekStatusKeseluruhan(): void
     {
-        $docs = [
-            'fr_apl_01_path',
-            'fr_apl_02_path',
-            'ktm_path',
-            'khs_path',
-            'internship_certificate_path',
-            'ktp_path',
-            'passport_photo_path',
-            'payment_reference',
-        ];
-
+        $requiredDocs = $this->registration->requiredDocumentFields();
+        $optionalDocs = $this->registration->optionalDocumentFields();
+        $allDocs = $this->registration->reviewableDocumentFields();
         $statuses = $this->registration->document_statuses ?? [];
 
         $allVerified = true;
         $anyRejected = false;
 
-        foreach ($docs as $doc) {
+        foreach ($allDocs as $doc) {
+            $isOptional = in_array($doc, $optionalDocs, true);
+
             if (empty($this->registration->$doc)) {
-                $allVerified = false;
+                if (! $isOptional) {
+                    $allVerified = false;
+                }
 
                 continue;
             }
@@ -123,7 +120,7 @@ class DetailDokumen extends Component
         $this->registration->save();
     }
 
-    public function render()
+    public function render(): View
     {
         return view('livewire.admin.detail-dokumen');
     }

@@ -1,13 +1,17 @@
 <?php
 
 use App\Livewire\Admin\DetailDokumen;
+use App\Livewire\Admin\DetailPembayaran;
 use App\Livewire\Admin\JadwalUji;
 use App\Livewire\Admin\SchemeForm;
 use App\Livewire\Admin\SchemeManager;
 use App\Livewire\Admin\UploadHasilUji;
 use App\Livewire\Admin\VerifikasiDokumen;
+use App\Livewire\Admin\VerifikasiPembayaran;
 use App\Livewire\CekSertifikat;
+use App\Livewire\ContactPage;
 use App\Livewire\DaftarSkemaBaru;
+use App\Livewire\ProfilPage;
 use App\Livewire\PublicSchemesPage;
 use App\Livewire\SchemeDetail;
 use App\Livewire\UserCertificatesPage;
@@ -17,6 +21,8 @@ use Illuminate\Support\Facades\Route;
 
 Route::view('/', 'welcome')->name('home');
 Route::get('cek-sertifikat', CekSertifikat::class)->name('cek-sertifikat');
+Route::get('kontak', ContactPage::class)->name('kontak');
+Route::get('profil', ProfilPage::class)->name('profil');
 Route::get('skema', PublicSchemesPage::class)->name('skema.index');
 Route::get('skema/{scheme}', SchemeDetail::class)->name('skema.detail');
 
@@ -38,6 +44,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('schemes/{scheme}/edit', SchemeForm::class)->name('schemes.edit');
         Route::get('verifikasi-dokumen', VerifikasiDokumen::class)->name('verifikasi');
         Route::get('verifikasi-dokumen/{registration}', DetailDokumen::class)->name('verifikasi.detail');
+        Route::get('verifikasi-pembayaran', VerifikasiPembayaran::class)->name('payment');
+        Route::get('verifikasi-pembayaran/{registration}', DetailPembayaran::class)->name('payment.detail');
         Route::get('jadwal-uji', JadwalUji::class)->name('jadwal');
         Route::get('upload-hasil-uji', UploadHasilUji::class)->name('hasil-uji');
     });

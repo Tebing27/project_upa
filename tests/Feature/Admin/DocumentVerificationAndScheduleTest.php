@@ -1,9 +1,12 @@
 <?php
 
 use App\Livewire\Admin\DetailDokumen;
+use App\Livewire\Admin\DetailPembayaran;
 use App\Livewire\Admin\JadwalUji;
 use App\Livewire\Admin\UploadHasilUji;
 use App\Livewire\Admin\VerifikasiDokumen;
+use App\Livewire\Admin\VerifikasiPembayaran;
+use App\Models\AppSetting;
 use App\Models\Certificate;
 use App\Models\Registration;
 use App\Models\Scheme;
@@ -88,7 +91,7 @@ it('shows registrations with rejected document statuses in the rejected verifica
         ->assertSee('Mahasiswa Status Belum Sinkron');
 });
 
-it('redirects document-approved participants to the schedule page without changing their status', function () {
+it('redirects document-approved participants to the payment verification page without changing their status', function () {
     $admin = User::factory()->create(['role' => 'admin']);
     $scheme = Scheme::factory()->create(['name' => 'Junior Web Developer']);
     $participant = User::factory()->create();
@@ -101,7 +104,7 @@ it('redirects document-approved participants to the schedule page without changi
     Livewire::actingAs($admin)
         ->test(DetailDokumen::class, ['registration' => $registration])
         ->call('lanjutkanKeJadwal')
-        ->assertRedirect(route('admin.jadwal', ['highlight' => $registration->id], absolute: false));
+        ->assertRedirect(route('admin.payment', ['highlight' => $registration->id], absolute: false));
 
     $registration->refresh();
 
@@ -128,14 +131,93 @@ it('shows the Data Pribadi modal button and correct user data in DetailDokumen',
         ->assertSee('12345678');
 });
 
-it('can create a schedule for a document-approved participant', function () {
+it('shows nik instead of generated nim for general users across admin verification pages', function () {
+    $admin = User::factory()->create(['role' => 'admin']);
+    $scheme = Scheme::factory()->create(['name' => 'Skema Sertifikasi Programmer']);
+    $participant = User::factory()->completedGeneralProfile()->create([
+        'name' => 'Peserta Umum Admin',
+        'nim' => 'NON-CKDRDMGC5S',
+        'no_ktp' => '3273056010900009',
+        'email' => 'umum@example.com',
+        'program_studi' => 'Sistem Informasi',
+    ]);
+
+    $documentRegistration = Registration::factory()->create([
+        'user_id' => $participant->id,
+        'scheme_id' => $scheme->id,
+        'status' => 'menunggu_verifikasi',
+        'payment_reference' => '98109000009015043',
+    ]);
+
+    $paymentRegistration = Registration::factory()->create([
+        'user_id' => $participant->id,
+        'scheme_id' => $scheme->id,
+        'status' => 'paid',
+        'payment_reference' => '98109000009015044',
+        'payment_submitted_at' => now(),
+    ]);
+
+    $scheduledRegistration = Registration::factory()->create([
+        'user_id' => $participant->id,
+        'scheme_id' => $scheme->id,
+        'status' => 'terjadwal',
+        'payment_reference' => '98109000009015045',
+        'exam_date' => Carbon::parse('2026-04-10 09:00:00'),
+        'exam_location' => 'Lab Sertifikasi Gedung A',
+        'assessor_name' => 'Budi Santoso',
+    ]);
+
+    Livewire::actingAs($admin)
+        ->test(DetailDokumen::class, ['registration' => $documentRegistration])
+        ->assertSee('NIK / No. Pendaftaran')
+        ->assertSee('3273056010900009')
+        ->assertSee('Provinsi Domisili')
+        ->assertSee('Kota Domisili')
+        ->assertSee('Kecamatan Domisili')
+        ->assertSee('Nama Perusahaan')
+        ->assertSee('Email Perusahaan')
+        ->assertDontSee('SKS / Semester')
+        ->assertDontSee('NON-CKDRDMGC5S');
+
+    Livewire::actingAs($admin)
+        ->test(VerifikasiDokumen::class)
+        ->assertSee('NIK / No. Pendaftaran')
+        ->assertSee('3273056010900009')
+        ->assertDontSee('NON-CKDRDMGC5S');
+
+    Livewire::actingAs($admin)
+        ->test(DetailPembayaran::class, ['registration' => $paymentRegistration])
+        ->assertSee('NIK / Email')
+        ->assertSee('3273056010900009 / umum@example.com')
+        ->assertDontSee('NON-CKDRDMGC5S');
+
+    Livewire::actingAs($admin)
+        ->test(VerifikasiPembayaran::class)
+        ->set('tab', 'terverifikasi')
+        ->assertSee('3273056010900009')
+        ->assertDontSee('NON-CKDRDMGC5S');
+
+    Livewire::actingAs($admin)
+        ->test(JadwalUji::class)
+        ->assertSee('Peserta Umum Admin')
+        ->assertSee('3273056010900009')
+        ->assertDontSee('NON-CKDRDMGC5S');
+
+    Livewire::actingAs($admin)
+        ->test(UploadHasilUji::class)
+        ->assertSee('Peserta Umum Admin')
+        ->assertSee('3273056010900009')
+        ->assertDontSee('NON-CKDRDMGC5S');
+});
+
+it('can create a schedule for a paid participant', function () {
     $admin = User::factory()->create(['role' => 'admin']);
     $scheme = Scheme::factory()->create(['name' => 'Junior Web Developer']);
     $participant = User::factory()->create();
     $registration = Registration::factory()->create([
         'user_id' => $participant->id,
         'scheme_id' => $scheme->id,
-        'status' => 'dokumen_ok',
+        'status' => 'paid',
     ]);
 
     Livewire::actingAs($admin)
@@ -170,6 +252,8 @@ it('can update an existing schedule for a participant', function () {
         'assessor_name' => 'Asesor Lama',
     ]);
 
+    AppSetting::put('whatsapp_channel_link', 'https://chat.whatsapp.com/lama');
+
     Livewire::actingAs($admin)
         ->test(JadwalUji::class)
         ->call('openScheduleModal', $registration->id)
@@ -187,6 +271,46 @@ it('can update an existing schedule for a participant', function () {
         ->and($registration->exam_date?->format('Y-m-d H:i:s'))->toBe(Carbon::parse('2026-04-12 13:30:00')->format('Y-m-d H:i:s'));
 });
 
+it('can create update and delete the global whatsapp link from the separate crud section', function () {
+    $admin = User::factory()->create(['role' => 'admin']);
+
+    $component = Livewire::actingAs($admin)
+        ->test(JadwalUji::class)
+        ->call('openWhatsappLinkModal')
+        ->assertDispatched('open-modal', id: 'modal-whatsapp-link')
+        ->set('whatsappLink', 'https://chat.whatsapp.com/global-upa')
+        ->call('saveWhatsappLink')
+        ->assertDispatched('close-modal', id: 'modal-whatsapp-link')
+        ->assertDispatched('toast')
+        ->assertSee('Link WhatsApp Global')
+        ->assertSee('Link WhatsApp Universal');
+
+    $settingId = AppSetting::query()
+        ->where('key', 'whatsapp_channel_link')
+        ->value('id');
+
+    expect(AppSetting::whatsappChannelLink())->toBe('https://chat.whatsapp.com/global-upa');
+
+    $component
+        ->call('openWhatsappLinkModal', $settingId)
+        ->assertDispatched('open-modal', id: 'modal-whatsapp-link')
+        ->assertSet('editingWhatsappSettingId', $settingId)
+        ->assertSet('whatsappLink', 'https://chat.whatsapp.com/global-upa')
+        ->set('whatsappLink', 'https://chat.whatsapp.com/global-baru')
+        ->call('saveWhatsappLink')
+        ->assertDispatched('close-modal', id: 'modal-whatsapp-link')
+        ->assertDispatched('toast');
+
+    expect(AppSetting::whatsappChannelLink())->toBe('https://chat.whatsapp.com/global-baru');
+
+    $component
+        ->call('deleteWhatsappLink', $settingId)
+        ->assertDispatched('toast')
+        ->assertDontSee('Link WhatsApp Universal');
+
+    expect(AppSetting::whatsappChannelLink())->toBeNull();
+});
+
 it('can filter schedule participants by search keyword and exam date', function () {
     $admin = User::factory()->create(['role' => 'admin']);
     $scheme = Scheme::factory()->create(['name' => 'Junior Web Developer']);
@@ -198,7 +322,7 @@ it('can filter schedule participants by search keyword and exam date', function 
     Registration::factory()->create([
         'user_id' => $readyUser->id,
         'scheme_id' => $scheme->id,
-        'status' => 'dokumen_ok',
+        'status' => 'paid',
     ]);
 
     Registration::factory()->create([
@@ -206,6 +330,8 @@ it('can filter schedule participants by search keyword and exam date', function 
         'scheme_id' => $scheme->id,
         'status' => 'terjadwal',
         'exam_date' => Carbon::parse('2026-04-10 09:00:00'),
+        'exam_location' => 'Lab Bagas',
+        'assessor_name' => 'Asesor Bagas',
     ]);
 
     Registration::factory()->create([
@@ -213,6 +339,8 @@ it('can filter schedule participants by search keyword and exam date', function 
         'scheme_id' => $scheme->id,
         'status' => 'terjadwal',
         'exam_date' => Carbon::parse('2026-04-11 09:00:00'),
+        'exam_location' => 'Lab Sinta',
+        'assessor_name' => 'Asesor Sinta',
     ]);
 
     Livewire::actingAs($admin)
@@ -234,7 +362,7 @@ it('shows ready and scheduled participants in a single schedule table with conte
     Registration::factory()->create([
         'user_id' => $readyUser->id,
         'scheme_id' => $scheme->id,
-        'status' => 'dokumen_ok',
+        'status' => 'paid',
     ]);
 
     Registration::factory()->create([
@@ -246,9 +374,13 @@ it('shows ready and scheduled participants in a single schedule table with conte
         'assessor_name' => 'Asesor Uji',
     ]);
 
+    AppSetting::put('whatsapp_channel_link', 'https://chat.whatsapp.com/asesor-uji');
+
     Livewire::actingAs($admin)
         ->test(JadwalUji::class)
         ->assertSee('Jadwal Uji')
+        ->assertSee('Link WhatsApp Global')
+        ->assertSee('Kelola satu link WhatsApp universal')
         ->assertDontSee('Peserta Siap Dijadwalkan')
         ->assertDontSee('Peserta Terjadwal')
         ->assertDontSee('Upload Sertifikat & Hasil')
@@ -259,7 +391,7 @@ it('shows ready and scheduled participants in a single schedule table with conte
         ->assertSee('Hapus');
 });
 
-it('can delete a schedule and move the participant back to document approved', function () {
+it('can delete a schedule and move the participant back to paid', function () {
     $admin = User::factory()->create(['role' => 'admin']);
     $scheme = Scheme::factory()->create(['name' => 'Junior Web Developer']);
     $participant = User::factory()->create();
@@ -281,7 +413,7 @@ it('can delete a schedule and move the participant back to document approved', f
 
     $registration->refresh();
 
-    expect($registration->status)->toBe('dokumen_ok')
+    expect($registration->status)->toBe('paid')
         ->and($registration->exam_date)->toBeNull()
         ->and($registration->exam_location)->toBeNull()
         ->and($registration->assessor_name)->toBeNull();
@@ -301,6 +433,8 @@ it('can upload certificate and exam result files for a scheduled participant', f
         'exam_location' => 'Lab Sertifikasi Gedung A',
         'assessor_name' => 'Budi Santoso',
     ]);
+
+    AppSetting::put('whatsapp_channel_link', 'https://chat.whatsapp.com/upload-hasil');
 
     $certificateFile = UploadedFile::fake()->create('sertifikat.pdf', 200, 'application/pdf');
     $resultFile = UploadedFile::fake()->create('hasil-ujian.pdf', 200, 'application/pdf');
@@ -325,6 +459,7 @@ it('can upload certificate and exam result files for a scheduled participant', f
 
     expect($registration->status)->toBe('sertifikat_terbit')
         ->and($certificate)->not->toBeNull()
+        ->and($certificate->certificate_number)->toBe('CERT-'.$participant->nim)
         ->and($certificate->status)->toBe('active')
         ->and($certificate->file_path)->not->toBeNull()
         ->and($certificate->result_file_path)->not->toBeNull()
@@ -332,6 +467,47 @@ it('can upload certificate and exam result files for a scheduled participant', f
 
     Storage::disk('public')->assertExists($certificate->file_path);
     Storage::disk('public')->assertExists($certificate->result_file_path);
+});
+
+it('generates certificate numbers with nik and 12 random digits for general users', function () {
+    Storage::fake('public');
+
+    $admin = User::factory()->create(['role' => 'admin']);
+    $scheme = Scheme::factory()->create(['name' => 'Junior Web Developer']);
+    $participant = User::factory()->completedGeneralProfile()->create([
+        'name' => 'Peserta Umum',
+        'no_ktp' => '3174000000000001',
+    ]);
+
+    $registration = Registration::factory()->create([
+        'user_id' => $participant->id,
+        'scheme_id' => $scheme->id,
+        'status' => 'terjadwal',
+        'exam_date' => Carbon::parse('2026-04-10 09:00:00'),
+        'exam_location' => 'Lab Sertifikasi Gedung A',
+        'assessor_name' => 'Budi Santoso',
+    ]);
+
+    AppSetting::put('whatsapp_channel_link', 'https://chat.whatsapp.com/user-umum');
+
+    $certificateFile = UploadedFile::fake()->create('sertifikat.pdf', 200, 'application/pdf');
+    $resultFile = UploadedFile::fake()->create('hasil-ujian.pdf', 200, 'application/pdf');
+
+    Livewire::actingAs($admin)
+        ->test(UploadHasilUji::class)
+        ->call('openUploadModal', $registration->id)
+        ->set('certificateFile', $certificateFile)
+        ->set('resultFile', $resultFile)
+        ->set('expiredDate', '2029-04-10')
+        ->call('uploadParticipantFiles');
+
+    $certificate = Certificate::query()
+        ->where('user_id', $participant->id)
+        ->latest('id')
+        ->first();
+
+    expect($certificate)->not->toBeNull()
+        ->and($certificate->certificate_number)->toBe('CERT-000000000001');
 });
 
 it('can edit only the expired date without re-uploading files', function () {
@@ -480,5 +656,28 @@ it('links recent admin requests to the document review page', function () {
     $this->actingAs($admin)
         ->get(route('dashboard'))
         ->assertOk()
-        ->assertSee(route('admin.verifikasi.detail', $registration), false);
+        ->assertSee(route('admin.payment.detail', $registration), false);
+});
+
+it('shows nik for general users in the recent admin requests dashboard card', function () {
+    $admin = User::factory()->create(['role' => 'admin']);
+    $participant = User::factory()->completedGeneralProfile()->create([
+        'name' => 'Asa',
+        'nim' => 'NON-CKDRDMGC5S',
+        'no_ktp' => '3273056010900009',
+    ]);
+    $scheme = Scheme::factory()->create(['name' => 'Skema Sertifikasi Programmer']);
+
+    Registration::factory()->create([
+        'user_id' => $participant->id,
+        'scheme_id' => $scheme->id,
+        'status' => 'paid',
+    ]);
+
+    $this->actingAs($admin)
+        ->get(route('dashboard'))
+        ->assertOk()
+        ->assertSee('Asa')
+        ->assertSee('3273056010900009')
+        ->assertDontSee('NON-CKDRDMGC5S');
 });
