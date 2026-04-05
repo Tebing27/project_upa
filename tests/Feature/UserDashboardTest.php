@@ -158,11 +158,11 @@ it('shows Daftar Ulang button when status is tidak_kompeten', function () {
         ->assertSee('Hasil Ujian')
         ->assertSee('Belum Kompeten')
         ->assertSee('Unduh Hasil Ujian')
-        ->assertSee(route('dashboard.daftar-skema', [
+        ->assertSee(e(route('dashboard.daftar-skema', [
             'type' => 'perpanjangan',
             'scheme' => $scheme->id,
             'source' => 'dashboard-skema',
-        ]), false)
+        ])), false)
         ->assertSee('Daftar Ulang Skema Ini');
 });
 

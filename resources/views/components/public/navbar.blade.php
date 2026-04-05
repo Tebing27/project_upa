@@ -61,7 +61,7 @@
     <div class="sticky top-0 z-50 w-full flex flex-col shadow-md">
         <!-- Topbar -->
         <div class="bg-[#1f2937] text-white text-xs md:text-sm py-2 w-full px-6 lg:px-16 relative z-20">
-            <div class="max-w-[85rem] mx-auto flex flex-col md:flex-row justify-between items-center w-full">
+            <div class="max-w-340 mx-auto flex flex-col md:flex-row justify-between items-center w-full">
                 <div class="font-medium">Welcome to UPA LUK</div>
                 <div class="flex flex-col md:flex-row gap-2 md:gap-6 mt-2 md:mt-0 text-gray-300">
                     <span class="flex items-center gap-2">
@@ -88,7 +88,7 @@
 
         <!-- Navbar -->
         <nav class="bg-white w-full px-6 lg:px-16 py-3 relative z-10">
-            <div class="max-w-[85rem] mx-auto flex justify-between items-center w-full">
+            <div class="max-w-340 mx-auto flex justify-between items-center w-full">
                 <!-- Logo -->
                 <a href="{{ route('home') }}" class="flex items-center gap-3">
                     <img src="{{ asset('assets/logo.webp') }}" alt="Logo UPNVJ"
@@ -108,7 +108,7 @@
                     <a href="{{ route('cek-sertifikat') }}"
                         class="solid-nav-link {{ $active === 'validasi' ? 'active' : '' }}">VALIDASI SERTIFIKAT</a>
 
-                    <div class="bg-gray-300 h-5 w-[2px] mx-1"></div>
+                    <div class="bg-gray-300 h-5 w-0.5 mx-1"></div>
 
                     @auth
                         <a href="{{ route('dashboard') }}"
@@ -143,7 +143,7 @@
     <!-- Default Transparent -> Fixed Mode (For pages with Hero) -->
     <!-- Topbar -->
     <div class="bg-[#1f2937] text-white text-xs md:text-sm py-2 z-50 relative w-full px-6 lg:px-16">
-        <div class="max-w-[85rem] mx-auto flex flex-col md:flex-row justify-between items-center w-full">
+        <div class="max-w-340 mx-auto flex flex-col md:flex-row justify-between items-center w-full">
             <div class="font-medium">Welcome to UPA LUK</div>
             <div class="flex flex-col md:flex-row gap-2 md:gap-6 mt-2 md:mt-0 text-gray-300">
                 <span class="flex items-center gap-2">
@@ -173,7 +173,7 @@
         <!-- Navbar -->
         <nav :class="scrolled ? 'scrolled-nav fixed top-0 shadow-md' : 'top-nav absolute top-0'"
             class="w-full z-40 transition-all duration-300 px-6 lg:px-16">
-            <div class="max-w-[85rem] mx-auto flex justify-between items-center w-full">
+            <div class="max-w-340 mx-auto flex justify-between items-center w-full">
                 <!-- Logo -->
                 <a href="{{ route('home') }}" class="flex items-center gap-3">
                     <img src="{{ asset('assets/logo.webp') }}" alt="Logo UPNVJ"
@@ -193,7 +193,7 @@
                         class="nav-link {{ $active === 'validasi' ? 'active' : '' }}">VALIDASI SERTIFIKAT</a>
 
                     <div :class="scrolled ? 'bg-gray-300' : 'bg-white/30'"
-                        class="h-5 w-[2px] mx-1 transition-colors duration-300"></div>
+                        class="h-5 w-0.5 mx-1 transition-colors duration-300"></div>
 
                     @auth
                         <a href="{{ route('dashboard') }}"

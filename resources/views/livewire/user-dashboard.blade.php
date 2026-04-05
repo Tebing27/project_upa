@@ -298,8 +298,7 @@
 
                     <div class="mt-5 space-y-3">
                         <div class="rounded-xl border border-amber-100 bg-amber-50/40 p-4">
-                            <p class="text-[10px] font-bold uppercase tracking-wider text-amber-500">Kode Instruksi
-                                Pembayaran</p>
+                            <p class="text-[10px] font-bold uppercase tracking-wider text-amber-500">Kode Instruksi Pembayaran</p>
                             <p class="mt-1.5 font-mono text-lg font-bold text-gray-900">
                                 {{ $latestRegistration->payment_reference }}</p>
                         </div>
@@ -534,10 +533,8 @@
                     <div class="mt-6 rounded-3xl border border-dashed border-emerald-200 bg-emerald-50/60 p-6">
                         <div class="flex flex-col gap-4">
                             <div>
-                                <p class="text-xs font-bold uppercase tracking-[0.2em] text-emerald-700">Biodata Belum
-                                    Lengkap</p>
-                                <h3 class="mt-2 text-lg font-bold text-gray-900">Lengkapi biodata di tahap kedua daftar
-                                    skema</h3>
+                                <p class="text-xs font-bold uppercase tracking-[0.2em] text-emerald-700">Biodata Belum Lengkap</p>
+                                <h3 class="mt-2 text-lg font-bold text-gray-900">Lengkapi biodata di tahap kedua daftar skema</h3>
                                 <p class="mt-2 max-w-xl text-sm text-gray-600">
                                     Ringkasan detail pendaftaran masih kosong karena biodata peserta umum belum
                                     dilengkapi.

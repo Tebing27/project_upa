@@ -48,7 +48,7 @@
                 <div
                     class="group flex flex-col overflow-hidden rounded-[1.25rem] bg-white shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] transition-all hover:shadow-[0_4px_20px_-4px_rgba(0,0,0,0.1)]">
                     {{-- Image --}}
-                    <div class="relative h-48 overflow-hidden bg-gradient-to-br from-emerald-400 to-teal-500">
+                    <div class="relative h-48 overflow-hidden bg-linear-to-br from-emerald-400 to-teal-500">
                         @if ($scheme->gambar_path)
                             <img src="{{ Storage::url($scheme->gambar_path) }}" alt="{{ $scheme->name }}"
                                 class="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105">

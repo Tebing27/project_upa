@@ -5,7 +5,7 @@
     <div class="relative min-h-[50vh] flex items-center justify-center pt-32 pb-20 overflow-hidden bg-gray-900">
         <img src="{{ asset('assets/background.webp') }}" alt="Hero Background"
             class="absolute inset-0 w-full h-full object-cover opacity-55">
-        <div class="absolute inset-0 bg-[linear-gradient(135deg,_rgba(15,23,42,0.62),_rgba(30,41,59,0.72))]"></div>
+        <div class="absolute inset-0 bg-[linear-gradient(135deg,rgba(15,23,42,0.62),rgba(30,41,59,0.72))]"></div>
 
         <div class="relative z-10 text-center px-6">
             <h1 class="text-3xl md:text-5xl font-bold text-white tracking-wide">
@@ -16,7 +16,7 @@
 
     <!-- Deskripsi Lembaga Section -->
     <div class="py-24 px-6 lg:px-16 bg-white">
-        <div class="max-w-[85rem] mx-auto w-full text-center">
+        <div class="max-w-340 mx-auto w-full text-center">
             <h2 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4">Unit Penunjang Akademik - Lembaga Uji
                 Kompetensi</h2>
             <div class="w-12 h-1 bg-[#1e40af] mx-auto mb-16"></div>
@@ -24,7 +24,7 @@
             <div
                 class="bg-[#f8f9fa] relative p-8 md:p-12 text-left rounded-xl shadow-[0_4px_20px_rgb(0,0,0,0.03)] mx-auto max-w-5xl">
                 <!-- Short blue line on the left -->
-                <div class="absolute left-0 top-10 h-12 w-[3px] bg-[#1e40af]"></div>
+                <div class="absolute left-0 top-10 h-12 w-0.75 bg-[#1e40af]"></div>
 
                 <p class="text-gray-600 leading-relaxed text-[1.1rem] md:text-lg font-medium pl-1">
                     Lembaga Sertifikasi Profesi (LSP) adalah lembaga pelaksanaan kegiatan sertifikasi profesi yang
@@ -82,7 +82,7 @@
 
             <!-- Tabs Content -->
             <div
-                class="bg-white rounded-xl p-8 md:p-14 shadow-[0_4px_20px_rgb(0,0,0,0.03)] border border-gray-50 min-h-[300px] text-left mx-auto max-w-5xl">
+                class="bg-white rounded-xl p-8 md:p-14 shadow-[0_4px_20px_rgb(0,0,0,0.03)] border border-gray-50 min-h-75 text-left mx-auto max-w-5xl">
                 @if ($activeTab === 'visi')
                     <div x-data="{ show: false }" x-init="setTimeout(() => show = true, 50)" x-show="show"
                         x-transition.opacity.duration.500ms>
@@ -90,7 +90,7 @@
 
                         <div class="bg-[#f8f9fa] rounded-lg p-8 md:p-10 relative">
                             <!-- Short blue line -->
-                            <div class="absolute left-0 top-10 h-10 w-[3px] bg-[#1e40af]"></div>
+                            <div class="absolute left-0 top-10 h-10 w-0.75 bg-[#1e40af]"></div>
 
                             <!-- Outline Quote Icon -->
                             <svg class="w-10 h-10 text-blue-500 mb-5 ml-1" viewBox="0 0 24 24" fill="none"
@@ -155,7 +155,7 @@
 
     <!-- Struktur Organisasi Section -->
     <div class="py-24 px-6 lg:px-16 bg-white border-t border-gray-100">
-        <div class="max-w-[85rem] mx-auto w-full text-center">
+        <div class="max-w-340 mx-auto w-full text-center">
             <h2 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4">Struktur Organisasi</h2>
             <div class="w-16 h-1 bg-[#1e40af] mx-auto mb-20 rounded-full"></div>
 

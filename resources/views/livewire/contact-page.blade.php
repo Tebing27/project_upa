@@ -5,9 +5,9 @@
             class="relative flex min-h-[42vh] items-center justify-center overflow-hidden bg-slate-950 px-6 pb-20 pt-32">
             <img src="{{ asset('assets/background.webp') }}" alt="Kontak UPA LUK"
                 class="absolute inset-0 h-full w-full object-cover opacity-55">
-            <div class="absolute inset-0 bg-[linear-gradient(135deg,_rgba(15,23,42,0.62),_rgba(30,41,59,0.72))]"></div>
+            <div class="absolute inset-0 bg-[linear-gradient(135deg,rgba(15,23,42,0.62),rgba(30,41,59,0.72))]"></div>
 
-            <div class="relative z-10 mx-auto flex w-full max-w-[85rem] justify-center text-center">
+            <div class="relative z-10 mx-auto flex w-full max-w-340 justify-center text-center">
                 <div>
                     <h1 class="text-3xl font-bold tracking-tight text-white md:text-5xl">
                         <span class="text-slate-200 font-medium">UPA LUK</span>
@@ -22,7 +22,7 @@
         </section>
 
         <main class="px-6 pb-24 pt-16 lg:px-16 lg:pt-20">
-            <div class="mx-auto max-w-[85rem]">
+            <div class="mx-auto max-w-340">
                 <section class="grid gap-6 lg:grid-cols-3">
                     <article
                         class="rounded-md border border-slate-100 bg-white px-8 py-14 text-center shadow-[0_22px_50px_-38px_rgba(15,23,42,0.28)]">
@@ -74,7 +74,7 @@
 
                 <section
                     class="mt-20 overflow-hidden rounded-md border border-slate-200 bg-white shadow-[0_28px_70px_-45px_rgba(15,23,42,0.3)]">
-                    <div class="google-map aspect-[16/8] w-full">
+                    <div class="google-map aspect-16/8 w-full">
                         <iframe
                             src="https://www.google.com/maps?q=Universitas%20Pembangunan%20Nasional%20Veteran%20Jakarta&z=15&output=embed"
                             class="h-full w-full" style="border:0;" allowfullscreen="" loading="lazy"
