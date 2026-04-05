@@ -24,5 +24,14 @@ class DatabaseSeeder extends Seeder
             'email' => 'test@example.com',
             'password' => Hash::make('password'), // rahasia123
         ]);
+
+        User::factory()->create([
+            'name' => 'Admin System',
+            'nim' => '987654321',
+            'email' => 'admin@example.com',
+            'password' => Hash::make('password'),
+            'role' => 'admin',
+            'user_type'=> 'admin',
+        ]);
     }
 }
