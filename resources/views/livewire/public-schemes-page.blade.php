@@ -223,9 +223,16 @@
         </div>
     </main>
 
-    <footer class="mt-10 border-t border-slate-200 bg-white">
-        <div class="mx-auto max-w-[85rem] px-6 py-6 text-center text-sm text-gray-500 lg:px-16">
-            &copy; {{ date('Y') }} {{ config('app.name', 'Laravel') }}. All rights reserved.
-        </div>
-    </footer>
+    <x-public.footer />
+
+    <!-- Scroll to Top -->
+    <button @click="window.scrollTo({top: 0, behavior: 'smooth'})" x-show="scrolled"
+        x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 translate-y-10"
+        x-transition:enter-end="opacity-100 translate-y-0" x-transition:leave="transition ease-in duration-200"
+        x-transition:leave-start="opacity-100 translate-y-0" x-transition:leave-end="opacity-0 translate-y-10"
+        class="fixed bottom-8 right-8 bg-[#1e40af] text-white p-3.5 rounded-full shadow-2xl hover:bg-blue-800 transition z-50 hover:-translate-y-1">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"></path>
+        </svg>
+    </button>
 </div>
