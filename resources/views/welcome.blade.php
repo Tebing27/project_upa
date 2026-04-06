@@ -184,83 +184,90 @@
                 </div>
             </div>
 
-            <!-- Pendaftaran Pipeline Section -->
-            <div class="mt-32 w-full border-t border-gray-100 pt-16">
-                <div class="text-center mb-16">
-                    <h2 class="text-3xl lg:text-4xl font-bold text-gray-900 leading-tight">Langkah Mudah <span class="text-[#ea580c]">Mendapatkan Sertifikat</span></h2>
-                    <p class="text-gray-600 mt-4 text-lg">Proses sertifikasi kompetensi di UPA LUK dirancang agar cepat, transparan, dan terstruktur.</p>
-                </div>
+            </div>
+        </div>
+    </div> <!-- Close Selamat Datang wrapper early -->
+
+    <!-- Pendaftaran Pipeline Section -->
+    <div class="bg-slate-50 border-t border-gray-100 py-24 px-6 lg:px-16 relative z-10 overflow-hidden shadow-inner">
+        <!-- Subtle dotted background -->
+        <div class="absolute inset-0 opacity-[0.03]" style="background-image: radial-gradient(#000 1.5px, transparent 1.5px); background-size: 28px 28px;"></div>
+        
+        <div class="max-w-[85rem] mx-auto w-full relative z-10">
+            <div class="text-center mb-16">
+                <h2 class="text-3xl lg:text-4xl font-bold text-gray-900 leading-tight">Langkah Mudah <span class="text-[#ea580c]">Mendapatkan Sertifikat</span></h2>
+                <p class="text-gray-600 mt-4 text-lg">Proses sertifikasi kompetensi di UPA LUK dirancang agar cepat, transparan, dan terstruktur.</p>
+            </div>
+            
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center relative w-full px-4 md:px-0">
+                <!-- Connecting line for desktop -->
+                <div class="hidden md:block absolute top-10 left-[10%] w-[80%] h-1 bg-gray-200 -translate-y-1/2 z-0"></div>
                 
-                <div class="flex flex-col md:flex-row justify-between items-start md:items-center relative w-full px-4 md:px-0">
-                    <!-- Connecting line for desktop -->
-                    <div class="hidden md:block absolute top-10 left-[10%] w-[80%] h-1 bg-gray-100 -translate-y-1/2 z-0"></div>
-                    
-                    <!-- Connecting line for mobile -->
-                    <div class="md:hidden absolute top-[10%] left-[3.25rem] w-1 h-[80%] bg-gray-100 -translate-x-1/2 z-0"></div>
+                <!-- Connecting line for mobile -->
+                <div class="md:hidden absolute top-[10%] left-[3.25rem] w-1 h-[80%] bg-gray-200 -translate-x-1/2 z-0"></div>
 
-                    <!-- Step 1 -->
-                    <div class="relative z-10 flex flex-row md:flex-col items-center bg-transparent md:bg-white w-full md:w-1/5 group mb-8 md:mb-0 gap-6 md:gap-0">
-                        <div class="w-16 h-16 shrink-0 rounded-full bg-blue-50 text-blue-600 border-4 border-white shadow-md flex items-center justify-center md:mb-5 group-hover:bg-blue-600 group-hover:text-white group-hover:scale-110 transition-all duration-300">
-                            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"></path></svg>
-                        </div>
-                        <div class="md:text-center">
-                            <h4 class="font-bold text-gray-900 text-lg md:text-base">1. Daftar Akun</h4>
-                            <p class="text-sm text-gray-500 mt-1 md:mt-2">Buat akun untuk masuk ke portal</p>
-                        </div>
+                <!-- Step 1 -->
+                <div class="relative z-10 flex flex-row md:flex-col items-center bg-transparent w-full md:w-1/5 group mb-8 md:mb-0 gap-6 md:gap-0 mt-2">
+                    <div class="w-16 h-16 shrink-0 rounded-full bg-blue-50 text-blue-600 border-4 border-white shadow-md flex items-center justify-center md:mb-5 group-hover:bg-blue-600 group-hover:text-white group-hover:scale-110 transition-all duration-300 relative z-10">
+                        <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"></path></svg>
                     </div>
-
-                    <!-- Step 2 -->
-                    <div class="relative z-10 flex flex-row md:flex-col items-center bg-transparent md:bg-white w-full md:w-1/5 group mb-8 md:mb-0 gap-6 md:gap-0">
-                        <div class="w-16 h-16 shrink-0 rounded-full bg-orange-50 text-[#ea580c] border-4 border-white shadow-md flex items-center justify-center md:mb-5 group-hover:bg-[#ea580c] group-hover:text-white group-hover:scale-110 transition-all duration-300">
-                            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                        </div>
-                        <div class="md:text-center">
-                            <h4 class="font-bold text-gray-900 text-lg md:text-base">2. Verifikasi Berkas</h4>
-                            <p class="text-sm text-gray-500 mt-1 md:mt-2">Upload dokumen persyaratan</p>
-                        </div>
+                    <div class="md:text-center mt-2 p-2 w-full md:w-auto bg-white/50 backdrop-blur-sm rounded-lg md:bg-transparent">
+                        <h4 class="font-bold text-gray-900 text-lg md:text-base">1. Daftar Akun</h4>
+                        <p class="text-sm text-gray-500 mt-1 md:mt-2">Buat akun untuk masuk ke portal</p>
                     </div>
+                </div>
 
-                    <!-- Step 3 -->
-                    <div class="relative z-10 flex flex-row md:flex-col items-center bg-transparent md:bg-white w-full md:w-1/5 group mb-8 md:mb-0 gap-6 md:gap-0">
-                        <div class="w-16 h-16 shrink-0 rounded-full bg-emerald-50 text-emerald-500 border-4 border-white shadow-md flex items-center justify-center md:mb-5 group-hover:bg-emerald-500 group-hover:text-white group-hover:scale-110 transition-all duration-300">
-                            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path></svg>
-                        </div>
-                        <div class="md:text-center">
-                            <h4 class="font-bold text-gray-900 text-lg md:text-base">3. Pembayaran VA</h4>
-                            <p class="text-sm text-gray-500 mt-1 md:mt-2">Selesaikan biaya administrasi</p>
-                        </div>
+                <!-- Step 2 -->
+                <div class="relative z-10 flex flex-row md:flex-col items-center bg-transparent w-full md:w-1/5 group mb-8 md:mb-0 gap-6 md:gap-0 mt-2">
+                    <div class="w-16 h-16 shrink-0 rounded-full bg-orange-50 text-[#ea580c] border-4 border-white shadow-md flex items-center justify-center md:mb-5 group-hover:bg-[#ea580c] group-hover:text-white group-hover:scale-110 transition-all duration-300 relative z-10">
+                        <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                     </div>
-
-                    <!-- Step 4 -->
-                    <div class="relative z-10 flex flex-row md:flex-col items-center bg-transparent md:bg-white w-full md:w-1/5 group mb-8 md:mb-0 gap-6 md:gap-0">
-                        <div class="w-16 h-16 shrink-0 rounded-full bg-purple-50 text-purple-600 border-4 border-white shadow-md flex items-center justify-center md:mb-5 group-hover:bg-purple-600 group-hover:text-white group-hover:scale-110 transition-all duration-300">
-                            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path></svg>
-                        </div>
-                        <div class="md:text-center">
-                            <h4 class="font-bold text-gray-900 text-lg md:text-base">4. Ujian Kompetensi</h4>
-                            <p class="text-sm text-gray-500 mt-1 md:mt-2">Jadwal asesmen tatap muka / online</p>
-                        </div>
+                    <div class="md:text-center mt-2 p-2 w-full md:w-auto bg-white/50 backdrop-blur-sm rounded-lg md:bg-transparent">
+                        <h4 class="font-bold text-gray-900 text-lg md:text-base">2. Verifikasi Berkas</h4>
+                        <p class="text-sm text-gray-500 mt-1 md:mt-2">Upload dokumen persyaratan</p>
                     </div>
+                </div>
 
-                    <!-- Step 5 -->
-                    <div class="relative z-10 flex flex-row md:flex-col items-center bg-transparent md:bg-white w-full md:w-1/5 group gap-6 md:gap-0">
-                        <div class="w-16 h-16 shrink-0 rounded-full bg-blue-50 text-blue-600 border-4 border-white shadow-md flex items-center justify-center md:mb-5 group-hover:bg-blue-600 group-hover:text-white group-hover:scale-110 transition-all duration-300">
-                            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
-                        </div>
-                        <div class="md:text-center">
-                            <h4 class="font-bold text-gray-900 text-lg md:text-base">5. Terbit Sertifikat</h4>
-                            <p class="text-sm text-gray-500 mt-1 md:mt-2">Sertifikat BNSP dirilis ke akun</p>
-                        </div>
+                <!-- Step 3 -->
+                <div class="relative z-10 flex flex-row md:flex-col items-center bg-transparent w-full md:w-1/5 group mb-8 md:mb-0 gap-6 md:gap-0 mt-2">
+                    <div class="w-16 h-16 shrink-0 rounded-full bg-emerald-50 text-emerald-500 border-4 border-white shadow-md flex items-center justify-center md:mb-5 group-hover:bg-emerald-500 group-hover:text-white group-hover:scale-110 transition-all duration-300 relative z-10">
+                        <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path></svg>
+                    </div>
+                    <div class="md:text-center mt-2 p-2 w-full md:w-auto bg-white/50 backdrop-blur-sm rounded-lg md:bg-transparent">
+                        <h4 class="font-bold text-gray-900 text-lg md:text-base">3. Pembayaran VA</h4>
+                        <p class="text-sm text-gray-500 mt-1 md:mt-2">Selesaikan biaya administrasi</p>
+                    </div>
+                </div>
+
+                <!-- Step 4 -->
+                <div class="relative z-10 flex flex-row md:flex-col items-center bg-transparent w-full md:w-1/5 group mb-8 md:mb-0 gap-6 md:gap-0 mt-2">
+                    <div class="w-16 h-16 shrink-0 rounded-full bg-purple-50 text-purple-600 border-4 border-white shadow-md flex items-center justify-center md:mb-5 group-hover:bg-purple-600 group-hover:text-white group-hover:scale-110 transition-all duration-300 relative z-10">
+                        <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path></svg>
+                    </div>
+                    <div class="md:text-center mt-2 p-2 w-full md:w-auto bg-white/50 backdrop-blur-sm rounded-lg md:bg-transparent">
+                        <h4 class="font-bold text-gray-900 text-lg md:text-base">4. Ujian Kompetensi</h4>
+                        <p class="text-sm text-gray-500 mt-1 md:mt-2">Jadwal asesmen tatap muka / online</p>
+                    </div>
+                </div>
+
+                <!-- Step 5 -->
+                <div class="relative z-10 flex flex-row md:flex-col items-center bg-transparent w-full md:w-1/5 group gap-6 md:gap-0 mt-2">
+                    <div class="w-16 h-16 shrink-0 rounded-full bg-blue-50 text-blue-600 border-4 border-white shadow-md flex items-center justify-center md:mb-5 group-hover:bg-blue-600 group-hover:text-white group-hover:scale-110 transition-all duration-300 relative z-10">
+                        <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
+                    </div>
+                    <div class="md:text-center mt-2 p-2 w-full md:w-auto bg-white/50 backdrop-blur-sm rounded-lg md:bg-transparent">
+                        <h4 class="font-bold text-gray-900 text-lg md:text-base">5. Terbit Sertifikat</h4>
+                        <p class="text-sm text-gray-500 mt-1 md:mt-2">Sertifikat BNSP dirilis ke akun</p>
                     </div>
                 </div>
             </div>
 
             <!-- Profile Head -->
-            <div class="mt-32 text-center max-w-xl mx-auto border-t border-gray-100 pt-16">
-                <div class="relative inline-block mb-6">
+            <div class="mt-32 text-center max-w-xl mx-auto border-t border-gray-200 pt-16">
+                <div class="relative inline-block mb-6 group">
                     <img src="{{ asset('assets/Dr.Kusumajanti.webp') }}" alt="Dr. Kusumajanti"
-                        class="w-56 h-72 object-cover mx-auto rounded-xl shadow-lg relative z-10">
-                    <div class="absolute inset-0 bg-blue-100 transform translate-x-4 translate-y-4 rounded-xl -z-10">
+                        class="w-56 h-72 object-cover mx-auto rounded-xl shadow-lg relative z-10 group-hover:-translate-y-2 group-hover:shadow-2xl transition-all duration-300">
+                    <div class="absolute inset-0 bg-blue-200 transform translate-x-4 translate-y-4 rounded-xl -z-10 group-hover:bg-[#ea580c]/50 transition-colors duration-300">
                     </div>
                 </div>
                 <h3 class="text-xl font-bold text-gray-900">Dr. Kusumajanti, S.Sos., M.M., M.Si.</h3>
@@ -303,7 +310,7 @@
     </div>
 
     <!-- Skema Section -->
-    <div class="bg-gray-50 py-32 px-6 lg:px-16 slanted-top relative z-10 -mt-12">
+    <div class="bg-white py-32 px-6 lg:px-16 slanted-top relative z-10 -mt-12">
         <div class="max-w-[85rem] mx-auto w-full">
             <h2 class="text-4xl font-bold text-center mb-6 text-gray-900">Skema Sertifikasi</h2>
 
@@ -434,11 +441,15 @@
     </div>
 
     <!-- Testimoni Section -->
-    <div class="bg-white py-24 px-6 lg:px-16 relative z-10">
-        <div class="max-w-[85rem] mx-auto w-full">
+    <div class="relative py-28 px-6 lg:px-16 overflow-hidden z-10 flex items-center">
+        <!-- Background Image & Overlay -->
+        <img src="{{ asset('assets/background.webp') }}" alt="Campus Background" class="absolute inset-0 w-full h-full object-cover z-0 filter blur-[2px] scale-105">
+        <div class="absolute inset-0 bg-slate-900/80 z-0"></div>
+
+        <div class="max-w-[85rem] mx-auto w-full relative z-10">
             <div class="text-center mb-16">
-                <h4 class="text-[#ea580c] font-bold tracking-widest mb-4 text-sm uppercase">CERITA ALUMNI</h4>
-                <h2 class="text-4xl font-bold text-gray-900">Apa Kata Mereka?</h2>
+                <h4 class="text-[#f97316] font-bold tracking-widest mb-4 text-sm uppercase">CERITA ALUMNI</h4>
+                <h2 class="text-4xl font-bold text-white drop-shadow-md">Apa Kata Mereka?</h2>
             </div>
             
             <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
