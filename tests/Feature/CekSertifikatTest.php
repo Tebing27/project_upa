@@ -1,9 +1,6 @@
 <?php
 
 use App\Livewire\CekSertifikat;
-use App\Models\Certificate;
-use App\Models\Scheme;
-use App\Models\User;
 use Livewire\Livewire;
 
 it('renders the cek sertifikat page without authentication', function () {
@@ -31,13 +28,14 @@ it('validates search input minimum length', function () {
 });
 
 it('finds a certificate by certificate number using NIM and name', function () {
-    $user = User::factory()->create(['name' => 'Budi Santoso', 'nim' => '112233445']);
-    $scheme = Scheme::factory()->create(['name' => 'Junior Web Developer', 'faculty' => 'Teknik']);
+    $user = createMahasiswaUser(
+        user: ['nama' => 'Budi Santoso'],
+        mahasiswaProfile: ['nim' => '112233445'],
+    );
+    $scheme = createScheme(['nama' => 'Junior Web Developer']);
 
-    Certificate::factory()->create([
-        'user_id' => $user->id,
-        'scheme_id' => $scheme->id,
-        'scheme_name' => 'Junior Web Developer',
+    createCertificateForUser($user, $scheme, [
+        'certificate_number' => 'CERT-112233445',
         'status' => 'active',
         'expired_date' => now()->addYear(),
     ]);
@@ -56,14 +54,14 @@ it('finds a certificate by certificate number using NIM and name', function () {
 });
 
 it('finds a general user certificate by stored certificate number', function () {
-    $user = User::factory()->completedGeneralProfile()->create([
-        'name' => 'Siti Umum',
-        'no_ktp' => '3174000000000001',
-    ]);
+    $user = createGeneralUser(
+        user: ['nama' => 'Siti Umum'],
+        umumProfile: ['no_ktp' => '3174000000000001'],
+        completed: true,
+    );
+    $scheme = createScheme(['nama' => 'Junior Web Developer']);
 
-    $certificate = Certificate::factory()->create([
-        'user_id' => $user->id,
-        'scheme_name' => 'Junior Web Developer',
+    $certificate = createCertificateForUser($user, $scheme, [
         'certificate_number' => 'CERT-000000000001',
         'status' => 'active',
     ]);
@@ -78,11 +76,14 @@ it('finds a general user certificate by stored certificate number', function () 
 });
 
 it('does not find a certificate by wrong owner name', function () {
-    $user = User::factory()->create(['name' => 'Budi Santoso', 'nim' => '112233445']);
+    $user = createMahasiswaUser(
+        user: ['nama' => 'Budi Santoso'],
+        mahasiswaProfile: ['nim' => '112233445'],
+    );
+    $scheme = createScheme(['nama' => 'Junior Web Developer']);
 
-    Certificate::factory()->create([
-        'user_id' => $user->id,
-        'scheme_name' => 'Junior Web Developer',
+    createCertificateForUser($user, $scheme, [
+        'certificate_number' => 'CERT-112233445',
         'status' => 'active',
     ]);
 
@@ -95,11 +96,14 @@ it('does not find a certificate by wrong owner name', function () {
 });
 
 it('finds a certificate by certificate number', function () {
-    $user = User::factory()->create(['name' => 'Budi', 'nim' => '998877665']);
+    $user = createMahasiswaUser(
+        user: ['nama' => 'Budi'],
+        mahasiswaProfile: ['nim' => '998877665'],
+    );
+    $scheme = createScheme(['nama' => 'Data Analyst']);
 
-    Certificate::factory()->create([
-        'user_id' => $user->id,
-        'scheme_name' => 'Data Analyst',
+    createCertificateForUser($user, $scheme, [
+        'certificate_number' => 'CERT-998877665',
         'status' => 'active',
     ]);
 
@@ -122,11 +126,14 @@ it('shows empty state when no certificate is found', function () {
 });
 
 it('correctly identifies expired certificates', function () {
-    $user = User::factory()->create(['name' => 'Budi', 'nim' => '556677889']);
+    $user = createMahasiswaUser(
+        user: ['nama' => 'Budi'],
+        mahasiswaProfile: ['nim' => '556677889'],
+    );
+    $scheme = createScheme(['nama' => 'Old Certificate']);
 
-    Certificate::factory()->create([
-        'user_id' => $user->id,
-        'scheme_name' => 'Old Certificate',
+    createCertificateForUser($user, $scheme, [
+        'certificate_number' => 'CERT-556677889',
         'status' => 'active',
         'expired_date' => now()->subDay(),
     ]);

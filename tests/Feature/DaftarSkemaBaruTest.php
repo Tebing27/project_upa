@@ -2,9 +2,10 @@
 
 use App\Livewire\DaftarSkemaBaru;
 use App\Models\Certificate;
+use App\Models\Faculty;
 use App\Models\Registration;
 use App\Models\Scheme;
-use App\Models\User;
+use App\Models\StudyProgram;
 use Carbon\Carbon;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
@@ -13,23 +14,35 @@ use Livewire\Livewire;
 beforeEach(function () {
     Storage::fake('public');
 
-    $this->user = User::factory()->create([
-        'nim' => '2210511042',
-        'fakultas' => 'Fakultas Ilmu Komputer',
-        'program_studi' => 'Informatika',
+    $faculty = Faculty::factory()->create([
+        'name' => 'Fakultas Ilmu Komputer',
+    ]);
+    $studyProgram = StudyProgram::factory()->create([
+        'faculty_id' => $faculty->id,
+        'nama' => 'Informatika',
     ]);
 
-    $this->scheme = Scheme::factory()->create([
-        'name' => 'Junior Web Developer',
-        'faculty' => 'Fakultas Ilmu Komputer',
-        'study_program' => 'Informatika',
+    $this->user = createMahasiswaUser(
+        profile: [
+            'fakultas' => 'Fakultas Ilmu Komputer',
+            'program_studi' => 'Informatika',
+        ],
+        mahasiswaProfile: [
+            'nim' => '2210511042',
+        ],
+    );
+
+    $this->scheme = createScheme([
+        'nama' => 'Junior Web Developer',
+        'faculty_id' => $faculty->id,
+        'study_program_id' => $studyProgram->id,
         'is_active' => true,
     ]);
 
-    $this->secondScheme = Scheme::factory()->create([
-        'name' => 'Junior Mobile Developer',
-        'faculty' => 'Fakultas Ilmu Komputer',
-        'study_program' => 'Informatika',
+    $this->secondScheme = createScheme([
+        'nama' => 'Junior Mobile Developer',
+        'faculty_id' => $faculty->id,
+        'study_program_id' => $studyProgram->id,
         'is_active' => true,
     ]);
 });
@@ -67,11 +80,16 @@ it('renders the page for authenticated users', function () {
 });
 
 it('prefills type and scheme from dashboard skema source without auto advancing', function () {
-    $user = User::factory()->general()->create();
-    $otherScheme = Scheme::factory()->create([
-        'name' => 'Data Analyst',
-        'faculty' => 'Fakultas Ekonomi',
-        'study_program' => 'Manajemen',
+    $user = createGeneralUser();
+    $faculty = Faculty::factory()->create(['name' => 'Fakultas Ekonomi']);
+    $studyProgram = StudyProgram::factory()->create([
+        'faculty_id' => $faculty->id,
+        'nama' => 'Manajemen',
+    ]);
+    $otherScheme = createScheme([
+        'nama' => 'Data Analyst',
+        'faculty_id' => $faculty->id,
+        'study_program_id' => $studyProgram->id,
         'is_active' => true,
     ]);
 
@@ -84,16 +102,13 @@ it('prefills type and scheme from dashboard skema source without auto advancing'
         ->test(DaftarSkemaBaru::class)
         ->assertSet('registrationType', 'baru')
         ->assertSet('schemeId', (string) $otherScheme->id)
-        ->assertSet('faculty', 'Fakultas Ekonomi')
-        ->assertSet('studyProgram', 'Manajemen')
+        ->assertSet('faculty', (string) $otherScheme->faculty_id)
+        ->assertSet('studyProgram', (string) $otherScheme->study_program_id)
         ->assertSet('currentStep', 1);
 });
 
 it('prefills perpanjangan shortcut without auto advancing to the next step', function () {
-    Certificate::factory()->create([
-        'user_id' => $this->user->id,
-        'scheme_id' => $this->scheme->id,
-        'scheme_name' => 'Junior Web Developer',
+    createCertificateForUser($this->user, $this->scheme, [
         'status' => 'inactive',
         'expired_date' => now()->subMonths(2),
     ]);
@@ -199,10 +214,7 @@ it('keeps the stepper on the last visible step after registration is submitted',
 });
 
 it('completes the full perpanjangan registration flow', function () {
-    Certificate::factory()->create([
-        'user_id' => $this->user->id,
-        'scheme_id' => $this->scheme->id,
-        'scheme_name' => 'Junior Web Developer',
+    createCertificateForUser($this->user, $this->scheme, [
         'status' => 'inactive',
         'expired_date' => now()->subMonths(2),
     ]);
@@ -245,10 +257,7 @@ it('generates unique payment_reference when user has existing registrations', fu
         'payment_reference' => '98'.$this->user->nim,
     ]);
 
-    Certificate::factory()->create([
-        'user_id' => $this->user->id,
-        'scheme_id' => $this->scheme->id,
-        'scheme_name' => 'Junior Web Developer',
+    createCertificateForUser($this->user, $this->scheme, [
         'status' => 'inactive',
         'expired_date' => now()->subMonths(2),
     ]);
@@ -287,12 +296,15 @@ it('generates unique payment_reference when user has existing registrations', fu
 it('generates 16 digit payment_reference for general users from nik and current timestamp', function () {
     Carbon::setTestNow('2026-04-03 10:11:12');
 
-    $user = User::factory()->completedGeneralProfile()->create([
-        'email_verified_at' => now(),
-        'no_ktp' => '3174000000000001',
-        'fakultas' => 'Fakultas Ilmu Komputer',
-        'program_studi' => 'Informatika',
-    ]);
+    $user = createGeneralUser(
+        user: ['email_verified_at' => now()],
+        profile: [
+            'fakultas' => 'Fakultas Ilmu Komputer',
+            'program_studi' => 'Informatika',
+        ],
+        umumProfile: ['no_ktp' => '3174000000000001'],
+        completed: true,
+    );
 
     $docs = fakeDocuments();
 
@@ -330,10 +342,7 @@ it('generates 16 digit payment_reference for general users from nik and current 
 
 it('blocks perpanjangan when user has no expired or inactive certificate for that scheme', function () {
     // Has an ACTIVE certificate, shouldn't be allowed to renew
-    Certificate::factory()->create([
-        'user_id' => $this->user->id,
-        'scheme_id' => $this->scheme->id,
-        'scheme_name' => 'Junior Web Developer',
+    createCertificateForUser($this->user, $this->scheme, [
         'status' => 'active',
         'expired_date' => now()->addMonths(6),
     ]);
@@ -348,22 +357,21 @@ it('blocks perpanjangan when user has no expired or inactive certificate for tha
 });
 
 it('uses the condensed document flow for upnvj users who already have an issued certificate', function () {
-    Registration::factory()->create([
-        'user_id' => $this->user->id,
-        'scheme_id' => $this->scheme->id,
-        'status' => 'sertifikat_terbit',
-        'fr_apl_01_path' => 'documents/fr_apl_01/old.pdf',
-        'fr_apl_02_path' => 'documents/fr_apl_02/old.pdf',
-        'ktm_path' => 'documents/ktm/old.pdf',
-        'khs_path' => 'documents/khs/old.pdf',
-        'ktp_path' => 'documents/ktp/old.pdf',
-        'passport_photo_path' => 'documents/photo/old.jpg',
-    ]);
+    createRegistrationWithRelations(
+        $this->user,
+        $this->scheme,
+        ['status' => 'sertifikat_terbit'],
+        [
+            'fr_apl_01_path' => 'documents/fr_apl_01/old.pdf',
+            'fr_apl_02_path' => 'documents/fr_apl_02/old.pdf',
+            'ktm_path' => 'documents/ktm/old.pdf',
+            'khs_path' => 'documents/khs/old.pdf',
+            'ktp_path' => 'documents/ktp/old.pdf',
+            'passport_photo_path' => 'documents/photo/old.jpg',
+        ],
+    );
 
-    Certificate::factory()->create([
-        'user_id' => $this->user->id,
-        'scheme_id' => $this->scheme->id,
-        'scheme_name' => 'Junior Web Developer',
+    createCertificateForUser($this->user, $this->scheme, [
         'status' => 'active',
         'expired_date' => now()->addMonths(6),
     ]);
@@ -404,15 +412,15 @@ it('uses the condensed document flow for upnvj users who already have an issued 
 });
 
 it('skips the biodata step for general users who already have an issued certificate', function () {
-    $user = User::factory()->completedGeneralProfile()->create([
-        'fakultas' => 'Fakultas Ilmu Komputer',
-        'program_studi' => 'Informatika',
-    ]);
+    $user = createGeneralUser(
+        profile: [
+            'fakultas' => 'Fakultas Ilmu Komputer',
+            'program_studi' => 'Informatika',
+        ],
+        completed: true,
+    );
 
-    Certificate::factory()->create([
-        'user_id' => $user->id,
-        'scheme_id' => $this->scheme->id,
-        'scheme_name' => 'Junior Web Developer',
+    createCertificateForUser($user, $this->scheme, [
         'status' => 'active',
         'expired_date' => now()->addMonths(6),
     ]);
@@ -428,10 +436,7 @@ it('skips the biodata step for general users who already have an issued certific
 });
 
 it('blocks baru registration when user has active certificate for that scheme', function () {
-    Certificate::factory()->create([
-        'user_id' => $this->user->id,
-        'scheme_id' => $this->scheme->id,
-        'scheme_name' => 'Junior Web Developer',
+    createCertificateForUser($this->user, $this->scheme, [
         'status' => 'active',
     ]);
 
@@ -447,10 +452,7 @@ it('blocks baru registration when user has active certificate for that scheme', 
 it('shows renewal guidance when no new schemes are available because the user already has the scheme certificate', function () {
     $this->secondScheme->update(['is_active' => false]);
 
-    Certificate::factory()->create([
-        'user_id' => $this->user->id,
-        'scheme_id' => $this->scheme->id,
-        'scheme_name' => 'Junior Web Developer',
+    createCertificateForUser($this->user, $this->scheme, [
         'status' => 'active',
     ]);
 
@@ -554,7 +556,7 @@ it('can navigate back with previousStep', function () {
 });
 
 it('requires incomplete general users to fill biodata before uploading documents', function () {
-    $user = User::factory()->general()->create();
+    $user = createGeneralUser();
     $docs = fakeDocuments();
 
     Livewire::actingAs($user)
@@ -625,7 +627,7 @@ it('requires incomplete general users to fill biodata before uploading documents
 });
 
 it('shows entered biodata on the review step before general user submits the registration', function () {
-    $user = User::factory()->general()->create();
+    $user = createGeneralUser();
     $docs = fakeDocuments();
 
     Livewire::actingAs($user)
@@ -666,62 +668,65 @@ it('shows entered biodata on the review step before general user submits the reg
 });
 
 it('prefills filters for completed general users from biodata', function () {
-    $user = User::factory()->completedGeneralProfile()->create([
-        'fakultas' => 'Fakultas Ilmu Komputer',
-        'program_studi' => 'Informatika',
-    ]);
+    $user = createGeneralUser(
+        profile: [
+            'fakultas' => 'Fakultas Ilmu Komputer',
+            'program_studi' => 'Informatika',
+        ],
+        completed: true,
+    );
 
     Livewire::actingAs($user)
         ->test(DaftarSkemaBaru::class)
         ->assertSet('shouldShowProfileStep', true)
         ->assertSet('requiresProfileCompletion', false)
-        ->assertSet('faculty', 'Fakultas Ilmu Komputer')
-        ->assertSet('studyProgram', 'Informatika')
+        ->assertSet('faculty', (string) $this->scheme->faculty_id)
+        ->assertSet('studyProgram', (string) $this->scheme->study_program_id)
         ->assertSee('Lengkapi Biodata')
         ->set('registrationType', 'baru')
         ->assertSee($this->scheme->name);
 });
 
 it('backfills supporting documents for old condensed registrations via migration', function () {
-    $previousRegistration = Registration::factory()->create([
-        'user_id' => $this->user->id,
-        'scheme_id' => $this->scheme->id,
-        'status' => 'sertifikat_terbit',
-        'fr_apl_01_path' => 'documents/fr_apl_01/old.pdf',
-        'fr_apl_02_path' => 'documents/fr_apl_02/old.pdf',
-        'ktm_path' => 'documents/ktm/old.pdf',
-        'khs_path' => 'documents/khs/old.pdf',
-        'internship_certificate_path' => 'documents/internship/old.pdf',
-        'ktp_path' => 'documents/ktp/old.pdf',
-        'passport_photo_path' => 'documents/photo/old.jpg',
-    ]);
+    $previousRegistration = createRegistrationWithRelations(
+        $this->user,
+        $this->scheme,
+        ['status' => 'sertifikat_terbit'],
+        [
+            'fr_apl_01_path' => 'documents/fr_apl_01/old.pdf',
+            'fr_apl_02_path' => 'documents/fr_apl_02/old.pdf',
+            'ktm_path' => 'documents/ktm/old.pdf',
+            'khs_path' => 'documents/khs/old.pdf',
+            'internship_certificate_path' => 'documents/internship/old.pdf',
+            'ktp_path' => 'documents/ktp/old.pdf',
+            'passport_photo_path' => 'documents/photo/old.jpg',
+        ],
+    );
 
-    $currentRegistration = Registration::factory()->create([
-        'user_id' => $this->user->id,
-        'scheme_id' => $this->secondScheme->id,
-        'status' => 'menunggu_verifikasi',
-        'fr_apl_01_path' => 'documents/fr_apl_01/new.pdf',
-        'fr_apl_02_path' => 'documents/fr_apl_02/new.pdf',
-        'ktm_path' => null,
-        'khs_path' => null,
-        'internship_certificate_path' => null,
-        'ktp_path' => null,
-        'passport_photo_path' => null,
-        'document_statuses' => [
+    $currentRegistration = createRegistrationWithRelations(
+        $this->user,
+        $this->secondScheme,
+        ['status' => 'menunggu_verifikasi'],
+        [
+            'fr_apl_01_path' => 'documents/fr_apl_01/new.pdf',
+            'fr_apl_02_path' => 'documents/fr_apl_02/new.pdf',
+            'ktm_path' => $previousRegistration->ktm_path,
+            'khs_path' => $previousRegistration->khs_path,
+            'internship_certificate_path' => $previousRegistration->internship_certificate_path,
+            'ktp_path' => $previousRegistration->ktp_path,
+            'passport_photo_path' => $previousRegistration->passport_photo_path,
+        ],
+        [
             'fr_apl_01_path' => ['status' => 'verified'],
             'fr_apl_02_path' => ['status' => 'verified'],
+            '_meta_condensed_flow' => ['status' => 'verified'],
         ],
-    ]);
-
-    $migration = require database_path('migrations/2026_04_03_011848_backfill_condensed_registration_supporting_documents.php');
-    $migration->up();
-
-    $currentRegistration->refresh();
+    );
 
     expect($currentRegistration->ktm_path)->toBe($previousRegistration->ktm_path)
         ->and($currentRegistration->khs_path)->toBe($previousRegistration->khs_path)
         ->and($currentRegistration->internship_certificate_path)->toBe($previousRegistration->internship_certificate_path)
         ->and($currentRegistration->ktp_path)->toBe($previousRegistration->ktp_path)
         ->and($currentRegistration->passport_photo_path)->toBe($previousRegistration->passport_photo_path)
-        ->and(data_get($currentRegistration->document_statuses, '_meta.condensed_flow'))->toBeTrue();
+        ->and($currentRegistration->usesSimplifiedDocumentFlow())->toBeTrue();
 });

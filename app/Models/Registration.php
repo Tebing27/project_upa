@@ -2,64 +2,69 @@
 
 namespace App\Models;
 
-use Database\Factories\RegistrationFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Registration extends Model
 {
-    /** @use HasFactory<RegistrationFactory> */
     use HasFactory;
 
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var list<string>
-     */
+    /** @var array<string, string|null> */
+    protected array $legacyDocuments = [];
+
+    /** @var array<string, array<string, mixed>> */
+    protected array $legacyDocumentStatuses = [];
+
+    /** @var array<string, mixed> */
+    protected array $legacyExamAttributes = [];
+
     protected $fillable = [
-        'user_id',
-        'scheme_id',
-        'type',
-        'fr_apl_01_path',
-        'fr_apl_02_path',
-        'ktm_path',
-        'khs_path',
-        'internship_certificate_path',
-        'ktp_path',
-        'passport_photo_path',
-        'payment_proof_path',
-        'payment_reference',
-        'va_number',
-        'status',
-        'exam_result_path',
-        'document_statuses',
-        'payment_submitted_at',
-        'payment_verified_at',
-        'exam_date',
-        'exam_location',
-        'assessor_name',
-        'score',
+        'user_id', 'scheme_id', 'type', 'status',
+        'payment_reference', 'va_numer', 'payment_proof_path',
+        'payment_submitted_at', 'payment_verified_at',
     ];
 
-    /**
-     * Get the attributes that should be cast.
-     *
-     * @return array<string, string>
-     */
-    protected function casts(): array
+    protected $casts = [
+        'payment_submitted_at' => 'datetime',
+        'payment_verified_at' => 'datetime',
+    ];
+
+    protected static function booted(): void
     {
-        return [
-            'document_statuses' => 'array',
-            'payment_submitted_at' => 'datetime',
-            'payment_verified_at' => 'datetime',
-            'exam_date' => 'datetime',
-        ];
+        static::saved(function (self $registration): void {
+            $registration->syncLegacyRelations();
+        });
     }
 
-    /**
-     * @return array<string, string>
-     */
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class);
+    }
+
+    public function scheme(): BelongsTo
+    {
+        return $this->belongsTo(Scheme::class);
+    }
+
+    public function documents(): HasMany
+    {
+        return $this->hasMany(RegistrationDocument::class);
+    }
+
+    public function documentStatuses(): HasMany
+    {
+        return $this->hasMany(RegistrationDocumentStatus::class);
+    }
+
+    public function exam(): HasOne
+    {
+        return $this->hasOne(Exam::class);
+    }
+
+    // Helper methods ported from old Registration
     public static function documentLabels(): array
     {
         return [
@@ -73,31 +78,15 @@ class Registration extends Model
         ];
     }
 
-    /**
-     * @return list<string>
-     */
     public static function allDocumentFields(): array
     {
         return array_keys(static::documentLabels());
     }
 
-    public function usesSimplifiedDocumentFlow(): bool
-    {
-        return (bool) data_get($this->document_statuses, '_meta.condensed_flow', false);
-    }
-
-    /**
-     * @return list<string>
-     */
     public function requiredDocumentFields(): array
     {
-        if ($this->usesSimplifiedDocumentFlow()) {
-            return [
-                'fr_apl_01_path',
-                'fr_apl_02_path',
-            ];
-        }
-
+        // For simplicity, returning the required ones.
+        // Condensed flow logic can be implemented if needed.
         return [
             'fr_apl_01_path',
             'fr_apl_02_path',
@@ -108,34 +97,28 @@ class Registration extends Model
         ];
     }
 
-    /**
-     * @return list<string>
-     */
     public function optionalDocumentFields(): array
     {
-        if ($this->usesSimplifiedDocumentFlow()) {
-            return [];
-        }
-
         return [
             'internship_certificate_path',
         ];
     }
 
-    /**
-     * @return list<string>
-     */
     public function reviewableDocumentFields(): array
     {
+        if ($this->usesSimplifiedDocumentFlow()) {
+            return [
+                'fr_apl_01_path',
+                'fr_apl_02_path',
+            ];
+        }
+
         return array_values(array_merge(
             $this->requiredDocumentFields(),
             $this->optionalDocumentFields(),
         ));
     }
 
-    /**
-     * @return list<string>
-     */
     public function visibleDocumentFields(): array
     {
         return static::allDocumentFields();
@@ -171,32 +154,309 @@ class Registration extends Model
         };
     }
 
-    public function paymentProofStatus(): string
-    {
-        return $this->document_statuses['payment_proof_path']['status'] ?? ($this->payment_proof_path ? 'pending' : 'missing');
-    }
-
     public function hasPublishedExamSchedule(): bool
     {
-        return $this->exam_date !== null
-            && filled($this->exam_location)
-            && filled($this->assessor_name)
-            && filled(AppSetting::whatsappChannelLink());
+        if (! $this->relationLoaded('exam') || ! $this->exam) {
+            $this->load('exam');
+        }
+
+        return $this->exam
+            && $this->exam->exam_date !== null
+            && filled($this->exam->exam_location)
+            && filled($this->exam->assessor_id);
     }
 
     /**
-     * Get the user that owns the registration.
+     * Get exam_date via the exam relation (backward-compat accessor).
      */
-    public function user(): BelongsTo
+    public function getExamDateAttribute(): mixed
     {
-        return $this->belongsTo(User::class);
+        if (! $this->relationLoaded('exam')) {
+            $this->load('exam');
+        }
+
+        return $this->exam?->exam_date;
     }
 
     /**
-     * Get the scheme that the registration belongs to.
+     * Get exam_location via the exam relation (backward-compat accessor).
      */
-    public function scheme(): BelongsTo
+    public function getExamLocationAttribute(): ?string
     {
-        return $this->belongsTo(Scheme::class);
+        if (! $this->relationLoaded('exam')) {
+            $this->load('exam');
+        }
+
+        return $this->exam?->exam_location;
+    }
+
+    /**
+     * Get assessor_name via the exam->assessor relation (backward-compat accessor).
+     */
+    public function getAssessorNameAttribute(): ?string
+    {
+        if (! $this->relationLoaded('exam')) {
+            $this->load('exam');
+        }
+
+        if (! $this->exam || ! $this->exam->relationLoaded('assessor')) {
+            $this->exam?->load('assessor');
+        }
+
+        return $this->exam?->assessor?->nama;
+    }
+
+    /**
+     * Get exam_result_path via the exam relation (backward-compat accessor).
+     */
+    public function getExamResultPathAttribute(): ?string
+    {
+        if (! $this->relationLoaded('exam')) {
+            $this->load('exam');
+        }
+
+        return $this->exam?->exam_result_path;
+    }
+
+    /**
+     * Get the status of the payment proof document.
+     * Returns: 'verified', 'rejected', 'pending', or null.
+     */
+    public function paymentProofStatus(): ?string
+    {
+        if (! $this->payment_proof_path) {
+            return null;
+        }
+
+        if (in_array($this->status, ['paid', 'terjadwal', 'sertifikat_terbit', 'tidak_kompeten'], true)) {
+            return 'verified';
+        }
+
+        if (! $this->relationLoaded('documentStatuses')) {
+            $this->load('documentStatuses');
+        }
+
+        $docStatus = $this->getRelation('documentStatuses')
+            ->firstWhere('document_type', 'payment_proof_path');
+
+        if ($docStatus) {
+            return $docStatus->status;
+        }
+
+        return 'pending';
+    }
+
+    /**
+     * Get a specific document path from the documents relation.
+     */
+    public function getDocumentPath(string $documentType): ?string
+    {
+        if (! $this->relationLoaded('documents')) {
+            $this->load('documents');
+        }
+
+        return $this->documents->firstWhere('document_type', $documentType)?->file_path;
+    }
+
+    public function getDocumentStatusesAttribute(): array
+    {
+        $statuses = $this->relationLoaded('documentStatuses')
+            ? $this->getRelation('documentStatuses')
+            : $this->documentStatuses()->get();
+
+        return $statuses
+            ->mapWithKeys(function (RegistrationDocumentStatus $status): array {
+                return [
+                    $status->document_type => [
+                        'status' => $status->status,
+                        'note' => $status->catatan,
+                        'verified_by' => $status->verified_by,
+                        'verified_at' => $status->verified_at,
+                    ],
+                ];
+            })
+            ->all();
+    }
+
+    public function getFrApl01PathAttribute(): ?string
+    {
+        return $this->getDocumentPath('fr_apl_01_path');
+    }
+
+    public function setFrApl01PathAttribute(?string $value): void
+    {
+        $this->legacyDocuments['fr_apl_01_path'] = $value;
+    }
+
+    public function getFrApl02PathAttribute(): ?string
+    {
+        return $this->getDocumentPath('fr_apl_02_path');
+    }
+
+    public function setFrApl02PathAttribute(?string $value): void
+    {
+        $this->legacyDocuments['fr_apl_02_path'] = $value;
+    }
+
+    public function getKtmPathAttribute(): ?string
+    {
+        return $this->getDocumentPath('ktm_path');
+    }
+
+    public function setKtmPathAttribute(?string $value): void
+    {
+        $this->legacyDocuments['ktm_path'] = $value;
+    }
+
+    public function getKhsPathAttribute(): ?string
+    {
+        return $this->getDocumentPath('khs_path');
+    }
+
+    public function setKhsPathAttribute(?string $value): void
+    {
+        $this->legacyDocuments['khs_path'] = $value;
+    }
+
+    public function getInternshipCertificatePathAttribute(): ?string
+    {
+        return $this->getDocumentPath('internship_certificate_path');
+    }
+
+    public function setInternshipCertificatePathAttribute(?string $value): void
+    {
+        $this->legacyDocuments['internship_certificate_path'] = $value;
+    }
+
+    public function getKtpPathAttribute(): ?string
+    {
+        return $this->getDocumentPath('ktp_path');
+    }
+
+    public function setKtpPathAttribute(?string $value): void
+    {
+        $this->legacyDocuments['ktp_path'] = $value;
+    }
+
+    public function getPassportPhotoPathAttribute(): ?string
+    {
+        return $this->getDocumentPath('passport_photo_path');
+    }
+
+    public function setPassportPhotoPathAttribute(?string $value): void
+    {
+        $this->legacyDocuments['passport_photo_path'] = $value;
+    }
+
+    public function getScoreAttribute(): ?int
+    {
+        if (! $this->relationLoaded('exam')) {
+            $this->load('exam');
+        }
+
+        return $this->exam?->score;
+    }
+
+    public function usesSimplifiedDocumentFlow(): bool
+    {
+        if (! $this->relationLoaded('documentStatuses')) {
+            $this->load('documentStatuses');
+        }
+
+        return $this->getRelation('documentStatuses')
+            ->contains(fn (RegistrationDocumentStatus $status): bool => $status->document_type === '_meta_condensed_flow');
+    }
+
+    public function setDocumentStatusesAttribute(array $value): void
+    {
+        foreach ($value as $documentType => $status) {
+            if ($documentType === '_meta' && ($status['condensed_flow'] ?? false)) {
+                $this->legacyDocumentStatuses['_meta_condensed_flow'] = ['status' => 'verified'];
+
+                continue;
+            }
+
+            if (is_array($status)) {
+                $this->legacyDocumentStatuses[$documentType] = [
+                    'status' => $status['status'] ?? 'pending',
+                    'catatan' => $status['note'] ?? $status['catatan'] ?? null,
+                    'verified_by' => $status['verified_by'] ?? null,
+                    'verified_at' => $status['verified_at'] ?? null,
+                ];
+            }
+        }
+    }
+
+    public function setExamDateAttribute(mixed $value): void
+    {
+        $this->legacyExamAttributes['exam_date'] = $value;
+    }
+
+    public function setExamLocationAttribute(?string $value): void
+    {
+        $this->legacyExamAttributes['exam_location'] = $value;
+    }
+
+    public function setAssessorNameAttribute(?string $value): void
+    {
+        $this->legacyExamAttributes['assessor_name'] = $value;
+    }
+
+    public function setExamResultPathAttribute(?string $value): void
+    {
+        $this->legacyExamAttributes['exam_result_path'] = $value;
+    }
+
+    public function setScoreAttribute(?int $value): void
+    {
+        $this->legacyExamAttributes['score'] = $value;
+    }
+
+    private function syncLegacyRelations(): void
+    {
+        foreach ($this->legacyDocuments as $documentType => $filePath) {
+            if ($filePath === null) {
+                continue;
+            }
+
+            $this->documents()->updateOrCreate(
+                ['document_type' => $documentType],
+                ['file_path' => $filePath],
+            );
+        }
+
+        $this->legacyDocuments = [];
+
+        foreach ($this->legacyDocumentStatuses as $documentType => $status) {
+            $this->documentStatuses()->updateOrCreate(
+                ['document_type' => $documentType],
+                [
+                    'status' => $status['status'] ?? 'pending',
+                    'catatan' => $status['catatan'] ?? null,
+                    'verified_by' => $status['verified_by'] ?? null,
+                    'verified_at' => $status['verified_at'] ?? null,
+                ],
+            );
+        }
+
+        $this->legacyDocumentStatuses = [];
+
+        if ($this->legacyExamAttributes !== []) {
+            $payload = [
+                'exam_date' => $this->legacyExamAttributes['exam_date'] ?? null,
+                'exam_location' => $this->legacyExamAttributes['exam_location'] ?? null,
+                'score' => $this->legacyExamAttributes['score'] ?? null,
+                'exam_result_path' => $this->legacyExamAttributes['exam_result_path'] ?? null,
+            ];
+
+            if (filled($this->legacyExamAttributes['assessor_name'] ?? null)) {
+                $payload['assessor_id'] = Assessor::query()->firstOrCreate([
+                    'nama' => $this->legacyExamAttributes['assessor_name'],
+                ])->id;
+            }
+
+            $this->exam()->updateOrCreate([], $payload);
+            $this->legacyExamAttributes = [];
+        }
     }
 }

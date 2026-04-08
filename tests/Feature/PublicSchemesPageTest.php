@@ -1,7 +1,7 @@
 <?php
 
 use App\Livewire\PublicSchemesPage;
-use App\Models\Scheme;
+use App\Models\Faculty;
 use Livewire\Livewire;
 
 it('uses the public layout for the public schemes page', function () {
@@ -12,14 +12,14 @@ it('uses the public layout for the public schemes page', function () {
 });
 
 it('shows only popular schemes when popular filter is selected on public schemes page', function () {
-    $popularScheme = Scheme::factory()->create([
-        'name' => 'Skema Populer',
+    $popularScheme = createScheme([
+        'nama' => 'Skema Populer',
         'is_active' => true,
         'is_popular' => true,
     ]);
 
-    $regularScheme = Scheme::factory()->create([
-        'name' => 'Skema Biasa',
+    $regularScheme = createScheme([
+        'nama' => 'Skema Biasa',
         'is_active' => true,
         'is_popular' => false,
     ]);
@@ -32,16 +32,18 @@ it('shows only popular schemes when popular filter is selected on public schemes
 });
 
 it('only applies search and dropdown filters after clicking cari', function () {
-    $targetScheme = Scheme::factory()->create([
-        'name' => 'Skema Cyber Security',
-        'faculty' => 'Teknik',
+    $teknikFaculty = Faculty::factory()->create(['name' => 'Teknik']);
+    $ekonomiFaculty = Faculty::factory()->create(['name' => 'Ekonomi']);
+    $targetScheme = createScheme([
+        'nama' => 'Skema Cyber Security',
+        'faculty_id' => $teknikFaculty->id,
         'jenis_skema' => 'Okupasi',
         'is_active' => true,
     ]);
 
-    $otherScheme = Scheme::factory()->create([
-        'name' => 'Skema Administrasi Bisnis',
-        'faculty' => 'Ekonomi',
+    $otherScheme = createScheme([
+        'nama' => 'Skema Administrasi Bisnis',
+        'faculty_id' => $ekonomiFaculty->id,
         'jenis_skema' => 'Klaster',
         'is_active' => true,
     ]);
@@ -49,7 +51,7 @@ it('only applies search and dropdown filters after clicking cari', function () {
     Livewire::test(PublicSchemesPage::class)
         ->set('searchInput', 'Cyber')
         ->set('filterTypeInput', 'Okupasi')
-        ->set('filterFacultyInput', 'Teknik')
+        ->set('filterFacultyInput', (string) $teknikFaculty->id)
         ->assertSee($targetScheme->name)
         ->assertSee($otherScheme->name)
         ->call('applyFilters')

@@ -7,18 +7,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class SchemePersyaratanAdministrasi extends Model
 {
-    /**
-     * @var list<string>
-     */
-    protected $fillable = [
-        'scheme_id',
-        'nama_dokumen',
-        'order',
-    ];
+    protected $fillable = ['scheme_id', 'deskripsi', 'order'];
 
-    /**
-     * Get the scheme that owns this persyaratan administrasi.
-     */
     public function scheme(): BelongsTo
     {
         return $this->belongsTo(Scheme::class);

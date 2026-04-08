@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Admin;
 
+use App\Models\Faculty;
 use App\Models\Scheme;
 use Illuminate\Support\Collection;
 use Illuminate\View\View;
@@ -19,27 +20,27 @@ class SchemeManager extends Component
     #[Computed]
     public function groupedSchemes(): Collection
     {
-        $query = Scheme::query();
+        $query = Scheme::query()->with(['faculty', 'studyProgram']);
 
         if ($this->filterFaculty) {
-            $query->where('faculty', $this->filterFaculty);
+            $query->where('faculty_id', $this->filterFaculty);
         }
 
-        return $query->orderBy('faculty')
-            ->orderBy('study_program')
-            ->orderBy('name')
+        return $query
+            ->orderBy('faculty_id')
+            ->orderBy('study_program_id')
+            ->orderBy('nama')
             ->get()
-            ->groupBy(['faculty', 'study_program']);
+            ->groupBy([
+                fn (Scheme $scheme): string => $scheme->faculty?->name ?? 'Umum',
+                fn (Scheme $scheme): string => $scheme->studyProgram?->nama ?? 'Semua Program Studi',
+            ]);
     }
 
     #[Computed]
     public function availableFaculties(): Collection
     {
-        return Scheme::query()
-            ->select('faculty')
-            ->distinct()
-            ->orderBy('faculty')
-            ->pluck('faculty');
+        return Faculty::query()->orderBy('name')->get();
     }
 
     public function confirmDelete(int $id): void

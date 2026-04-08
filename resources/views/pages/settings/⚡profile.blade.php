@@ -72,6 +72,10 @@ new #[Title('Profile settings')] class extends Component {
     public function updateProfileInformation(): void
     {
         $user = Auth::user();
+        $rules = $this->profileRules($user->id, $user->user_type);
+
+        $rules['name'] = $rules['nama'];
+        unset($rules['nama']);
 
         foreach ([
             'nim', 'no_ktp', 'tempat_lahir', 'tanggal_lahir', 'jenis_kelamin', 'alamat_rumah',
@@ -85,14 +89,49 @@ new #[Title('Profile settings')] class extends Component {
 
         $this->total_sks = filled($this->total_sks) ? (int) $this->total_sks : null;
 
-        $validated = $this->validate($this->profileRules($user->id, $user->user_type));
+        $validated = $this->validate($rules);
 
-        $user->fill($validated);
+        $user->fill([
+            'nama' => $validated['name'] ?? $user->nama,
+            'email' => $validated['email'] ?? $user->email,
+        ]);
 
-        if ($user->isDirty('email')) {
+        $emailChanged = $user->isDirty('email');
+
+        if ($emailChanged) {
             $user->email_verified_at = null;
         }
 
+        $user->save();
+        $user->profile()->updateOrCreate([], [
+            'tempat_lahir' => $validated['tempat_lahir'] ?? null,
+            'tanggal_lahir' => $validated['tanggal_lahir'] ?? null,
+            'jenis_kelamin' => $validated['jenis_kelamin'] ?? null,
+            'alamat_rumah' => $validated['alamat_rumah'] ?? null,
+            'domisili_provinsi' => $validated['domisili_provinsi'] ?? null,
+            'domisili_kota' => $validated['domisili_kota'] ?? null,
+            'domisili_kecamatan' => $validated['domisili_kecamatan'] ?? null,
+            'no_wa' => $validated['no_wa'] ?? null,
+            'fakultas' => $validated['fakultas'] ?? null,
+            'program_studi' => $validated['program_studi'] ?? null,
+        ]);
+        $user->mahasiswaProfile()->updateOrCreate([], [
+            'nim' => $validated['nim'] ?? null,
+            'total_sks' => $validated['total_sks'] ?? null,
+            'status_semester' => $validated['status_semester'] ?? null,
+        ]);
+        $user->umumProfile()->updateOrCreate([], [
+            'no_ktp' => $validated['no_ktp'] ?? null,
+            'pendidikan_terakhir' => $validated['pendidikan_terakhir'] ?? null,
+            'nama_pekerjaan' => $validated['pekerjaan'] ?? null,
+            'nama_perusahaan' => $validated['nama_perusahaan'] ?? ($validated['nama_institusi'] ?? null),
+            'jabatan' => $validated['jabatan'] ?? null,
+            'alamat_perusahaan' => $validated['alamat_perusahaan'] ?? null,
+            'kode_pos_perusahaan' => $validated['kode_pos_perusahaan'] ?? null,
+            'no_telp_perusahaan' => $validated['no_telp_perusahaan'] ?? null,
+            'email_perusahaan' => $validated['email_perusahaan'] ?? null,
+        ]);
+        $user->refresh();
         $user->syncProfileCompletionStatus();
         $user->save();
 

@@ -2,31 +2,15 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class AppSetting extends Model
 {
-    use HasFactory;
+    protected $fillable = ['key', 'value'];
 
-    /**
-     * @var list<string>
-     */
-    protected $fillable = [
-        'key',
-        'value',
-    ];
-
-    public static function value(string $key, ?string $default = null): ?string
+    public static function put(string $key, ?string $value): self
     {
-        return static::query()
-            ->where('key', $key)
-            ->value('value') ?? $default;
-    }
-
-    public static function put(string $key, string $value): void
-    {
-        static::query()->updateOrCreate(
+        return static::query()->updateOrCreate(
             ['key' => $key],
             ['value' => $value],
         );
@@ -34,6 +18,6 @@ class AppSetting extends Model
 
     public static function whatsappChannelLink(): ?string
     {
-        return static::value('whatsapp_channel_link');
+        return static::where('key', 'whatsapp_channel_link')->value('value');
     }
 }

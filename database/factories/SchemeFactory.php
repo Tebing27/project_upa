@@ -2,21 +2,19 @@
 
 namespace Database\Factories;
 
-use App\Models\Scheme;
+use App\Models\Faculty;
+use App\Models\StudyProgram;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
-/**
- * @extends Factory<Scheme>
- */
 class SchemeFactory extends Factory
 {
     public function definition(): array
     {
         return [
-            'name' => fake()->jobTitle(),
-            'faculty' => fake()->word(),
-            'study_program' => fake()->word(),
-            'description' => fake()->sentence(),
+            'faculty_id' => Faculty::factory(),
+            'study_program_id' => StudyProgram::factory(),
+            'nama' => fake()->jobTitle(),
+            'deskripsi' => fake()->sentence(),
             'is_active' => true,
             'is_popular' => false,
         ];

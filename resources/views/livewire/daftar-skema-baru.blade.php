@@ -155,7 +155,7 @@
                                                 class="mt-1 block w-full rounded-lg border-gray-300 bg-white px-3 py-2 text-sm shadow-sm">
                                                 <option value="">-- Semua Fakultas --</option>
                                                 @foreach ($faculties as $fac)
-                                                    <option value="{{ $fac }}">{{ $fac }}</option>
+                                                    <option value="{{ $fac->id }}">{{ $fac->name }}</option>
                                                 @endforeach
                                             </select>
                                         </div>
@@ -166,7 +166,7 @@
                                                 @disabled(!$faculty)>
                                                 <option value="">-- Semua Program Studi --</option>
                                                 @foreach ($studyPrograms as $sp)
-                                                    <option value="{{ $sp }}">{{ $sp }}</option>
+                                                    <option value="{{ $sp->id }}">{{ $sp->nama }}</option>
                                                 @endforeach
                                             </select>
                                         </div>

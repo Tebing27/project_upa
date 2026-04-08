@@ -54,15 +54,14 @@ class VerifikasiDokumen extends Component
 
     public function render(): View
     {
-        $query = Registration::with(['user', 'scheme'])
+        $query = Registration::with(['user.mahasiswaProfile', 'user.umumProfile', 'scheme'])
             ->where('status', '!=', 'draft');
 
         if ($this->search) {
             $query->whereHas('user', function (Builder $userQuery): void {
-                $userQuery
-                    ->where('name', 'like', '%'.$this->search.'%')
-                    ->orWhere('nim', 'like', '%'.$this->search.'%')
-                    ->orWhere('no_ktp', 'like', '%'.$this->search.'%');
+                $userQuery->where('nama', 'like', '%'.$this->search.'%')
+                    ->orWhereHas('mahasiswaProfile', fn (Builder $q) => $q->where('nim', 'like', '%'.$this->search.'%'))
+                    ->orWhereHas('umumProfile', fn (Builder $q) => $q->where('no_ktp', 'like', '%'.$this->search.'%'));
             });
         }
 
@@ -76,11 +75,11 @@ class VerifikasiDokumen extends Component
             $query->whereIn('status', ['dokumen_ok', 'pending_payment', 'paid', 'terjadwal', 'kompeten', 'tidak_kompeten']);
         } elseif ($this->tab === 'ditolak') {
             $query->where(function (Builder $rejectedQuery): void {
-                $rejectedQuery->whereIn('status', ['dokumen_ditolak', 'rejected']);
-
-                foreach ($this->rejectedDocumentFields() as $field) {
-                    $rejectedQuery->orWhere("document_statuses->{$field}->status", 'rejected');
-                }
+                $rejectedQuery->whereIn('status', ['dokumen_ditolak', 'rejected'])
+                    ->orWhereHas('documentStatuses', function (Builder $dsQuery): void {
+                        $dsQuery->where('status', 'rejected')
+                            ->whereIn('document_type', Registration::allDocumentFields());
+                    });
             });
         }
 
@@ -91,13 +90,5 @@ class VerifikasiDokumen extends Component
             'registrations' => $registrations,
             'schemes' => $schemes,
         ]);
-    }
-
-    /**
-     * @return list<string>
-     */
-    private function rejectedDocumentFields(): array
-    {
-        return Registration::allDocumentFields();
     }
 }

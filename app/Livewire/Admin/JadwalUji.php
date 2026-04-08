@@ -3,6 +3,7 @@
 namespace App\Livewire\Admin;
 
 use App\Models\AppSetting;
+use App\Models\Assessor;
 use App\Models\Registration;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
@@ -40,7 +41,7 @@ class JadwalUji extends Component
 
     public function openScheduleModal(int $registrationId): void
     {
-        $registration = Registration::query()->findOrFail($registrationId);
+        $registration = Registration::query()->with('exam.assessor')->findOrFail($registrationId);
 
         if (! in_array($registration->status, ['paid', 'terjadwal'], true)) {
             return;
@@ -48,10 +49,10 @@ class JadwalUji extends Component
 
         $this->scheduleRegistrationId = $registration->id;
         $this->highlight = $registration->id;
-        $this->examDate = $registration->exam_date?->format('Y-m-d') ?? '';
-        $this->examTime = $registration->exam_date?->format('H:i') ?? '';
-        $this->examLocation = $registration->exam_location ?? '';
-        $this->assessorName = $registration->assessor_name ?? '';
+        $this->examDate = $registration->exam?->exam_date?->format('Y-m-d') ?? '';
+        $this->examTime = $registration->exam?->exam_date?->format('H:i') ?? '';
+        $this->examLocation = $registration->exam?->exam_location ?? '';
+        $this->assessorName = $registration->exam?->assessor?->nama ?? '';
 
         $this->dispatch('open-modal', id: 'modal-jadwal');
     }
@@ -135,12 +136,17 @@ class JadwalUji extends Component
 
         $examDateTime = Carbon::createFromFormat('Y-m-d H:i', $validated['examDate'].' '.$validated['examTime']);
 
-        $registration->update([
+        // Find or create assessor
+        $assessor = Assessor::firstOrCreate(['nama' => $validated['assessorName']]);
+
+        // Upsert the exam record
+        $registration->exam()->updateOrCreate([], [
+            'assessor_id' => $assessor->id,
             'exam_date' => $examDateTime,
             'exam_location' => $validated['examLocation'],
-            'assessor_name' => $validated['assessorName'],
-            'status' => 'terjadwal',
         ]);
+
+        $registration->update(['status' => 'terjadwal']);
 
         $this->resetScheduleForm();
         $this->dispatch('toast', ['message' => 'Jadwal uji berhasil disimpan.', 'type' => 'success']);
@@ -166,12 +172,10 @@ class JadwalUji extends Component
             return;
         }
 
-        $registration->update([
-            'exam_date' => null,
-            'exam_location' => null,
-            'assessor_name' => null,
-            'status' => 'paid',
-        ]);
+        // Delete the exam record
+        $registration->exam()?->delete();
+
+        $registration->update(['status' => 'paid']);
 
         $this->deleteRegistrationId = null;
         $this->dispatch('toast', ['message' => 'Jadwal uji berhasil dihapus.', 'type' => 'success']);
@@ -208,13 +212,12 @@ class JadwalUji extends Component
                     ->orWhere(function (Builder $scheduledQuery): void {
                         $scheduledQuery
                             ->where('status', 'terjadwal')
-                            ->when($this->filterDate !== '', function (Builder $query): void {
-                                $query->whereDate('exam_date', $this->filterDate);
+                            ->when($this->filterDate !== '', function (Builder $q): void {
+                                $q->whereHas('exam', fn ($eq) => $eq->whereDate('exam_date', $this->filterDate));
                             });
                     });
             })
             ->orderByRaw("case when status = 'paid' then 0 else 1 end")
-            ->orderBy('exam_date')
             ->latest('id')
             ->get();
     }
@@ -226,7 +229,7 @@ class JadwalUji extends Component
         }
 
         return Registration::query()
-            ->with(['user', 'scheme'])
+            ->with(['user', 'user.profile', 'user.mahasiswaProfile', 'user.umumProfile', 'scheme', 'exam.assessor'])
             ->find($this->scheduleRegistrationId);
     }
 
@@ -237,7 +240,7 @@ class JadwalUji extends Component
         }
 
         return Registration::query()
-            ->with(['user', 'scheme'])
+            ->with(['user', 'scheme', 'exam.assessor'])
             ->find($this->deleteRegistrationId);
     }
 
@@ -253,13 +256,14 @@ class JadwalUji extends Component
     private function registrationsQuery(): Builder
     {
         return Registration::query()
-            ->with(['user', 'scheme'])
+            ->with(['user', 'user.profile', 'user.mahasiswaProfile', 'user.umumProfile', 'scheme', 'exam.assessor'])
             ->when($this->search !== '', function (Builder $query): void {
                 $query->whereHas('user', function (Builder $userQuery): void {
-                    $userQuery
-                        ->where('name', 'like', '%'.$this->search.'%')
-                        ->orWhere('nim', 'like', '%'.$this->search.'%')
-                        ->orWhere('no_ktp', 'like', '%'.$this->search.'%');
+                    $userQuery->where('nama', 'like', '%'.$this->search.'%');
+                })->orWhereHas('user.mahasiswaProfile', function (Builder $q): void {
+                    $q->where('nim', 'like', '%'.$this->search.'%');
+                })->orWhereHas('user.umumProfile', function (Builder $q): void {
+                    $q->where('no_ktp', 'like', '%'.$this->search.'%');
                 });
             });
     }

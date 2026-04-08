@@ -2,65 +2,43 @@
 
 namespace App\Models;
 
-use Database\Factories\CertificateFactory;
-use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Certificate extends Model
 {
-    /** @use HasFactory<CertificateFactory> */
     use HasFactory;
 
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var list<string>
-     */
+    protected ?string $legacySchemeName = null;
+
     protected $fillable = [
-        'user_id',
-        'scheme_id',
-        'scheme_name',
-        'certificate_number',
-        'level',
-        'status',
-        'expired_date',
-        'file_path',
-        'result_file_path',
+        'user_id', 'scheme_id', 'certificate_number',
+        'level', 'status', 'expired_date',
+        'file_path', 'result_file_path',
     ];
 
-    /**
-     * The accessors to append to the model's array form.
-     *
-     * @var list<string>
-     */
-    protected $appends = ['is_expired'];
+    protected $casts = [
+        'expired_date' => 'date',
+    ];
 
     protected static function booted(): void
     {
-        static::creating(function (self $certificate): void {
-            if (blank($certificate->certificate_number)) {
-                $certificate->certificate_number = $certificate->generateCertificateNumber();
-            }
+        static::saving(function (self $certificate): void {
+            $certificate->resolveLegacyScheme();
         });
     }
 
-    /**
-     * Get the attributes that should be cast.
-     *
-     * @return array<string, string>
-     */
-    protected function casts(): array
+    public function user(): BelongsTo
     {
-        return [
-            'expired_date' => 'date',
-        ];
+        return $this->belongsTo(User::class);
     }
 
-    /**
-     * Determine if the certificate has expired based on expired_date.
-     */
+    public function scheme(): BelongsTo
+    {
+        return $this->belongsTo(Scheme::class);
+    }
+
     public function getIsExpiredAttribute(): bool
     {
         if (! $this->expired_date) {
@@ -70,89 +48,65 @@ class Certificate extends Model
         return $this->expired_date->isPast();
     }
 
-    /**
-     * Determine if the certificate is currently active (not manually deactivated and not expired).
-     */
     public function getIsActiveAttribute(): bool
     {
         return $this->status === 'active' && ! $this->is_expired;
     }
 
-    /**
-     * Get the display number for the certificate.
-     */
-    public function displayNumber(): string
-    {
-        if (filled($this->certificate_number)) {
-            return $this->certificate_number;
-        }
-
-        if ($this->user?->isGeneralUser()) {
-            $nik = preg_replace('/\D+/', '', (string) $this->user->no_ktp);
-
-            return 'CERT-'.substr(str_pad($nik, 12, '0', STR_PAD_LEFT), -12);
-        }
-
-        $identifier = trim((string) ($this->user?->nim ?? ''));
-
-        return $identifier !== '' ? 'CERT-'.$identifier : '-';
-    }
-
-    /**
-     * Scope a query to only include active certificates (status active and not expired).
-     */
-    public function scopeActive(Builder $query): Builder
+    public function scopeActive($query)
     {
         return $query->where('status', 'active')
-            ->where(function (Builder $q): void {
+            ->where(function ($q) {
                 $q->whereNull('expired_date')
                     ->orWhere('expired_date', '>=', now()->startOfDay());
             });
     }
 
     /**
-     * Get the user that owns the certificate.
+     * Generate a display certificate number.
      */
-    public function user(): BelongsTo
+    public function displayNumber(): string
     {
-        return $this->belongsTo(User::class);
-    }
-
-    /**
-     * Get the scheme that the certificate belongs to.
-     */
-    public function scheme(): BelongsTo
-    {
-        return $this->belongsTo(Scheme::class);
-    }
-
-    /**
-     * Generate a certificate number based on the owner type.
-     */
-    private function generateCertificateNumber(): string
-    {
-        $user = $this->relationLoaded('user') ? $this->user : $this->user()->first();
-
-        if ($user?->isGeneralUser()) {
-            $nik = preg_replace('/\D+/', '', (string) $user->no_ktp);
-
-            return 'CERT-'.substr(str_pad($nik, 12, '0', STR_PAD_LEFT), -12);
+        if ($this->certificate_number) {
+            return $this->certificate_number;
         }
 
-        $nim = trim((string) ($user?->nim ?? ''));
+        $identifier = $this->relationLoaded('user') && $this->user
+            ? ($this->user->mahasiswaProfile?->nim ?? $this->user->umumProfile?->no_ktp ?? $this->user_id)
+            : $this->user_id;
 
-        if ($nim !== '') {
-            return 'CERT-'.$nim;
-        }
-
-        return 'CERT-'.$this->generateRandomSuffix();
+        return 'CERT-'.$identifier.'-'.str_pad($this->id, 12, '0', STR_PAD_LEFT);
     }
 
     /**
-     * Generate a 12-digit random suffix for certificate numbers.
+     * Get the scheme name via the scheme relation (replaces old scheme_name column).
      */
-    private function generateRandomSuffix(): string
+    public function getSchemNameAttribute(): ?string
     {
-        return str_pad((string) random_int(0, 999999999999), 12, '0', STR_PAD_LEFT);
+        return $this->scheme?->nama;
+    }
+
+    /**
+     * Alias accessor for scheme name (used in older blade templates).
+     */
+    public function getSchemeNameAttribute(): ?string
+    {
+        return $this->scheme?->nama;
+    }
+
+    public function setSchemeNameAttribute(?string $value): void
+    {
+        $this->legacySchemeName = filled($value) ? $value : null;
+    }
+
+    private function resolveLegacyScheme(): void
+    {
+        if ($this->legacySchemeName === null || filled($this->scheme_id)) {
+            return;
+        }
+
+        $this->scheme_id = Scheme::query()->firstOrCreate([
+            'nama' => $this->legacySchemeName,
+        ])->id;
     }
 }

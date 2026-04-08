@@ -1,35 +1,35 @@
 <?php
 
 use App\Livewire\Admin\DetailDokumen;
-use App\Models\Registration;
-use App\Models\Scheme;
 use App\Models\User;
 use Livewire\Livewire;
 
 beforeEach(function () {
     $this->admin = User::factory()->create(['role' => 'admin']);
 
-    $this->scheme = Scheme::factory()->create([
-        'name' => 'Junior Web Developer',
-        'faculty' => 'Fakultas Ilmu Komputer',
-        'study_program' => 'Informatika',
+    $this->scheme = createScheme([
+        'nama' => 'Junior Web Developer',
         'is_active' => true,
     ]);
 });
 
 it('sets status to dokumen_ok when all required documents are verified even without optional internship certificate', function () {
-    $registration = Registration::factory()->create([
-        'scheme_id' => $this->scheme->id,
-        'status' => 'menunggu_verifikasi',
-        'fr_apl_01_path' => 'documents/fr_apl_01/test.pdf',
-        'fr_apl_02_path' => 'documents/fr_apl_02/test.pdf',
-        'ktm_path' => 'documents/ktm/test.pdf',
-        'khs_path' => 'documents/khs/test.pdf',
-        'internship_certificate_path' => null,
-        'ktp_path' => 'documents/ktp/test.pdf',
-        'passport_photo_path' => 'documents/photo/test.jpg',
-        'payment_reference' => '982210511042',
-    ]);
+    $registration = createRegistrationWithRelations(
+        createMahasiswaUser(),
+        $this->scheme,
+        [
+            'status' => 'menunggu_verifikasi',
+            'payment_reference' => '982210511042',
+        ],
+        [
+            'fr_apl_01_path' => 'documents/fr_apl_01/test.pdf',
+            'fr_apl_02_path' => 'documents/fr_apl_02/test.pdf',
+            'ktm_path' => 'documents/ktm/test.pdf',
+            'khs_path' => 'documents/khs/test.pdf',
+            'ktp_path' => 'documents/ktp/test.pdf',
+            'passport_photo_path' => 'documents/photo/test.jpg',
+        ],
+    );
 
     $requiredDocs = [
         'fr_apl_01_path',
@@ -53,18 +53,23 @@ it('sets status to dokumen_ok when all required documents are verified even with
 });
 
 it('sets status to dokumen_ok when all documents including optional internship are verified', function () {
-    $registration = Registration::factory()->create([
-        'scheme_id' => $this->scheme->id,
-        'status' => 'menunggu_verifikasi',
-        'fr_apl_01_path' => 'documents/fr_apl_01/test.pdf',
-        'fr_apl_02_path' => 'documents/fr_apl_02/test.pdf',
-        'ktm_path' => 'documents/ktm/test.pdf',
-        'khs_path' => 'documents/khs/test.pdf',
-        'internship_certificate_path' => 'documents/internship/test.pdf',
-        'ktp_path' => 'documents/ktp/test.pdf',
-        'passport_photo_path' => 'documents/photo/test.jpg',
-        'payment_reference' => '982210511042',
-    ]);
+    $registration = createRegistrationWithRelations(
+        createMahasiswaUser(),
+        $this->scheme,
+        [
+            'status' => 'menunggu_verifikasi',
+            'payment_reference' => '982210511042',
+        ],
+        [
+            'fr_apl_01_path' => 'documents/fr_apl_01/test.pdf',
+            'fr_apl_02_path' => 'documents/fr_apl_02/test.pdf',
+            'ktm_path' => 'documents/ktm/test.pdf',
+            'khs_path' => 'documents/khs/test.pdf',
+            'internship_certificate_path' => 'documents/internship/test.pdf',
+            'ktp_path' => 'documents/ktp/test.pdf',
+            'passport_photo_path' => 'documents/photo/test.jpg',
+        ],
+    );
 
     $allDocs = [
         'fr_apl_01_path',
@@ -89,18 +94,22 @@ it('sets status to dokumen_ok when all documents including optional internship a
 });
 
 it('sets status to dokumen_ditolak when any document is rejected', function () {
-    $registration = Registration::factory()->create([
-        'scheme_id' => $this->scheme->id,
-        'status' => 'menunggu_verifikasi',
-        'fr_apl_01_path' => 'documents/fr_apl_01/test.pdf',
-        'fr_apl_02_path' => 'documents/fr_apl_02/test.pdf',
-        'ktm_path' => 'documents/ktm/test.pdf',
-        'khs_path' => 'documents/khs/test.pdf',
-        'internship_certificate_path' => null,
-        'ktp_path' => 'documents/ktp/test.pdf',
-        'passport_photo_path' => 'documents/photo/test.jpg',
-        'payment_reference' => '982210511042',
-    ]);
+    $registration = createRegistrationWithRelations(
+        createMahasiswaUser(),
+        $this->scheme,
+        [
+            'status' => 'menunggu_verifikasi',
+            'payment_reference' => '982210511042',
+        ],
+        [
+            'fr_apl_01_path' => 'documents/fr_apl_01/test.pdf',
+            'fr_apl_02_path' => 'documents/fr_apl_02/test.pdf',
+            'ktm_path' => 'documents/ktm/test.pdf',
+            'khs_path' => 'documents/khs/test.pdf',
+            'ktp_path' => 'documents/ktp/test.pdf',
+            'passport_photo_path' => 'documents/photo/test.jpg',
+        ],
+    );
 
     $component = Livewire::actingAs($this->admin)
         ->test(DetailDokumen::class, ['registration' => $registration]);
@@ -117,23 +126,25 @@ it('sets status to dokumen_ditolak when any document is rejected', function () {
 });
 
 it('sets status to dokumen_ok after verifying only FR APL 01 and FR APL 02 in the condensed flow', function () {
-    $registration = Registration::factory()->create([
-        'scheme_id' => $this->scheme->id,
-        'status' => 'menunggu_verifikasi',
-        'fr_apl_01_path' => 'documents/fr_apl_01/test.pdf',
-        'fr_apl_02_path' => 'documents/fr_apl_02/test.pdf',
-        'ktm_path' => 'documents/ktm/test.pdf',
-        'khs_path' => 'documents/khs/test.pdf',
-        'internship_certificate_path' => null,
-        'ktp_path' => 'documents/ktp/test.pdf',
-        'passport_photo_path' => 'documents/photo/test.jpg',
-        'document_statuses' => [
-            '_meta' => [
-                'condensed_flow' => true,
-            ],
+    $registration = createRegistrationWithRelations(
+        createMahasiswaUser(),
+        $this->scheme,
+        [
+            'status' => 'menunggu_verifikasi',
+            'payment_reference' => '982210511042',
         ],
-        'payment_reference' => '982210511042',
-    ]);
+        [
+            'fr_apl_01_path' => 'documents/fr_apl_01/test.pdf',
+            'fr_apl_02_path' => 'documents/fr_apl_02/test.pdf',
+            'ktm_path' => 'documents/ktm/test.pdf',
+            'khs_path' => 'documents/khs/test.pdf',
+            'ktp_path' => 'documents/ktp/test.pdf',
+            'passport_photo_path' => 'documents/photo/test.jpg',
+        ],
+        [
+            '_meta_condensed_flow' => ['status' => 'verified'],
+        ],
+    );
 
     $component = Livewire::actingAs($this->admin)
         ->test(DetailDokumen::class, ['registration' => $registration])

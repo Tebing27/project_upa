@@ -47,7 +47,7 @@ class UserRegistrationStatus extends Component
             abort(403);
         }
 
-        $this->registration = $registration->load('scheme', 'user');
+        $this->registration = $registration->load('scheme', 'user', 'documents', 'documentStatuses', 'exam.assessor');
         $this->fillProfileForm();
         $this->activeTab = $this->resolveActiveTab($this->registration->status);
     }
@@ -65,7 +65,7 @@ class UserRegistrationStatus extends Component
         }
 
         $this->registration->refresh();
-        $this->registration->load('scheme', 'user');
+        $this->registration->load('scheme', 'user', 'documents', 'documentStatuses', 'exam.assessor');
 
         return view('livewire.user-registration-status', [
             'registration' => $this->registration,
@@ -102,14 +102,45 @@ class UserRegistrationStatus extends Component
 
         $user = $this->registration->user;
 
-        foreach (array_keys($this->profileRules($user->id, $user->user_type)) as $field) {
+        foreach (array_keys($this->profileRules($user->id, $user->role)) as $field) {
             $value = $this->profile[$field] ?? null;
             $this->profile[$field] = filled($value) ? trim((string) $value) : null;
         }
 
-        $validated = $this->validate($this->prefixedProfileRules($user->id, $user->user_type));
+        $validated = $this->validate($this->prefixedProfileRules($user->id, $user->role));
 
-        $user->fill($validated['profile']);
+        $profileData = $validated['profile'];
+
+        $user->update([
+            'nama' => $profileData['nama'] ?? $user->nama,
+            'email' => $profileData['email'] ?? $user->email,
+        ]);
+
+        $user->profile()->updateOrCreate([], [
+            'tempat_lahir' => $profileData['tempat_lahir'] ?? null,
+            'tanggal_lahir' => $profileData['tanggal_lahir'] ?? null,
+            'jenis_kelamin' => $profileData['jenis_kelamin'] ?? null,
+            'alamat_rumah' => $profileData['alamat_rumah'] ?? null,
+            'domisili_provinsi' => $profileData['domisili_provinsi'] ?? null,
+            'domisili_kota' => $profileData['domisili_kota'] ?? null,
+            'domisili_kecamatan' => $profileData['domisili_kecamatan'] ?? null,
+            'no_wa' => $profileData['no_wa'] ?? null,
+            'fakultas' => $profileData['fakultas'] ?? null,
+            'program_studi' => $profileData['program_studi'] ?? null,
+        ]);
+
+        $user->umumProfile()->updateOrCreate([], [
+            'no_ktp' => $profileData['no_ktp'] ?? null,
+            'pendidikan_terakhir' => $profileData['pendidikan_terakhir'] ?? null,
+            'nama_pekerjaan' => $profileData['pekerjaan'] ?? null,
+            'nama_perusahaan' => $profileData['nama_perusahaan'] ?? null,
+            'jabatan' => $profileData['jabatan'] ?? null,
+            'alamat_perusahaan' => $profileData['alamat_perusahaan'] ?? null,
+            'kode_pos_perusahaan' => $profileData['kode_pos_perusahaan'] ?? null,
+            'no_telp_perusahaan' => $profileData['no_telp_perusahaan'] ?? null,
+            'email_perusahaan' => $profileData['email_perusahaan'] ?? null,
+        ]);
+
         $user->syncProfileCompletionStatus();
         $user->save();
 
@@ -139,16 +170,18 @@ class UserRegistrationStatus extends Component
 
         $storedPath = $this->reuploadFiles[$documentField]->store($this->documentStoragePath($documentField), 'public');
 
-        $registration->{$documentField} = $storedPath;
+        // Update or create document record
+        $registration->documents()->updateOrCreate(
+            ['document_type' => $documentField],
+            ['file_path' => $storedPath]
+        );
 
-        $documentStatuses = $registration->document_statuses ?? [];
-        $documentStatuses[$documentField] = [
-            'status' => 'pending',
-            'note' => null,
-            'reuploaded_at' => now()->toDateTimeString(),
-        ];
+        // Reset the document status to pending so admin re-reviews
+        $registration->documentStatuses()->updateOrCreate(
+            ['document_type' => $documentField],
+            ['status' => 'pending', 'catatan' => null, 'verified_by' => null, 'verified_at' => null]
+        );
 
-        $registration->document_statuses = $documentStatuses;
         $registration->status = 'menunggu_verifikasi';
         $registration->save();
 
@@ -173,20 +206,18 @@ class UserRegistrationStatus extends Component
         ]);
 
         $storedPath = $this->paymentProof->store('payments/proofs', 'public');
-        $statuses = $this->registration->document_statuses ?? [];
-        $statuses['payment_proof_path'] = [
-            'status' => 'pending',
-            'note' => null,
-            'verified_at' => null,
-        ];
 
         $this->registration->update([
             'payment_proof_path' => $storedPath,
             'payment_submitted_at' => now(),
             'payment_verified_at' => null,
-            'document_statuses' => $statuses,
             'status' => 'pending_payment',
         ]);
+
+        $this->registration->documentStatuses()->updateOrCreate(
+            ['document_type' => 'payment_proof_path'],
+            ['status' => 'pending', 'catatan' => null, 'verified_by' => null, 'verified_at' => null]
+        );
 
         $this->reset('paymentProof');
         $this->activeTab = 'pembayaran';
@@ -236,25 +267,34 @@ class UserRegistrationStatus extends Component
         $documents = Registration::documentLabels();
         $reviewableFields = $registration->reviewableDocumentFields();
 
+        // Build a keyed map of document type => doc record
+        $docMap = $registration->documents->keyBy('document_type');
+
+        // Build a keyed map of document type => status record
+        $statusMap = $registration->getRelation('documentStatuses')->keyBy('document_type');
+
+        $useCondensed = $statusMap->has('_meta_condensed_flow');
+
         return collect($registration->visibleDocumentFields())
             ->mapWithKeys(fn (string $field): array => [$field => $documents[$field]])
-            ->map(function (string $label, string $field) use ($registration, $reviewableFields): array {
-                $isSupportingDocument = $registration->usesSimplifiedDocumentFlow()
-                    && ! in_array($field, $registration->reviewableDocumentFields(), true);
-                $documentStatus = $registration->document_statuses[$field] ?? [];
+            ->map(function (string $label, string $field) use ($docMap, $statusMap, $reviewableFields, $useCondensed): array {
+                $docRecord = $docMap->get($field);
+                $statusRecord = $statusMap->get($field);
+
+                $isSupportingDocument = $useCondensed && ! in_array($field, $reviewableFields, true);
                 $status = $isSupportingDocument
-                    ? ($registration->{$field} ? 'supporting' : 'missing')
-                    : ($documentStatus['status'] ?? ($registration->{$field} ? 'pending' : 'missing'));
+                    ? ($docRecord ? 'supporting' : 'missing')
+                    : ($statusRecord?->status ?? ($docRecord ? 'pending' : 'missing'));
 
                 return [
                     'field' => $field,
                     'label' => $label,
                     'status' => $status,
-                    'note' => $documentStatus['note'] ?? null,
-                    'has_file' => (bool) $registration->{$field},
+                    'note' => $statusRecord?->catatan,
+                    'has_file' => (bool) $docRecord,
                     'can_reupload' => $status === 'rejected' && in_array($field, $reviewableFields, true),
                     'can_upload_optional' => $field === 'internship_certificate_path' && $status === 'missing',
-                    'file_url' => $registration->{$field} ? Storage::url($registration->{$field}) : null,
+                    'file_url' => $docRecord?->file_path ? Storage::url($docRecord->file_path) : null,
                 ];
             })
             ->values()
@@ -279,19 +319,20 @@ class UserRegistrationStatus extends Component
             ],
         ];
 
-        $rejectedDocuments = collect($registration->document_statuses ?? [])
-            ->filter(fn (array $documentStatus): bool => ($documentStatus['status'] ?? null) === 'rejected');
+        $rejectedStatuses = $registration->getRelation('documentStatuses')->where('status', 'rejected');
 
-        if ($rejectedDocuments->isNotEmpty()) {
+        if ($rejectedStatuses->isNotEmpty()) {
             $history[] = [
                 'title' => 'Dokumen perlu diperbaiki',
-                'description' => $rejectedDocuments->count().' dokumen ditolak dan menunggu upload ulang.',
-                'date' => $rejectedDocuments->pluck('verified_at')->filter()->sort()->last(),
+                'description' => $rejectedStatuses->count().' dokumen ditolak dan menunggu upload ulang.',
+                'date' => $rejectedStatuses->pluck('verified_at')->filter()->sort()->last()?->translatedFormat('d M Y'),
                 'color' => 'red',
             ];
         } elseif (in_array($registration->status, ['menunggu_verifikasi', 'dokumen_ok', 'pending_payment', 'paid', 'terjadwal', 'kompeten', 'sertifikat_terbit'], true)) {
-            $verifiedCount = collect($registration->document_statuses ?? [])
-                ->filter(fn (array $documentStatus, string $field): bool => in_array($field, $registration->reviewableDocumentFields(), true))
+            $verifiedStatuses = $registration->getRelation('documentStatuses');
+
+            $verifiedCount = $verifiedStatuses
+                ->whereIn('document_type', $registration->reviewableDocumentFields())
                 ->where('status', 'verified')
                 ->count();
 
@@ -318,8 +359,9 @@ class UserRegistrationStatus extends Component
             ];
         }
 
-        if ($registration->exam_date) {
-            $scheduleDescription = $registration->exam_location ?: 'Lokasi ujian akan diinformasikan oleh admin.';
+        $exam = $registration->exam;
+        if ($exam?->exam_date) {
+            $scheduleDescription = $exam->exam_location ?: 'Lokasi ujian akan diinformasikan oleh admin.';
 
             if (AppSetting::whatsappChannelLink()) {
                 $scheduleDescription .= ' Link WhatsApp sudah tersedia pada detail jadwal ujian.';
@@ -328,7 +370,7 @@ class UserRegistrationStatus extends Component
             $history[] = [
                 'title' => 'Jadwal ujian diterbitkan',
                 'description' => $scheduleDescription,
-                'date' => $registration->exam_date->translatedFormat('d M Y H:i'),
+                'date' => $exam->exam_date->translatedFormat('d M Y H:i'),
                 'color' => 'indigo',
             ];
         }
@@ -338,8 +380,8 @@ class UserRegistrationStatus extends Component
                 'title' => $registration->status === 'tidak_kompeten' ? 'Hasil ujian belum kompeten' : 'Hasil ujian kompeten',
                 'description' => $registration->status === 'tidak_kompeten'
                     ? 'Silahkan download file hasil ujian dan lakukan pendaftaran ulang.'
-                    : ($registration->score !== null
-                        ? 'Nilai akhir: '.$registration->score
+                    : ($exam?->score !== null
+                        ? 'Nilai akhir: '.$exam->score
                         : 'Hasil ujian telah diproses.'),
                 'date' => $registration->updated_at?->translatedFormat('d M Y'),
                 'color' => $registration->status === 'tidak_kompeten' ? 'red' : 'emerald',
@@ -403,13 +445,18 @@ class UserRegistrationStatus extends Component
             return false;
         }
 
-        return collect($this->registration->document_statuses ?? [])
-            ->contains(fn (array $documentStatus): bool => ($documentStatus['status'] ?? null) === 'rejected');
+        if (! $this->registration->relationLoaded('documentStatuses')) {
+            $this->registration->load('documentStatuses');
+        }
+
+        return $this->registration->getRelation('documentStatuses')
+            ->where('status', 'rejected')
+            ->isNotEmpty();
     }
 
     private function hasPublishedExamSchedule(): bool
     {
-        if (! $this->registration?->exam_date) {
+        if (! $this->registration?->exam?->exam_date) {
             return false;
         }
 
@@ -426,32 +473,34 @@ class UserRegistrationStatus extends Component
             return;
         }
 
+        $user->load('profile', 'mahasiswaProfile', 'umumProfile');
+
         $this->profile = [
-            'name' => $user->name,
+            'nama' => $user->nama,
             'email' => $user->email,
-            'nim' => $user->nim,
-            'no_ktp' => $user->no_ktp,
-            'tempat_lahir' => $user->tempat_lahir,
-            'tanggal_lahir' => $user->tanggal_lahir ? Carbon::parse($user->tanggal_lahir)->format('Y-m-d') : null,
-            'jenis_kelamin' => $user->jenis_kelamin,
-            'alamat_rumah' => $user->alamat_rumah,
-            'domisili_provinsi' => $user->domisili_provinsi,
-            'domisili_kota' => $user->domisili_kota,
-            'domisili_kecamatan' => $user->domisili_kecamatan,
-            'no_wa' => $user->no_wa,
-            'pendidikan_terakhir' => $user->pendidikan_terakhir,
-            'nama_institusi' => $user->nama_institusi,
-            'total_sks' => $user->total_sks,
-            'status_semester' => $user->status_semester,
-            'fakultas' => $user->fakultas,
-            'program_studi' => $user->program_studi,
-            'pekerjaan' => $user->pekerjaan,
-            'nama_perusahaan' => $user->nama_perusahaan,
-            'jabatan' => $user->jabatan,
-            'alamat_perusahaan' => $user->alamat_perusahaan,
-            'kode_pos_perusahaan' => $user->kode_pos_perusahaan,
-            'no_telp_perusahaan' => $user->no_telp_perusahaan,
-            'email_perusahaan' => $user->email_perusahaan,
+            'nim' => $user->mahasiswaProfile?->nim,
+            'no_ktp' => $user->umumProfile?->no_ktp,
+            'tempat_lahir' => $user->profile?->tempat_lahir,
+            'tanggal_lahir' => $user->profile?->tanggal_lahir ? Carbon::parse($user->profile->tanggal_lahir)->format('Y-m-d') : null,
+            'jenis_kelamin' => $user->profile?->jenis_kelamin,
+            'alamat_rumah' => $user->profile?->alamat_rumah,
+            'domisili_provinsi' => $user->profile?->domisili_provinsi,
+            'domisili_kota' => $user->profile?->domisili_kota,
+            'domisili_kecamatan' => $user->profile?->domisili_kecamatan,
+            'no_wa' => $user->profile?->no_wa,
+            'pendidikan_terakhir' => $user->umumProfile?->pendidikan_terakhir,
+            'nama_institusi' => $user->umumProfile?->nama_perusahaan,
+            'total_sks' => $user->mahasiswaProfile?->total_sks,
+            'status_semester' => $user->mahasiswaProfile?->status_semester,
+            'fakultas' => $user->profile?->fakultas,
+            'program_studi' => $user->profile?->program_studi,
+            'pekerjaan' => $user->umumProfile?->nama_pekerjaan,
+            'nama_perusahaan' => $user->umumProfile?->nama_perusahaan,
+            'jabatan' => $user->umumProfile?->jabatan,
+            'alamat_perusahaan' => $user->umumProfile?->alamat_perusahaan,
+            'kode_pos_perusahaan' => $user->umumProfile?->kode_pos_perusahaan,
+            'no_telp_perusahaan' => $user->umumProfile?->no_telp_perusahaan,
+            'email_perusahaan' => $user->umumProfile?->email_perusahaan,
         ];
     }
 

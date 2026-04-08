@@ -3,7 +3,6 @@
 namespace App\Livewire\Admin;
 
 use App\Models\Registration;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
 use Livewire\Component;
 
@@ -15,7 +14,7 @@ class DetailPembayaran extends Component
 
     public function mount(Registration $registration): void
     {
-        $this->registration = $registration->load(['user', 'scheme']);
+        $this->registration = $registration->load(['user', 'scheme', 'user.profile', 'user.umumProfile', 'user.mahasiswaProfile']);
     }
 
     public function verifikasiPembayaran(): void
@@ -24,16 +23,12 @@ class DetailPembayaran extends Component
             return;
         }
 
-        $statuses = $this->registration->document_statuses ?? [];
-        $statuses['payment_proof_path'] = [
-            'status' => 'verified',
-            'note' => null,
-            'verified_at' => now()->toDateTimeString(),
-            'verified_by' => Auth::id(),
-        ];
+        $this->registration->documentStatuses()->updateOrCreate(
+            ['document_type' => 'payment_proof_path'],
+            ['status' => 'verified', 'catatan' => null, 'verified_at' => now()],
+        );
 
         $this->registration->update([
-            'document_statuses' => $statuses,
             'payment_verified_at' => now(),
             'status' => 'paid',
         ]);
@@ -45,19 +40,15 @@ class DetailPembayaran extends Component
             'rejectNote' => 'required|string|max:255',
         ]);
 
-        $statuses = $this->registration->document_statuses ?? [];
-        $statuses['payment_proof_path'] = [
-            'status' => 'rejected',
-            'note' => $this->rejectNote,
-            'verified_at' => now()->toDateTimeString(),
-            'verified_by' => Auth::id(),
-        ];
-
         $this->registration->update([
-            'document_statuses' => $statuses,
             'payment_verified_at' => null,
             'status' => 'pending_payment',
         ]);
+
+        $this->registration->documentStatuses()->updateOrCreate(
+            ['document_type' => 'payment_proof_path'],
+            ['status' => 'rejected', 'catatan' => $this->rejectNote],
+        );
 
         $this->rejectNote = '';
     }

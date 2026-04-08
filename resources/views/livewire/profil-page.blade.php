@@ -191,6 +191,8 @@
         </div>
     </div>
 
+    <x-public.footer />
+
     <!-- Scroll to Top -->
     <button @click="window.scrollTo({top: 0, behavior: 'smooth'})" x-show="scrolled"
         x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 translate-y-10"

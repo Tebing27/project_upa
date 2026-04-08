@@ -2,7 +2,9 @@
 
 use App\Livewire\Admin\SchemeForm;
 use App\Livewire\Admin\SchemeManager;
+use App\Models\Faculty;
 use App\Models\Scheme;
+use App\Models\StudyProgram;
 use App\Models\User;
 use Livewire\Livewire;
 
@@ -34,10 +36,8 @@ it('renders the scheme create page for admin', function () {
 
 it('renders the scheme edit page for admin', function () {
     $admin = User::factory()->create(['role' => 'admin']);
-    $scheme = Scheme::create([
-        'name' => 'Skema Test Edit',
-        'faculty' => 'Fakultas Test',
-        'study_program' => 'Prodi Test',
+    $scheme = createScheme([
+        'nama' => 'Skema Test Edit',
         'is_active' => true,
     ]);
 
@@ -49,6 +49,11 @@ it('renders the scheme edit page for admin', function () {
 
 it('can create a new scheme with full details', function () {
     $admin = User::factory()->create(['role' => 'admin']);
+    $faculty = Faculty::factory()->create(['name' => 'Fakultas Teknik']);
+    $studyProgram = StudyProgram::factory()->create([
+        'faculty_id' => $faculty->id,
+        'nama' => 'Sistem Informasi',
+    ]);
 
     Livewire::actingAs($admin)
         ->test(SchemeForm::class)
@@ -57,8 +62,8 @@ it('can create a new scheme with full details', function () {
         ->set('jenis_skema', 'Okupasi')
         ->set('izin_nirkertas', 'SJJ')
         ->set('harga', '500000')
-        ->set('faculty', 'Fakultas Teknik')
-        ->set('study_program', 'Sistem Informasi')
+        ->set('faculty_id', $faculty->id)
+        ->set('study_program_id', $studyProgram->id)
         ->set('description', 'Deskripsi Skema')
         ->set('unitKompetensis', [
             ['kode_unit' => 'J.611000.004.01', 'nama_unit' => 'Merancang Pengalamatan Jaringan', 'nama_unit_en' => 'Designing Network Addressing'],
@@ -67,22 +72,22 @@ it('can create a new scheme with full details', function () {
             ['deskripsi' => 'Pendidikan minimal kelas 12 SMA/Sederajat'],
         ])
         ->set('persyaratanAdministrasis', [
-            ['nama_dokumen' => 'Kartu Tanda Penduduk (KTP)'],
+            ['deskripsi' => 'Kartu Tanda Penduduk (KTP)'],
         ])
         ->call('save')
         ->assertHasNoErrors()
         ->assertDispatched('toast');
 
-    $scheme = Scheme::where('name', 'Skema Uji Komputer Baru')->first();
+    $scheme = Scheme::query()->where('nama', 'Skema Uji Komputer Baru')->first();
 
     $this->assertDatabaseHas('schemes', [
-        'name' => 'Skema Uji Komputer Baru',
+        'nama' => 'Skema Uji Komputer Baru',
         'kode_skema' => 'SKK-24-10/2024',
         'jenis_skema' => 'Okupasi',
         'izin_nirkertas' => 'SJJ',
         'harga' => 500000.00,
-        'faculty' => 'Fakultas Teknik',
-        'study_program' => 'Sistem Informasi',
+        'faculty_id' => $faculty->id,
+        'study_program_id' => $studyProgram->id,
         'is_active' => true,
         'is_popular' => false,
     ]);
@@ -93,24 +98,22 @@ it('can create a new scheme with full details', function () {
         'nama_unit' => 'Merancang Pengalamatan Jaringan',
     ]);
 
-    $this->assertDatabaseHas('scheme_persyaratan_dasars', [
+    $this->assertDatabaseHas('scheme_persyaratan_dasar', [
         'scheme_id' => $scheme->id,
         'deskripsi' => 'Pendidikan minimal kelas 12 SMA/Sederajat',
     ]);
 
     $this->assertDatabaseHas('scheme_persyaratan_administrasis', [
         'scheme_id' => $scheme->id,
-        'nama_dokumen' => 'Kartu Tanda Penduduk (KTP)',
+        'deskripsi' => 'Kartu Tanda Penduduk (KTP)',
     ]);
 });
 
 it('can update an existing scheme', function () {
     $admin = User::factory()->create(['role' => 'admin']);
-    $scheme = Scheme::create([
-        'name' => 'Skema Lama',
-        'faculty' => 'Fakultas Lama',
-        'study_program' => 'Prodi Lama',
-        'description' => 'Deskripsi Lama',
+    $scheme = createScheme([
+        'nama' => 'Skema Lama',
+        'deskripsi' => 'Deskripsi Lama',
         'is_active' => false,
     ]);
 
@@ -123,7 +126,7 @@ it('can update an existing scheme', function () {
 
     $this->assertDatabaseHas('schemes', [
         'id' => $scheme->id,
-        'name' => 'Skema Diupdate',
+        'nama' => 'Skema Diupdate',
         'is_active' => false,
     ]);
 });
@@ -150,11 +153,9 @@ it('can toggle active and popular states from the scheme manager', function () {
 
 it('can delete a scheme', function () {
     $admin = User::factory()->create(['role' => 'admin']);
-    $scheme = Scheme::create([
-        'name' => 'Skema Untuk Dihapus',
-        'faculty' => 'Fakultas Hapus',
-        'study_program' => 'Prodi Hapus',
-        'description' => 'Akan dhapus',
+    $scheme = createScheme([
+        'nama' => 'Skema Untuk Dihapus',
+        'deskripsi' => 'Akan dhapus',
         'is_active' => true,
     ]);
 
@@ -178,5 +179,5 @@ it('validates required fields on the form', function () {
         ->test(SchemeForm::class)
         ->set('name', '')
         ->call('save')
-        ->assertHasErrors(['name', 'faculty', 'study_program']);
+        ->assertHasErrors(['name', 'faculty_id']);
 });

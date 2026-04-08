@@ -130,21 +130,31 @@
                         <label class="block text-xs font-semibold uppercase tracking-wider text-gray-500 mb-2">
                             Fakultas <span class="text-red-500">*</span>
                         </label>
-                        <input wire:model="faculty" type="text"
+                        <select wire:model.live="faculty_id"
                             class="block w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50/50 text-sm font-semibold text-gray-900 outline-none transition-all hover:bg-white hover:border-slate-300 focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 focus:bg-white"
-                            required placeholder="Fakultas Ilmu Komputer" />
-                        @error('faculty')
+                            required>
+                            <option value="">Pilih Fakultas</option>
+                            @foreach ($this->faculties as $facultyOption)
+                                <option value="{{ $facultyOption->id }}">{{ $facultyOption->name }}</option>
+                            @endforeach
+                        </select>
+                        @error('faculty_id')
                             <p class="mt-2 text-xs font-medium text-red-600">{{ $message }}</p>
                         @enderror
                     </div>
                     <div>
                         <label class="block text-xs font-semibold uppercase tracking-wider text-gray-500 mb-2">
-                            Program Studi <span class="text-red-500">*</span>
+                            Program Studi
                         </label>
-                        <input wire:model="study_program" type="text"
+                        <select wire:model="study_program_id"
                             class="block w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50/50 text-sm font-semibold text-gray-900 outline-none transition-all hover:bg-white hover:border-slate-300 focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 focus:bg-white"
-                            required placeholder="Sistem Informasi" />
-                        @error('study_program')
+                            @disabled(!$faculty_id)>
+                            <option value="">Semua Program Studi</option>
+                            @foreach ($this->studyPrograms as $studyProgramOption)
+                                <option value="{{ $studyProgramOption->id }}">{{ $studyProgramOption->nama }}</option>
+                            @endforeach
+                        </select>
+                        @error('study_program_id')
                             <p class="mt-2 text-xs font-medium text-red-600">{{ $message }}</p>
                         @enderror
                     </div>
@@ -315,10 +325,10 @@
                         <div wire:key="pa-{{ $index }}" class="flex items-start gap-2">
                             <span class="mt-2.5 text-xs font-semibold text-gray-400 w-5 shrink-0">{{ $index + 1 }}.</span>
                             <div class="flex-1">
-                                <input type="text" wire:model="persyaratanAdministrasis.{{ $index }}.nama_dokumen"
+                                <input type="text" wire:model="persyaratanAdministrasis.{{ $index }}.deskripsi"
                                     class="block w-full px-3 py-2 rounded-lg border border-slate-200 bg-white text-sm outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
                                     placeholder="Nama dokumen (misal: Kartu Tanda Penduduk)" />
-                                @error("persyaratanAdministrasis.{$index}.nama_dokumen")
+                                @error("persyaratanAdministrasis.{$index}.deskripsi")
                                     <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
                                 @enderror
                             </div>

@@ -3,7 +3,9 @@
 namespace App\Livewire\Admin;
 
 use App\Models\Certificate;
+use App\Models\Exam;
 use App\Models\Registration;
+use App\Models\User;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Storage;
@@ -89,7 +91,7 @@ class UploadHasilUji extends Component
     public function uploadParticipantFiles(): void
     {
         $registration = Registration::query()
-            ->with(['scheme'])
+            ->with(['scheme', 'exam'])
             ->findOrFail($this->uploadRegistrationId);
 
         if (! in_array($registration->status, ['terjadwal', 'sertifikat_terbit', 'tidak_kompeten'], true)) {
@@ -104,7 +106,8 @@ class UploadHasilUji extends Component
 
         $activeCertificate = $this->activeCertificateForRegistration($registration);
         $isEditingCertificate = $activeCertificate !== null;
-        $isEditingResultOnly = $registration->exam_result_path !== null;
+        $currentExamResultPath = $registration->exam?->exam_result_path;
+        $isEditingResultOnly = $currentExamResultPath !== null;
 
         $rules = [
             'uploadRegistrationId' => 'required|integer|exists:registrations,id',
@@ -120,8 +123,6 @@ class UploadHasilUji extends Component
         }
 
         $validated = $this->validate($rules);
-
-        $schemeName = $registration->scheme?->name ?? 'Sertifikat Kompetensi';
 
         if ($this->examResult === 'kompeten') {
             if ($isEditingCertificate) {
@@ -149,7 +150,7 @@ class UploadHasilUji extends Component
                 Certificate::query()->create([
                     'user_id' => $registration->user_id,
                     'scheme_id' => $registration->scheme_id,
-                    'scheme_name' => $schemeName,
+                    'certificate_number' => $this->generateCertificateNumber($registration->user),
                     'level' => null,
                     'status' => 'active',
                     'expired_date' => $validated['expiredDate'],
@@ -158,12 +159,14 @@ class UploadHasilUji extends Component
                 ]);
             }
 
-            $registration->update([
-                'status' => 'sertifikat_terbit',
-                'exam_result_path' => null,
-            ]);
+            // Clear exam result path if previously set as belum_kompeten
+            if ($registration->exam) {
+                $registration->exam->update(['exam_result_path' => null]);
+            }
+
+            $registration->update(['status' => 'sertifikat_terbit']);
         } else {
-            $resultPath = $registration->exam_result_path;
+            $resultPath = $currentExamResultPath;
 
             if ($this->resultFile) {
                 if ($resultPath && $resultPath !== $activeCertificate?->result_file_path) {
@@ -176,10 +179,17 @@ class UploadHasilUji extends Component
                 $activeCertificate->update(['status' => 'inactive']);
             }
 
-            $registration->update([
-                'status' => 'tidak_kompeten',
-                'exam_result_path' => $resultPath,
-            ]);
+            // Store result path on the exam record
+            if ($registration->exam) {
+                $registration->exam->update(['exam_result_path' => $resultPath]);
+            } else {
+                Exam::query()->create([
+                    'registration_id' => $registration->id,
+                    'exam_result_path' => $resultPath,
+                ]);
+            }
+
+            $registration->update(['status' => 'tidak_kompeten']);
         }
 
         $this->resetUploadForm();
@@ -196,13 +206,14 @@ class UploadHasilUji extends Component
         $registration = $this->uploadableRegistrationQuery()->findOrFail($this->deleteRegistrationId);
 
         if ($registration->status === 'tidak_kompeten') {
-            if ($registration->exam_result_path) {
-                Storage::disk('public')->delete($registration->exam_result_path);
+            $examResultPath = $registration->exam?->exam_result_path;
+            if ($examResultPath) {
+                Storage::disk('public')->delete($examResultPath);
             }
-            $registration->update([
-                'status' => 'terjadwal',
-                'exam_result_path' => null,
-            ]);
+            if ($registration->exam) {
+                $registration->exam->update(['exam_result_path' => null]);
+            }
+            $registration->update(['status' => 'terjadwal']);
         } else {
             $certificate = $this->activeCertificateForRegistration($registration);
 
@@ -216,9 +227,7 @@ class UploadHasilUji extends Component
                 $certificate->delete();
             }
 
-            $registration->update([
-                'status' => 'terjadwal',
-            ]);
+            $registration->update(['status' => 'terjadwal']);
         }
 
         $this->deleteRegistrationId = null;
@@ -249,7 +258,11 @@ class UploadHasilUji extends Component
     {
         $registrations = $this->uploadableRegistrationQuery()
             ->orderByRaw("case when status = 'terjadwal' then 0 else 1 end")
-            ->orderBy('exam_date')
+            ->orderBy(
+                Exam::query()->select('exam_date')
+                    ->whereColumn('registration_id', 'registrations.id')
+                    ->limit(1)
+            )
             ->get();
 
         $activeCertificates = Certificate::query()
@@ -260,10 +273,13 @@ class UploadHasilUji extends Component
 
         return $registrations->map(function (Registration $registration) use ($activeCertificates): Registration {
             $certificate = $activeCertificates->get($registration->user_id.'|'.$registration->scheme_id);
+            $examResultPath = $registration->exam?->exam_result_path;
 
             $registration->active_certificate_id = $certificate?->id;
             $registration->certificate_file_url = $certificate?->file_path ? Storage::url($certificate->file_path) : null;
-            $registration->result_file_url = $certificate?->result_file_path ? Storage::url($certificate->result_file_path) : ($registration->exam_result_path ? Storage::url($registration->exam_result_path) : null);
+            $registration->result_file_url = $certificate?->result_file_path
+                ? Storage::url($certificate->result_file_path)
+                : ($examResultPath ? Storage::url($examResultPath) : null);
 
             return $registration;
         });
@@ -272,7 +288,7 @@ class UploadHasilUji extends Component
     private function uploadableRegistrationQuery(): Builder
     {
         return Registration::query()
-            ->with(['user', 'scheme'])
+            ->with(['user.mahasiswaProfile', 'user.umumProfile', 'scheme', 'exam'])
             ->whereIn('status', ['terjadwal', 'sertifikat_terbit', 'tidak_kompeten'])
             ->where(function (Builder $query): void {
                 $query->where('status', '!=', 'sertifikat_terbit')
@@ -288,14 +304,13 @@ class UploadHasilUji extends Component
             })
             ->when($this->search !== '', function (Builder $query): void {
                 $query->whereHas('user', function (Builder $userQuery): void {
-                    $userQuery
-                        ->where('name', 'like', '%'.$this->search.'%')
-                        ->orWhere('nim', 'like', '%'.$this->search.'%')
-                        ->orWhere('no_ktp', 'like', '%'.$this->search.'%');
+                    $userQuery->where('nama', 'like', '%'.$this->search.'%')
+                        ->orWhereHas('mahasiswaProfile', fn (Builder $q) => $q->where('nim', 'like', '%'.$this->search.'%'))
+                        ->orWhereHas('umumProfile', fn (Builder $q) => $q->where('no_ktp', 'like', '%'.$this->search.'%'));
                 });
             })
             ->when($this->filterDate !== '', function (Builder $query): void {
-                $query->whereDate('exam_date', $this->filterDate);
+                $query->whereHas('exam', fn (Builder $q) => $q->whereDate('exam_date', $this->filterDate));
             })
             ->when($this->filterStatus !== '', function (Builder $query): void {
                 if ($this->filterStatus === 'kompeten') {
@@ -335,5 +350,16 @@ class UploadHasilUji extends Component
             ->where('status', 'active')
             ->latest('id')
             ->first();
+    }
+
+    private function generateCertificateNumber(User $user): string
+    {
+        if (filled($user->nim)) {
+            return 'CERT-'.$user->nim;
+        }
+
+        $nik = preg_replace('/\D+/', '', (string) $user->no_ktp);
+
+        return 'CERT-'.substr(str_pad($nik, 12, '0', STR_PAD_LEFT), -12);
     }
 }

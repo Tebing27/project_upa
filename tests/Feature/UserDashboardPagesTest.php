@@ -3,28 +3,23 @@
 use App\Livewire\UserRegistrationStatus;
 use App\Livewire\UserSchemesPage;
 use App\Models\AppSetting;
-use App\Models\Certificate;
-use App\Models\Registration;
-use App\Models\Scheme;
 use App\Models\User;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use Livewire\Livewire;
 
 it('renders the registration status page', function () {
-    $user = User::factory()->create(['nim' => '2210511042']);
-    $scheme = Scheme::factory()->create(['name' => 'Junior Web Developer']);
+    $user = createMahasiswaUser([], [], ['nim' => '2210511042']);
+    $scheme = createScheme(['nama' => 'Junior Web Developer']);
 
-    $registration = Registration::factory()->create([
-        'user_id' => $user->id,
-        'scheme_id' => $scheme->id,
+    $registration = createRegistrationWithRelations($user, $scheme, [
         'status' => 'dokumen_ditolak',
+    ], [
         'khs_path' => 'documents/khs/khs.pdf',
-        'document_statuses' => [
-            'khs_path' => [
-                'status' => 'rejected',
-                'note' => 'Dokumen KHS buram.',
-            ],
+    ], [
+        'khs_path' => [
+            'status' => 'rejected',
+            'note' => 'Dokumen KHS buram.',
         ],
     ]);
 
@@ -41,11 +36,10 @@ it('renders the registration status page', function () {
 
 it('shows the published exam schedule and WhatsApp link on the registration status page', function () {
     $user = User::factory()->create();
-    $scheme = Scheme::factory()->create(['name' => 'Junior Web Developer']);
-    $registration = Registration::factory()->create([
-        'user_id' => $user->id,
-        'scheme_id' => $scheme->id,
+    $scheme = createScheme(['nama' => 'Junior Web Developer']);
+    $registration = createRegistrationWithRelations($user, $scheme, [
         'status' => 'terjadwal',
+    ], [], [], [
         'exam_date' => now()->addDays(5)->setTime(9, 0),
         'exam_location' => 'Lab Sertifikasi Gedung B',
         'assessor_name' => 'Siti Rahma',
@@ -65,11 +59,10 @@ it('shows the published exam schedule and WhatsApp link on the registration stat
 
 it('shows hasil ujian as the fifth step on the registration status page when user is belum kompeten', function () {
     $user = User::factory()->create();
-    $scheme = Scheme::factory()->create(['name' => 'Junior Web Developer']);
-    $registration = Registration::factory()->create([
-        'user_id' => $user->id,
-        'scheme_id' => $scheme->id,
+    $scheme = createScheme(['nama' => 'Junior Web Developer']);
+    $registration = createRegistrationWithRelations($user, $scheme, [
         'status' => 'tidak_kompeten',
+    ], [], [], [
         'exam_date' => now()->addDays(3)->setTime(8, 30),
         'exam_location' => 'Lab Sertifikasi Gedung B',
         'assessor_name' => 'Siti Rahma',
@@ -85,10 +78,8 @@ it('shows hasil ujian as the fifth step on the registration status page when use
 
 it('defaults to dokumen tab during document verification stage', function () {
     $user = User::factory()->create();
-    $scheme = Scheme::factory()->create();
-    $registration = Registration::factory()->create([
-        'user_id' => $user->id,
-        'scheme_id' => $scheme->id,
+    $scheme = createScheme();
+    $registration = createRegistrationWithRelations($user, $scheme, [
         'status' => 'menunggu_verifikasi',
     ]);
 
@@ -101,10 +92,8 @@ it('defaults to dokumen tab during document verification stage', function () {
 
 it('defaults to pembayaran tab during payment stage and allows manual tab switching', function () {
     $user = User::factory()->create();
-    $scheme = Scheme::factory()->create();
-    $registration = Registration::factory()->create([
-        'user_id' => $user->id,
-        'scheme_id' => $scheme->id,
+    $scheme = createScheme();
+    $registration = createRegistrationWithRelations($user, $scheme, [
         'status' => 'pending_payment',
         'payment_reference' => 'PAY-777',
     ]);
@@ -120,12 +109,13 @@ it('defaults to pembayaran tab during payment stage and allows manual tab switch
 
 it('defaults to jadwal tab when exam schedule is published and allows manual tab switching', function () {
     $user = User::factory()->create();
-    $scheme = Scheme::factory()->create();
-    $registration = Registration::factory()->create([
-        'user_id' => $user->id,
-        'scheme_id' => $scheme->id,
+    $scheme = createScheme();
+    $registration = createRegistrationWithRelations($user, $scheme, [
         'status' => 'terjadwal',
+    ], [], [], [
         'exam_date' => now()->addDays(3)->setTime(8, 30),
+        'exam_location' => 'Lab Sertifikasi',
+        'assessor_name' => 'Asesor Uji',
     ]);
 
     Livewire::actingAs($user)
@@ -151,16 +141,13 @@ it('allows users to reupload rejected documents', function () {
     Storage::fake('public');
 
     $user = User::factory()->create();
-    $scheme = Scheme::factory()->create();
-    $registration = Registration::factory()->create([
-        'user_id' => $user->id,
-        'scheme_id' => $scheme->id,
+    $scheme = createScheme();
+    $registration = createRegistrationWithRelations($user, $scheme, [
         'status' => 'dokumen_ditolak',
-        'document_statuses' => [
-            'khs_path' => [
-                'status' => 'rejected',
-                'note' => 'Dokumen KHS buram.',
-            ],
+    ], [], [
+        'khs_path' => [
+            'status' => 'rejected',
+            'note' => 'Dokumen KHS buram.',
         ],
     ]);
 
@@ -185,12 +172,9 @@ it('allows users to upload the optional internship certificate from the registra
     Storage::fake('public');
 
     $user = User::factory()->create();
-    $scheme = Scheme::factory()->create();
-    $registration = Registration::factory()->create([
-        'user_id' => $user->id,
-        'scheme_id' => $scheme->id,
+    $scheme = createScheme();
+    $registration = createRegistrationWithRelations($user, $scheme, [
         'status' => 'menunggu_verifikasi',
-        'internship_certificate_path' => null,
     ]);
 
     $file = UploadedFile::fake()->create('internship.pdf', 200, 'application/pdf');
@@ -213,10 +197,8 @@ it('allows users to upload payment proof from the registration status page', fun
     Storage::fake('public');
 
     $user = User::factory()->create();
-    $scheme = Scheme::factory()->create();
-    $registration = Registration::factory()->create([
-        'user_id' => $user->id,
-        'scheme_id' => $scheme->id,
+    $scheme = createScheme();
+    $registration = createRegistrationWithRelations($user, $scheme, [
         'status' => 'dokumen_ok',
         'payment_reference' => 'PAY-009',
     ]);
@@ -239,20 +221,17 @@ it('allows users to upload payment proof from the registration status page', fun
 });
 
 it('allows biodata updates from the registration status page when a document is rejected', function () {
-    $user = User::factory()->general()->create([
-        'name' => 'Peserta Lama',
+    $user = createGeneralUser([
+        'nama' => 'Peserta Lama',
         'email' => 'lama@example.com',
     ]);
-    $scheme = Scheme::factory()->create();
-    $registration = Registration::factory()->create([
-        'user_id' => $user->id,
-        'scheme_id' => $scheme->id,
+    $scheme = createScheme();
+    $registration = createRegistrationWithRelations($user, $scheme, [
         'status' => 'dokumen_ditolak',
-        'document_statuses' => [
-            'fr_apl_01_path' => [
-                'status' => 'rejected',
-                'note' => 'Nama pada formulir perlu diperbarui.',
-            ],
+    ], [], [
+        'fr_apl_01_path' => [
+            'status' => 'rejected',
+            'note' => 'Nama pada formulir perlu diperbarui.',
         ],
     ]);
 
@@ -260,7 +239,7 @@ it('allows biodata updates from the registration status page when a document is 
         ->test(UserRegistrationStatus::class, ['registration' => $registration])
         ->call('startEditingBiodata')
         ->assertSet('isEditingBiodata', true)
-        ->set('profile.name', 'Peserta Baru')
+        ->set('profile.nama', 'Peserta Baru')
         ->set('profile.email', 'baru@example.com')
         ->set('profile.no_ktp', '3174000000000001')
         ->set('profile.tempat_lahir', 'Jakarta')
@@ -285,17 +264,14 @@ it('allows biodata updates from the registration status page when a document is 
 });
 
 it('shows a biodata edit notice on the dokumen tab when documents are rejected', function () {
-    $user = User::factory()->general()->create();
-    $scheme = Scheme::factory()->create();
-    $registration = Registration::factory()->create([
-        'user_id' => $user->id,
-        'scheme_id' => $scheme->id,
+    $user = createGeneralUser();
+    $scheme = createScheme();
+    $registration = createRegistrationWithRelations($user, $scheme, [
         'status' => 'dokumen_ditolak',
-        'document_statuses' => [
-            'fr_apl_01_path' => [
-                'status' => 'rejected',
-                'note' => 'Perlu revisi biodata.',
-            ],
+    ], [], [
+        'fr_apl_01_path' => [
+            'status' => 'rejected',
+            'note' => 'Perlu revisi biodata.',
         ],
     ]);
 
@@ -310,21 +286,19 @@ it('shows a biodata edit notice on the dokumen tab when documents are rejected',
 
 it('shows supporting documents as non-review items in the condensed registration status flow', function () {
     $user = User::factory()->create();
-    $scheme = Scheme::factory()->create();
-    $registration = Registration::factory()->create([
-        'user_id' => $user->id,
-        'scheme_id' => $scheme->id,
+    $scheme = createScheme();
+    $registration = createRegistrationWithRelations($user, $scheme, [
         'status' => 'menunggu_verifikasi',
+    ], [
         'fr_apl_01_path' => 'documents/fr_apl_01/test.pdf',
         'fr_apl_02_path' => 'documents/fr_apl_02/test.pdf',
         'ktm_path' => 'documents/ktm/test.pdf',
         'khs_path' => 'documents/khs/test.pdf',
         'ktp_path' => 'documents/ktp/test.pdf',
         'passport_photo_path' => 'documents/photo/test.jpg',
-        'document_statuses' => [
-            '_meta' => [
-                'condensed_flow' => true,
-            ],
+    ], [
+        '_meta_condensed_flow' => [
+            'status' => 'meta',
         ],
     ]);
 
@@ -336,37 +310,35 @@ it('shows supporting documents as non-review items in the condensed registration
 });
 
 it('shows only general-user biodata fields on the registration status page for general users', function () {
-    $user = User::factory()->completedGeneralProfile()->create([
-        'name' => 'Asa',
-        'email' => 'asa@gmail.com',
-        'nim' => 'NON-CKDRDMGC5S',
-        'no_ktp' => '3273056010900009',
-        'tempat_lahir' => 'asa',
-        'tanggal_lahir' => '2026-04-03',
-        'jenis_kelamin' => 'L',
-        'alamat_rumah' => 'asa',
-        'domisili_provinsi' => 'asa',
-        'domisili_kota' => 'asa',
-        'domisili_kecamatan' => 'asa',
-        'no_wa' => '08112933',
-        'pendidikan_terakhir' => 'asa',
-        'nama_institusi' => 'asa',
-        'fakultas' => 'Ilmu Komputer',
-        'program_studi' => 'Sistem Informasi',
-        'pekerjaan' => 'asa',
-        'nama_perusahaan' => null,
-        'jabatan' => null,
-        'alamat_perusahaan' => null,
-        'kode_pos_perusahaan' => null,
-        'no_telp_perusahaan' => null,
-        'email_perusahaan' => null,
-        'total_sks' => null,
-        'status_semester' => null,
-    ]);
-    $scheme = Scheme::factory()->create();
-    $registration = Registration::factory()->create([
-        'user_id' => $user->id,
-        'scheme_id' => $scheme->id,
+    $user = createGeneralUser(
+        ['nama' => 'Asa', 'email' => 'asa@gmail.com'],
+        [
+            'tempat_lahir' => 'asa',
+            'tanggal_lahir' => '2026-04-03',
+            'jenis_kelamin' => 'L',
+            'alamat_rumah' => 'asa',
+            'domisili_provinsi' => 'asa',
+            'domisili_kota' => 'asa',
+            'domisili_kecamatan' => 'asa',
+            'no_wa' => '08112933',
+            'fakultas' => 'Ilmu Komputer',
+            'program_studi' => 'Sistem Informasi',
+        ],
+        [
+            'no_ktp' => '3273056010900009',
+            'pendidikan_terakhir' => 'asa',
+            'nama_pekerjaan' => 'asa',
+            'nama_perusahaan' => null,
+            'jabatan' => null,
+            'alamat_perusahaan' => null,
+            'kode_pos_perusahaan' => null,
+            'no_telp_perusahaan' => null,
+            'email_perusahaan' => null,
+        ],
+        true,
+    );
+    $scheme = createScheme();
+    $registration = createRegistrationWithRelations($user, $scheme, [
         'status' => 'menunggu_verifikasi',
     ]);
 
@@ -386,10 +358,9 @@ it('shows only general-user biodata fields on the registration status page for g
 
 it('renders the certificates page with the active certificate and table', function () {
     $user = User::factory()->create();
+    $scheme = createScheme(['nama' => 'Junior Web Developer']);
 
-    Certificate::factory()->create([
-        'user_id' => $user->id,
-        'scheme_name' => 'Junior Web Developer',
+    createCertificateForUser($user, $scheme, [
         'level' => 'KKNI Level 6',
         'status' => 'active',
         'file_path' => 'certificates/jwd.pdf',
@@ -410,14 +381,14 @@ it('renders the certificates page with the active certificate and table', functi
 it('filters only popular schemes on the user schemes page', function () {
     $user = User::factory()->create();
 
-    $popularScheme = Scheme::factory()->create([
-        'name' => 'Skema Populer Dashboard',
+    $popularScheme = createScheme([
+        'nama' => 'Skema Populer Dashboard',
         'is_active' => true,
         'is_popular' => true,
     ]);
 
-    $regularScheme = Scheme::factory()->create([
-        'name' => 'Skema Biasa Dashboard',
+    $regularScheme = createScheme([
+        'nama' => 'Skema Biasa Dashboard',
         'is_active' => true,
         'is_popular' => false,
     ]);

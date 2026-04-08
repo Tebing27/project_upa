@@ -1,22 +1,14 @@
 <?php
 
 use App\Models\AppSetting;
-use App\Models\Certificate;
-use App\Models\Registration;
-use App\Models\Scheme;
 use App\Models\User;
 use Carbon\Carbon;
 
 it('renders the user dashboard with the new summary cards', function () {
-    $user = User::factory()->create([
-        'nim' => '2210511042',
-        'program_studi' => 'Teknik Informatika',
-    ]);
-    $scheme = Scheme::factory()->create(['name' => 'Junior Web Developer']);
+    $user = createMahasiswaUser();
+    $scheme = createScheme(['nama' => 'Junior Web Developer']);
 
-    Registration::factory()->create([
-        'user_id' => $user->id,
-        'scheme_id' => $scheme->id,
+    createRegistrationWithRelations($user, $scheme, [
         'status' => 'pending_payment',
         'payment_reference' => 'REF-2024-0042',
     ]);
@@ -42,12 +34,11 @@ it('renders the user dashboard with the new summary cards', function () {
 
 it('displays the active certificate summary from the database', function () {
     $user = User::factory()->create();
+    $scheme = createScheme(['nama' => 'Skema Dummy']);
 
-    Certificate::factory()->count(3)->create([
-        'user_id' => $user->id,
-        'status' => 'active',
-        'scheme_name' => 'Skema Dummy',
-    ]);
+    createCertificateForUser($user, $scheme, ['status' => 'active']);
+    createCertificateForUser($user, $scheme, ['status' => 'active']);
+    createCertificateForUser($user, $scheme, ['status' => 'active']);
 
     $this->actingAs($user)
         ->get('/dashboard')
@@ -59,17 +50,14 @@ it('displays the active certificate summary from the database', function () {
 
 it('shows rejected document details in progress step two', function () {
     $user = User::factory()->create();
-    $scheme = Scheme::factory()->create(['name' => 'Junior Web Developer']);
+    $scheme = createScheme(['nama' => 'Junior Web Developer']);
 
-    Registration::factory()->create([
-        'user_id' => $user->id,
-        'scheme_id' => $scheme->id,
+    createRegistrationWithRelations($user, $scheme, [
         'status' => 'dokumen_ditolak',
-        'document_statuses' => [
-            'khs_path' => [
-                'status' => 'rejected',
-                'note' => 'Dokumen buram dan tidak terbaca.',
-            ],
+    ], [], [
+        'khs_path' => [
+            'status' => 'rejected',
+            'note' => 'Dokumen buram dan tidak terbaca.',
         ],
     ]);
 
@@ -85,12 +73,11 @@ it('shows rejected document details in progress step two', function () {
 
 it('shows the exam schedule in progress step four', function () {
     $user = User::factory()->create();
-    $scheme = Scheme::factory()->create(['name' => 'Junior Web Developer']);
+    $scheme = createScheme(['nama' => 'Junior Web Developer']);
 
-    Registration::factory()->create([
-        'user_id' => $user->id,
-        'scheme_id' => $scheme->id,
+    createRegistrationWithRelations($user, $scheme, [
         'status' => 'terjadwal',
+    ], [], [], [
         'exam_date' => Carbon::parse('2026-04-10 09:00:00'),
         'exam_location' => 'Lab Sertifikasi Gedung A',
         'assessor_name' => 'Budi Santoso',
@@ -113,17 +100,15 @@ it('shows the exam schedule in progress step four', function () {
 
 it('shows certificate and exam result download actions when files are available', function () {
     $user = User::factory()->create();
-    $scheme = Scheme::factory()->create(['name' => 'Junior Web Developer']);
+    $scheme = createScheme(['nama' => 'Junior Web Developer']);
 
-    Registration::factory()->create([
-        'user_id' => $user->id,
-        'scheme_id' => $scheme->id,
+    createRegistrationWithRelations($user, $scheme, [
         'status' => 'sertifikat_terbit',
+    ], [], [], [
+        'exam_result_path' => 'exam-results/jwd-result.pdf',
     ]);
 
-    Certificate::factory()->create([
-        'user_id' => $user->id,
-        'scheme_name' => 'Junior Web Developer',
+    createCertificateForUser($user, $scheme, [
         'status' => 'active',
         'file_path' => 'certificates/jwd.pdf',
         'result_file_path' => 'exam-results/jwd-result.pdf',
@@ -140,12 +125,11 @@ it('shows certificate and exam result download actions when files are available'
 
 it('shows Daftar Ulang button when status is tidak_kompeten', function () {
     $user = User::factory()->create();
-    $scheme = Scheme::factory()->create(['name' => 'Junior Web Developer']);
+    $scheme = createScheme(['nama' => 'Junior Web Developer']);
 
-    Registration::factory()->create([
-        'user_id' => $user->id,
-        'scheme_id' => $scheme->id,
+    createRegistrationWithRelations($user, $scheme, [
         'status' => 'tidak_kompeten',
+    ], [], [], [
         'exam_result_path' => 'exam-results/failed.pdf',
     ]);
 
@@ -168,11 +152,9 @@ it('shows Daftar Ulang button when status is tidak_kompeten', function () {
 
 it('shows review status when documents are being verified', function () {
     $user = User::factory()->create();
-    $scheme = Scheme::factory()->create(['name' => 'Junior Web Developer']);
+    $scheme = createScheme(['nama' => 'Junior Web Developer']);
 
-    Registration::factory()->create([
-        'user_id' => $user->id,
-        'scheme_id' => $scheme->id,
+    createRegistrationWithRelations($user, $scheme, [
         'status' => 'menunggu_verifikasi',
     ]);
 
@@ -186,11 +168,9 @@ it('shows review status when documents are being verified', function () {
 
 it('shows payment instructions and recent scheme history during payment stage', function () {
     $user = User::factory()->create();
-    $scheme = Scheme::factory()->create(['name' => 'Junior Web Developer']);
+    $scheme = createScheme(['nama' => 'Junior Web Developer']);
 
-    Registration::factory()->create([
-        'user_id' => $user->id,
-        'scheme_id' => $scheme->id,
+    createRegistrationWithRelations($user, $scheme, [
         'status' => 'dokumen_ok',
         'payment_reference' => 'PAY-001',
     ]);
@@ -206,7 +186,7 @@ it('shows payment instructions and recent scheme history during payment stage', 
 });
 
 it('shows biodata completion call to action for incomplete general users', function () {
-    $user = User::factory()->general()->create();
+    $user = createGeneralUser(completed: false);
 
     $this->actingAs($user)
         ->get('/dashboard')

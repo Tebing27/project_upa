@@ -17,23 +17,22 @@ class DetailDokumen extends Component
 
     public function mount(Registration $registration): void
     {
-        $this->registration = $registration;
+        $this->registration = $registration->load('documents', 'documentStatuses');
     }
 
     public function verifikasiDokumen(string $docType): void
     {
-        $statuses = $this->registration->document_statuses ?? [];
+        $this->registration->documentStatuses()->updateOrCreate(
+            ['document_type' => $docType],
+            [
+                'status' => 'verified',
+                'catatan' => null,
+                'verified_at' => now(),
+                'verified_by' => Auth::id(),
+            ]
+        );
 
-        $statuses[$docType] = [
-            'status' => 'verified',
-            'note' => null,
-            'verified_at' => now()->toDateTimeString(),
-            'verified_by' => Auth::id(),
-        ];
-
-        $this->registration->document_statuses = $statuses;
-        $this->registration->save();
-
+        $this->registration->load('documentStatuses');
         $this->cekStatusKeseluruhan();
     }
 
@@ -51,18 +50,17 @@ class DetailDokumen extends Component
             'rejectNote' => 'required|string|max:255',
         ]);
 
-        $statuses = $this->registration->document_statuses ?? [];
+        $this->registration->documentStatuses()->updateOrCreate(
+            ['document_type' => $this->rejectDocType],
+            [
+                'status' => 'rejected',
+                'catatan' => $this->rejectNote,
+                'verified_at' => now(),
+                'verified_by' => Auth::id(),
+            ]
+        );
 
-        $statuses[$this->rejectDocType] = [
-            'status' => 'rejected',
-            'note' => $this->rejectNote,
-            'verified_at' => now()->toDateTimeString(),
-            'verified_by' => Auth::id(),
-        ];
-
-        $this->registration->document_statuses = $statuses;
-        $this->registration->save();
-
+        $this->registration->load('documentStatuses');
         $this->cekStatusKeseluruhan();
 
         $this->dispatch('close-modal', id: 'modal-tolak');
@@ -79,10 +77,11 @@ class DetailDokumen extends Component
 
     private function cekStatusKeseluruhan(): void
     {
-        $requiredDocs = $this->registration->requiredDocumentFields();
         $optionalDocs = $this->registration->optionalDocumentFields();
         $allDocs = $this->registration->reviewableDocumentFields();
-        $statuses = $this->registration->document_statuses ?? [];
+
+        $docMap = $this->registration->documents->keyBy('document_type');
+        $statusMap = $this->registration->getRelation('documentStatuses')->keyBy('document_type');
 
         $allVerified = true;
         $anyRejected = false;
@@ -90,7 +89,7 @@ class DetailDokumen extends Component
         foreach ($allDocs as $doc) {
             $isOptional = in_array($doc, $optionalDocs, true);
 
-            if (empty($this->registration->$doc)) {
+            if (! $docMap->has($doc)) {
                 if (! $isOptional) {
                     $allVerified = false;
                 }
@@ -98,7 +97,7 @@ class DetailDokumen extends Component
                 continue;
             }
 
-            $status = $statuses[$doc]['status'] ?? 'pending';
+            $status = $statusMap->get($doc)?->status ?? 'pending';
 
             if ($status === 'rejected') {
                 $anyRejected = true;

@@ -15,7 +15,7 @@
                 class="block w-48 px-4 py-3 rounded-xl border border-slate-200 bg-white text-sm font-semibold text-slate-700 outline-none transition-all hover:bg-slate-50/50 hover:border-slate-300 focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 focus:bg-white">
                 <option value="">Semua Fakultas</option>
                 @foreach ($faculties as $fac)
-                    <option value="{{ $fac }}">{{ $fac }}</option>
+                    <option value="{{ $fac->id }}">{{ $fac->name }}</option>
                 @endforeach
             </select>
             <div class="relative">

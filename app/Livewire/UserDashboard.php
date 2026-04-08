@@ -14,7 +14,7 @@ class UserDashboard extends Component
     {
         $user = auth()->user();
         $allRegistrations = $user->registrations()
-            ->with('scheme')
+            ->with(['scheme', 'documentStatuses'])
             ->latest()
             ->get();
         $latestRegistration = $allRegistrations->first();
@@ -68,20 +68,24 @@ class UserDashboard extends Component
             return [];
         }
 
+        if (! $registration->relationLoaded('documentStatuses')) {
+            $registration->load('documentStatuses');
+        }
+
+        $documentStatuses = $registration->getRelation('documentStatuses');
+
         $labels = [
             ...Registration::documentLabels(),
             'payment_proof_path' => 'Bukti Pembayaran',
         ];
 
-        return collect($registration->document_statuses ?? [])
-            ->filter(fn (array $documentStatus): bool => ($documentStatus['status'] ?? null) === 'rejected')
-            ->map(function (array $documentStatus, string $key) use ($labels): array {
-                return [
-                    'key' => $key,
-                    'label' => $labels[$key] ?? Str::title(str_replace('_', ' ', $key)),
-                    'note' => $documentStatus['note'] ?? null,
-                ];
-            })
+        return $documentStatuses
+            ->filter(fn ($ds): bool => $ds->status === 'rejected')
+            ->map(fn ($ds): array => [
+                'key' => $ds->document_type,
+                'label' => $labels[$ds->document_type] ?? Str::title(str_replace('_', ' ', $ds->document_type)),
+                'note' => $ds->catatan,
+            ])
             ->values()
             ->all();
     }

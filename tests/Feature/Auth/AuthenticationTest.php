@@ -10,7 +10,7 @@ test('login screen can be rendered', function () {
 });
 
 test('users can authenticate using the login screen', function () {
-    $user = User::factory()->create();
+    $user = createMahasiswaUser();
 
     $response = $this->post(route('login.store'), [
         'nim' => $user->nim,
@@ -28,7 +28,7 @@ test('admins are redirected to the admin dashboard after login', function () {
     $admin = User::factory()->create(['role' => 'admin']);
 
     $response = $this->post(route('login.store'), [
-        'nim' => $admin->nim,
+        'nim' => $admin->email,
         'password' => 'password',
     ]);
 
@@ -57,7 +57,7 @@ test('users can authenticate using email on the login screen', function () {
 });
 
 test('users can not authenticate with invalid password', function () {
-    $user = User::factory()->create();
+    $user = createMahasiswaUser();
 
     $response = $this->post(route('login.store'), [
         'nim' => $user->nim,
@@ -77,7 +77,9 @@ test('users with two factor enabled are redirected to two factor challenge', fun
         'confirmPassword' => true,
     ]);
 
-    $user = User::factory()->withTwoFactor()->create();
+    $user = User::factory()->withTwoFactor()->create([
+        'nim' => '2210511999',
+    ]);
 
     $response = $this->post(route('login.store'), [
         'nim' => $user->nim,

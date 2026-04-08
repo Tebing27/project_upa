@@ -3,15 +3,20 @@
 namespace App\Livewire;
 
 use App\Models\Certificate;
+use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 use Livewire\Attributes\Layout;
+use Livewire\Attributes\Url;
 use Livewire\Component;
 
 #[Layout('components.layouts.public')]
 class CekSertifikat extends Component
 {
+    #[Url(as: 'nama', except: '')]
     public string $name = '';
 
+    #[Url(as: 'nomor', except: '')]
     public string $search = '';
 
     public bool $hasSearched = false;
@@ -19,8 +24,27 @@ class CekSertifikat extends Component
     /** @var array<int, array<string, mixed>> */
     public array $results = [];
 
+    public function mount(): void
+    {
+        if (trim($this->name) !== '' || trim($this->search) !== '') {
+            $this->cekSertifikat();
+        }
+    }
+
     public function cekSertifikat(): void
     {
+        $key = 'req-cek-sertifikat:'.request()->ip();
+
+        if (RateLimiter::tooManyAttempts($key, 10)) {
+            $seconds = RateLimiter::availableIn($key);
+
+            throw ValidationException::withMessages([
+                'search' => "Sistem mendeteksi indikasi bot. Silakan coba lagi dalam {$seconds} detik.",
+            ]);
+        }
+
+        RateLimiter::hit($key, 60);
+
         $this->validate([
             'name' => ['required', 'string'],
             'search' => ['required', 'string', 'min:2'],
@@ -36,16 +60,17 @@ class CekSertifikat extends Component
         $this->hasSearched = true;
 
         $certificates = Certificate::query()
-            ->with(['user', 'scheme'])
+            ->with(['user.mahasiswaProfile', 'user.umumProfile', 'scheme.faculty', 'scheme.studyProgram'])
             ->where(function ($query) use ($keyword, $identifier): void {
                 $query->where('certificate_number', $keyword)
                     ->orWhereHas('user', function ($userQuery) use ($identifier): void {
-                        $userQuery->where('nim', $identifier)
-                            ->orWhere('no_ktp', $identifier);
+                        $userQuery
+                            ->whereHas('mahasiswaProfile', fn ($q) => $q->where('nim', $identifier))
+                            ->orWhereHas('umumProfile', fn ($q) => $q->where('no_ktp', $identifier));
                     });
             })
             ->whereHas('user', function ($query) use ($name): void {
-                $query->where('name', 'like', '%'.$name.'%');
+                $query->where('nama', 'like', '%'.$name.'%');
             })
             ->latest()
             ->limit(20)
@@ -54,8 +79,8 @@ class CekSertifikat extends Component
         $this->results = $certificates->map(fn (Certificate $cert): array => [
             'id' => $cert->id,
             'nomor' => $cert->displayNumber(),
-            'nama_pemilik' => $cert->user?->name ?? '-',
-            'skema' => $cert->scheme_name,
+            'nama_pemilik' => $cert->user?->nama ?? '-',
+            'skema' => $cert->scheme?->nama,
             'fakultas' => $cert->scheme?->faculty ?? 'Umum',
             'program_studi' => $cert->scheme?->study_program,
             'tanggal_terbit' => $cert->created_at?->translatedFormat('d F Y'),

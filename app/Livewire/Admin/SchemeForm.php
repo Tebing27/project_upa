@@ -2,8 +2,12 @@
 
 namespace App\Livewire\Admin;
 
+use App\Models\Faculty;
 use App\Models\Scheme;
+use App\Models\StudyProgram;
+use Illuminate\Support\Collection;
 use Illuminate\View\View;
+use Livewire\Attributes\Computed;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
 use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
@@ -28,9 +32,9 @@ class SchemeForm extends Component
 
     public string $ringkasan_skema = '';
 
-    public string $faculty = '';
+    public ?int $faculty_id = null;
 
-    public string $study_program = '';
+    public ?int $study_program_id = null;
 
     public string $description = '';
 
@@ -53,7 +57,7 @@ class SchemeForm extends Component
     public array $persyaratanDasars = [];
 
     /**
-     * @var array<int, array{nama_dokumen: string}>
+     * @var array<int, array{deskripsi: string}>
      */
     public array $persyaratanAdministrasis = [];
 
@@ -63,15 +67,15 @@ class SchemeForm extends Component
             $scheme->load(['unitKompetensis', 'persyaratanDasars', 'persyaratanAdministrasis']);
 
             $this->schemeId = $scheme->id;
-            $this->name = $scheme->name;
+            $this->name = $scheme->nama;
             $this->kode_skema = $scheme->kode_skema ?? '';
             $this->jenis_skema = $scheme->jenis_skema ?? '';
             $this->izin_nirkertas = $scheme->izin_nirkertas ?? '';
             $this->harga = $scheme->harga ? (string) $scheme->harga : '';
             $this->ringkasan_skema = $scheme->ringkasan_skema ?? '';
-            $this->faculty = $scheme->faculty;
-            $this->study_program = $scheme->study_program;
-            $this->description = $scheme->description ?? '';
+            $this->faculty_id = $scheme->faculty_id;
+            $this->study_program_id = $scheme->study_program_id;
+            $this->description = $scheme->deskripsi ?? '';
             $this->unitKompetensis = $scheme->unitKompetensis->map(fn ($uk) => [
                 'kode_unit' => $uk->kode_unit,
                 'nama_unit' => $uk->nama_unit,
@@ -83,9 +87,33 @@ class SchemeForm extends Component
             ])->toArray();
 
             $this->persyaratanAdministrasis = $scheme->persyaratanAdministrasis->map(fn ($pa) => [
-                'nama_dokumen' => $pa->nama_dokumen,
+                'deskripsi' => $pa->deskripsi,
             ])->toArray();
         }
+    }
+
+    #[Computed]
+    public function faculties(): Collection
+    {
+        return Faculty::query()->orderBy('name')->get();
+    }
+
+    #[Computed]
+    public function studyPrograms(): Collection
+    {
+        if (! $this->faculty_id) {
+            return collect();
+        }
+
+        return StudyProgram::query()
+            ->where('faculty_id', $this->faculty_id)
+            ->orderBy('nama')
+            ->get();
+    }
+
+    public function updatedFacultyId(): void
+    {
+        $this->study_program_id = null;
     }
 
     /**
@@ -100,8 +128,8 @@ class SchemeForm extends Component
             'izin_nirkertas' => 'nullable|string|max:255',
             'harga' => 'nullable|numeric|min:0',
             'ringkasan_skema' => 'nullable|string',
-            'faculty' => 'required|string|max:255',
-            'study_program' => 'required|string|max:255',
+            'faculty_id' => 'required|exists:faculties,id',
+            'study_program_id' => 'nullable|exists:study_programs,id',
             'description' => 'nullable|string',
             'gambar' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
             'dokumen_skema' => 'nullable|file|mimes:pdf|max:4096',
@@ -109,7 +137,7 @@ class SchemeForm extends Component
             'unitKompetensis.*.nama_unit' => 'required|string|max:255',
             'unitKompetensis.*.nama_unit_en' => 'nullable|string|max:255',
             'persyaratanDasars.*.deskripsi' => 'required|string',
-            'persyaratanAdministrasis.*.nama_dokumen' => 'required|string|max:255',
+            'persyaratanAdministrasis.*.deskripsi' => 'required|string|max:255',
         ];
     }
 
@@ -119,10 +147,12 @@ class SchemeForm extends Component
     protected function messages(): array
     {
         return [
+            'faculty_id.required' => 'Fakultas wajib dipilih.',
+            'faculty_id.exists' => 'Fakultas tidak valid.',
             'unitKompetensis.*.kode_unit.required' => 'Kode unit wajib diisi.',
             'unitKompetensis.*.nama_unit.required' => 'Nama unit wajib diisi.',
             'persyaratanDasars.*.deskripsi.required' => 'Deskripsi persyaratan wajib diisi.',
-            'persyaratanAdministrasis.*.nama_dokumen.required' => 'Nama dokumen wajib diisi.',
+            'persyaratanAdministrasis.*.deskripsi.required' => 'Nama dokumen wajib diisi.',
         ];
     }
 
@@ -150,7 +180,7 @@ class SchemeForm extends Component
 
     public function addPersyaratanAdministrasi(): void
     {
-        $this->persyaratanAdministrasis[] = ['nama_dokumen' => ''];
+        $this->persyaratanAdministrasis[] = ['deskripsi' => ''];
     }
 
     public function removePersyaratanAdministrasi(int $index): void
@@ -175,15 +205,15 @@ class SchemeForm extends Component
         }
 
         $data = [
-            'name' => $this->name,
+            'nama' => $this->name,
             'kode_skema' => $this->kode_skema ?: null,
             'jenis_skema' => $this->jenis_skema ?: null,
             'izin_nirkertas' => $this->izin_nirkertas ?: null,
             'harga' => $this->harga !== '' ? (float) $this->harga : null,
             'ringkasan_skema' => $this->ringkasan_skema ?: null,
-            'faculty' => $this->faculty,
-            'study_program' => $this->study_program,
-            'description' => $this->description ?: null,
+            'faculty_id' => $this->faculty_id,
+            'study_program_id' => $this->study_program_id,
+            'deskripsi' => $this->description ?: null,
         ];
 
         if ($gambarPath) {
@@ -236,9 +266,9 @@ class SchemeForm extends Component
 
         $scheme->persyaratanAdministrasis()->delete();
         foreach ($this->persyaratanAdministrasis as $index => $persyaratan) {
-            if (! empty($persyaratan['nama_dokumen'])) {
+            if (! empty($persyaratan['deskripsi'])) {
                 $scheme->persyaratanAdministrasis()->create([
-                    'nama_dokumen' => $persyaratan['nama_dokumen'],
+                    'deskripsi' => $persyaratan['deskripsi'],
                     'order' => $index + 1,
                 ]);
             }

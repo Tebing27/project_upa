@@ -2,6 +2,7 @@
 
 namespace App\Livewire;
 
+use App\Models\Faculty;
 use App\Models\Scheme;
 use Illuminate\Support\Collection;
 use Illuminate\View\View;
@@ -20,27 +21,26 @@ class UserSchemesPage extends Component
     public string $filterPopularity = '';
 
     /**
-     * @return Collection<int, string>
+     * @return Collection<int, Faculty>
      */
     public function getFaculties(): Collection
     {
-        return Scheme::query()
-            ->where('is_active', true)
-            ->whereNotNull('faculty')
-            ->distinct()
-            ->pluck('faculty')
-            ->sort()
-            ->values();
+        return Faculty::query()
+            ->whereHas('studyPrograms.schemes', fn ($q) => $q->where('is_active', true))
+            ->orWhereHas('schemes', fn ($q) => $q->where('is_active', true))
+            ->orderBy('name')
+            ->get();
     }
 
     public function render(): View
     {
         $schemes = Scheme::query()
+            ->with(['faculty', 'studyProgram'])
             ->where('is_active', true)
-            ->when($this->search, fn ($q) => $q->where('name', 'like', "%{$this->search}%"))
-            ->when($this->filterFaculty, fn ($q) => $q->where('faculty', $this->filterFaculty))
+            ->when($this->search, fn ($q) => $q->where('nama', 'like', "%{$this->search}%"))
+            ->when($this->filterFaculty, fn ($q) => $q->where('faculty_id', $this->filterFaculty))
             ->when($this->filterPopularity === 'populer', fn ($q) => $q->where('is_popular', true))
-            ->orderBy('name')
+            ->orderBy('nama')
             ->get();
 
         return view('livewire.user-schemes-page', [

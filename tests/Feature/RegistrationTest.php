@@ -4,10 +4,10 @@ use App\Models\User;
 use Illuminate\Support\Facades\Hash;
 
 test('a user can log in with nim', function () {
-    $user = User::factory()->create([
-        'nim' => '123456789',
-        'password' => Hash::make('password'),
-    ]);
+    $user = createMahasiswaUser(
+        user: ['password' => Hash::make('password')],
+        mahasiswaProfile: ['nim' => '123456789'],
+    );
 
     $response = $this->post('/login', [
         'nim' => '123456789',
@@ -19,7 +19,7 @@ test('a user can log in with nim', function () {
 });
 
 test('a user can log in with email entered into the same login field', function () {
-    $user = User::factory()->create([
+    $user = createMahasiswaUser([
         'email' => 'mahasiswa@example.com',
         'password' => Hash::make('password'),
     ]);
@@ -46,10 +46,12 @@ test('non mahasiswa can register with email and password', function () {
 
     expect($user)->not->toBeNull()
         ->and($user->name)->toBe('Johndoe')
-        ->and($user->nim)->toStartWith('NON-')
+        ->and($user->nim)->toBeNull()
         ->and($user->user_type)->toBe('umum')
         ->and($user->profile_completed_at)->toBeNull()
-        ->and($user->email_verified_at)->toBeNull();
+        ->and($user->email_verified_at)->toBeNull()
+        ->and($user->umumProfile)->not->toBeNull()
+        ->and($user->profile)->not->toBeNull();
 
     $response->assertRedirect('/dashboard');
 });

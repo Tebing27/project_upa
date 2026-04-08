@@ -424,7 +424,7 @@ it('can upload certificate and exam result files for a scheduled participant', f
 
     $admin = User::factory()->create(['role' => 'admin']);
     $scheme = Scheme::factory()->create(['name' => 'Junior Web Developer']);
-    $participant = User::factory()->create();
+    $participant = createMahasiswaUser(mahasiswaProfile: ['nim' => '2210511881']);
     $registration = Registration::factory()->create([
         'user_id' => $participant->id,
         'scheme_id' => $scheme->id,
@@ -453,7 +453,7 @@ it('can upload certificate and exam result files for a scheduled participant', f
 
     $certificate = Certificate::query()
         ->where('user_id', $participant->id)
-        ->where('scheme_name', 'Junior Web Developer')
+        ->where('scheme_id', $scheme->id)
         ->latest('id')
         ->first();
 

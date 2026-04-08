@@ -50,15 +50,15 @@ class VerifikasiPembayaran extends Component
     public function render(): View
     {
         $query = Registration::query()
-            ->with(['user', 'scheme'])
+            ->with(['user.mahasiswaProfile', 'user.umumProfile', 'scheme', 'documentStatuses'])
             ->whereIn('status', ['dokumen_ok', 'pending_payment', 'paid', 'terjadwal', 'sertifikat_terbit', 'tidak_kompeten']);
 
         if ($this->search !== '') {
             $query->whereHas('user', function (Builder $userQuery): void {
                 $userQuery
-                    ->where('name', 'like', '%'.$this->search.'%')
-                    ->orWhere('nim', 'like', '%'.$this->search.'%')
-                    ->orWhere('no_ktp', 'like', '%'.$this->search.'%')
+                    ->where('nama', 'like', '%'.$this->search.'%')
+                    ->orWhereHas('mahasiswaProfile', fn (Builder $q) => $q->where('nim', 'like', '%'.$this->search.'%'))
+                    ->orWhereHas('umumProfile', fn (Builder $q) => $q->where('no_ktp', 'like', '%'.$this->search.'%'))
                     ->orWhere('email', 'like', '%'.$this->search.'%');
             });
         }
@@ -77,14 +77,23 @@ class VerifikasiPembayaran extends Component
                             ->where(function (Builder $proofQuery): void {
                                 $proofQuery
                                     ->whereNull('payment_proof_path')
-                                    ->orWhere('document_statuses->payment_proof_path->status', 'pending');
+                                    ->orWhereHas('documentStatuses', function (Builder $dsQuery): void {
+                                        $dsQuery->where('document_type', 'payment_proof_path')
+                                            ->where('status', 'pending');
+                                    })
+                                    ->orWhereDoesntHave('documentStatuses', function (Builder $dsQuery): void {
+                                        $dsQuery->where('document_type', 'payment_proof_path');
+                                    });
                             });
                     });
             });
         } elseif ($this->tab === 'terverifikasi') {
             $query->whereIn('status', ['paid', 'terjadwal', 'sertifikat_terbit', 'tidak_kompeten']);
         } elseif ($this->tab === 'ditolak') {
-            $query->where('document_statuses->payment_proof_path->status', 'rejected');
+            $query->whereHas('documentStatuses', function (Builder $dsQuery): void {
+                $dsQuery->where('document_type', 'payment_proof_path')
+                    ->where('status', 'rejected');
+            });
         }
 
         return view('livewire.admin.verifikasi-pembayaran', [

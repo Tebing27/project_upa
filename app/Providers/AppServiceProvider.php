@@ -39,17 +39,17 @@ class AppServiceProvider extends ServiceProvider
             URL::forceScheme('https');
         }
 
-        $viewPath = '/tmp/views';
-        if (! is_dir($viewPath)) {
-            mkdir($viewPath, 0755, true);
-        }
-        config(['view.compiled' => $viewPath]);
+        // $viewPath = '/tmp/views';
+        // if (! is_dir($viewPath)) {
+        //     mkdir($viewPath, 0755, true);
+        // }
+        // config(['view.compiled' => $viewPath]);
 
-        $livewireTmp = '/tmp/livewire-tmp';
-        if (! is_dir($livewireTmp)) {
-            mkdir($livewireTmp, 0755, true);
-        }
-        config(['livewire.temporary_file_upload.directory' => $livewireTmp]);
+        // $livewireTmp = '/tmp/livewire-tmp';
+        // if (! is_dir($livewireTmp)) {
+        //     mkdir($livewireTmp, 0755, true);
+        // }
+        // config(['livewire.temporary_file_upload.directory' => $livewireTmp]);
     }
 
     /**

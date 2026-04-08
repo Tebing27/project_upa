@@ -6,30 +6,20 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
     public function up(): void
     {
         Schema::create('users', function (Blueprint $table) {
             $table->id();
-            $table->string('name');
-            $table->string('nim')->unique();
+            $table->string('nama');
             $table->string('email')->unique();
-            $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
-            $table->string('no_ktp')->nullable();
-            $table->string('tempat_lahir')->nullable();
-            $table->date('tanggal_lahir')->nullable();
-            $table->enum('jenis_kelamin', ['L', 'P'])->nullable();
-            $table->text('alamat_rumah')->nullable();
-            $table->string('no_wa')->nullable();
-            $table->string('pendidikan_terakhir')->nullable();
-            $table->integer('total_sks')->nullable();
-            $table->string('status_semester')->nullable();
-            $table->string('fakultas')->nullable();
-            $table->string('program_studi')->nullable();
+            $table->enum('role', ['mahasiswa', 'umum', 'admin'])->default('mahasiswa');
+            $table->timestamp('email_verified_at')->nullable();
+            $table->timestamp('profile_completed_at')->nullable();
             $table->rememberToken();
+            $table->string('two_factor_secret')->nullable();
+            $table->text('two_factor_recovery_codes')->nullable();
+            $table->timestamp('two_factor_confirmed_at')->nullable();
             $table->timestamps();
         });
 
@@ -49,9 +39,6 @@ return new class extends Migration
         });
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
         Schema::dropIfExists('users');

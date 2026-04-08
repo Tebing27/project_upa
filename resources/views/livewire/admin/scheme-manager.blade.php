@@ -9,7 +9,7 @@
                 class="block w-48 px-4 py-3 rounded-xl border border-slate-200 bg-white text-sm font-semibold text-slate-700 outline-none transition-all hover:bg-slate-50/50 hover:border-slate-300 focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 focus:bg-white">
                 <option value="">Semua Fakultas</option>
                 @foreach ($this->availableFaculties as $facultyOption)
-                    <option value="{{ $facultyOption }}">{{ $facultyOption }}</option>
+                    <option value="{{ $facultyOption->id }}">{{ $facultyOption->name }}</option>
                 @endforeach
             </select>
             <a href="{{ route('admin.schemes.create') }}" wire:navigate

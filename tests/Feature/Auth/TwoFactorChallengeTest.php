@@ -19,7 +19,9 @@ test('two factor challenge can be rendered', function () {
         'confirmPassword' => true,
     ]);
 
-    $user = User::factory()->withTwoFactor()->create();
+    $user = User::factory()->withTwoFactor()->create([
+        'nim' => '2210511888',
+    ]);
 
     $this->post(route('login.store'), [
         'nim' => $user->nim,

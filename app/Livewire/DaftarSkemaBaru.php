@@ -4,8 +4,11 @@ namespace App\Livewire;
 
 use App\Concerns\ProfileValidationRules;
 use App\Models\Certificate;
+use App\Models\Faculty;
 use App\Models\Registration;
+use App\Models\RegistrationDocument;
 use App\Models\Scheme;
+use App\Models\StudyProgram;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Auth;
@@ -123,9 +126,6 @@ class DaftarSkemaBaru extends Component
         $this->fillProfileFromUser();
         $this->syncFlowConfiguration();
 
-        $this->faculty = $user->fakultas ?? '';
-        $this->studyProgram = $user->program_studi ?? '';
-
         if ($user->hasInProgressRegistration()) {
             $this->errorMessage = 'Anda masih memiliki pendaftaran yang sedang berjalan. Selesaikan pendaftaran tersebut terlebih dahulu.';
 
@@ -139,8 +139,8 @@ class DaftarSkemaBaru extends Component
             && $selectedScheme
             && $this->registrationType === 'baru'
         ) {
-            $this->faculty = $selectedScheme->faculty ?? '';
-            $this->studyProgram = $selectedScheme->study_program ?? '';
+            $this->faculty = (string) ($selectedScheme->faculty_id ?? '');
+            $this->studyProgram = (string) ($selectedScheme->study_program_id ?? '');
         }
 
     }
@@ -265,9 +265,15 @@ class DaftarSkemaBaru extends Component
 
         $paymentReference = $this->generatePaymentReference();
 
-        $user->registrations()->create([
+        $registration = $user->registrations()->create([
             'scheme_id' => $schemeId,
             'type' => $this->registrationType,
+            'payment_reference' => $paymentReference,
+            'va_numer' => null,
+            'status' => 'menunggu_verifikasi',
+        ]);
+
+        $documents = [
             'fr_apl_01_path' => $frApl01Path,
             'fr_apl_02_path' => $frApl02Path,
             'ktm_path' => $ktmPath,
@@ -275,13 +281,25 @@ class DaftarSkemaBaru extends Component
             'internship_certificate_path' => $internshipPath,
             'ktp_path' => $ktpPath,
             'passport_photo_path' => $passportPhotoPath,
-            'payment_reference' => $paymentReference,
-            'va_number' => null,
-            'document_statuses' => $this->useCondensedDocumentFlow ? ['_meta' => ['condensed_flow' => true]] : null,
-            'status' => 'menunggu_verifikasi',
-        ]);
+        ];
 
-        $this->submittedRegistration = $user->registrations()->latest()->with('scheme')->first();
+        foreach ($documents as $type => $path) {
+            if ($path) {
+                $registration->documents()->create([
+                    'document_type' => $type,
+                    'file_path' => $path,
+                ]);
+            }
+        }
+
+        if ($this->useCondensedDocumentFlow) {
+            $registration->documentStatuses()->create([
+                'document_type' => '_meta_condensed_flow',
+                'status' => 'verified',
+            ]);
+        }
+
+        $this->submittedRegistration = $registration->load('scheme');
         $this->currentStep = 5;
     }
 
@@ -325,8 +343,8 @@ class DaftarSkemaBaru extends Component
 
         return Scheme::query()
             ->where('is_active', true)
-            ->when($this->faculty !== '', fn ($query) => $query->where('faculty', $this->faculty))
-            ->when($this->studyProgram !== '', fn ($query) => $query->where('study_program', $this->studyProgram))
+            ->when($this->faculty !== '', fn ($query) => $query->where('faculty_id', $this->faculty))
+            ->when($this->studyProgram !== '', fn ($query) => $query->where('study_program_id', $this->studyProgram))
             ->whereNotIn('id', $excludeIds)
             ->get();
     }
@@ -368,25 +386,15 @@ class DaftarSkemaBaru extends Component
 
     public function getFaculties(): \Illuminate\Support\Collection
     {
-        return Scheme::query()
-            ->where('is_active', true)
-            ->whereNotNull('faculty')
-            ->distinct()
-            ->pluck('faculty')
-            ->sort()
-            ->values();
+        return Faculty::query()->orderBy('name')->get();
     }
 
     public function getStudyPrograms(): \Illuminate\Support\Collection
     {
-        return Scheme::query()
-            ->where('is_active', true)
-            ->where('faculty', $this->faculty)
-            ->whereNotNull('study_program')
-            ->distinct()
-            ->pluck('study_program')
-            ->sort()
-            ->values();
+        return StudyProgram::query()
+            ->when($this->faculty !== '', fn ($q) => $q->where('faculty_id', $this->faculty))
+            ->orderBy('nama')
+            ->get();
     }
 
     public function render(): View
@@ -408,40 +416,47 @@ class DaftarSkemaBaru extends Component
     {
         $user = Auth::user();
 
-        $this->name = $user->name;
+        $this->name = $user->nama;
         $this->email = $user->email;
-        $this->nim = $user->nim;
-        $this->no_ktp = $user->no_ktp;
-        $this->tempat_lahir = $user->tempat_lahir;
-        $this->tanggal_lahir = $user->tanggal_lahir
-            ? Carbon::parse($user->tanggal_lahir)->format('Y-m-d')
+        $this->nim = $user->mahasiswaProfile?->nim;
+        $this->no_ktp = $user->umumProfile?->no_ktp;
+        $this->tempat_lahir = $user->profile?->tempat_lahir;
+        $this->tanggal_lahir = $user->profile?->tanggal_lahir
+            ? Carbon::parse($user->profile?->tanggal_lahir)->format('Y-m-d')
             : null;
-        $this->jenis_kelamin = $user->jenis_kelamin;
-        $this->alamat_rumah = $user->alamat_rumah;
-        $this->domisili_provinsi = $user->domisili_provinsi;
-        $this->domisili_kota = $user->domisili_kota;
-        $this->domisili_kecamatan = $user->domisili_kecamatan;
-        $this->no_wa = $user->no_wa;
-        $this->pendidikan_terakhir = $user->pendidikan_terakhir;
-        $this->nama_institusi = $user->nama_institusi;
-        $this->total_sks = $user->total_sks;
-        $this->status_semester = $user->status_semester;
-        $this->fakultas = $user->fakultas;
-        $this->program_studi = $user->program_studi;
-        $this->faculty = $user->fakultas ?? '';
-        $this->studyProgram = $user->program_studi ?? '';
-        $this->pekerjaan = $user->pekerjaan;
-        $this->nama_perusahaan = $user->nama_perusahaan;
-        $this->jabatan = $user->jabatan;
-        $this->alamat_perusahaan = $user->alamat_perusahaan;
-        $this->kode_pos_perusahaan = $user->kode_pos_perusahaan;
-        $this->no_telp_perusahaan = $user->no_telp_perusahaan;
-        $this->email_perusahaan = $user->email_perusahaan;
+        $this->jenis_kelamin = $user->profile?->jenis_kelamin;
+        $this->alamat_rumah = $user->profile?->alamat_rumah;
+        $this->domisili_provinsi = $user->profile?->domisili_provinsi;
+        $this->domisili_kota = $user->profile?->domisili_kota;
+        $this->domisili_kecamatan = $user->profile?->domisili_kecamatan;
+        $this->no_wa = $user->profile?->no_wa;
+        $this->pendidikan_terakhir = $user->umumProfile?->pendidikan_terakhir;
+        $this->nama_institusi = $user->umumProfile?->nama_perusahaan;
+        $this->total_sks = $user->mahasiswaProfile?->total_sks;
+        $this->status_semester = $user->mahasiswaProfile?->status_semester;
+        $this->fakultas = $user->profile?->fakultas;
+        $this->program_studi = $user->profile?->program_studi;
+        $this->faculty = $this->resolveFacultyFilterValue($user->profile?->fakultas);
+        $this->studyProgram = $this->resolveStudyProgramFilterValue(
+            $user->profile?->program_studi,
+            $this->faculty,
+        );
+        $this->pekerjaan = $user->umumProfile?->nama_pekerjaan;
+        $this->nama_perusahaan = $user->umumProfile?->nama_perusahaan;
+        $this->jabatan = $user->umumProfile?->jabatan;
+        $this->alamat_perusahaan = $user->umumProfile?->alamat_perusahaan;
+        $this->kode_pos_perusahaan = $user->umumProfile?->kode_pos_perusahaan;
+        $this->no_telp_perusahaan = $user->umumProfile?->no_telp_perusahaan;
+        $this->email_perusahaan = $user->umumProfile?->email_perusahaan;
     }
 
     private function validateProfileStep(): array
     {
         $user = Auth::user();
+        $rules = $this->profileRules($user->id, $user->role);
+
+        $rules['name'] = $rules['nama'];
+        unset($rules['nama']);
 
         foreach ([
             'no_ktp', 'tempat_lahir', 'tanggal_lahir', 'jenis_kelamin', 'alamat_rumah',
@@ -453,7 +468,7 @@ class DaftarSkemaBaru extends Component
             $this->{$field} = filled($this->{$field}) ? trim((string) $this->{$field}) : null;
         }
 
-        return $this->validate($this->profileRules($user->id, $user->user_type));
+        return $this->validate($rules);
     }
 
     private function saveProfileStep(): void
@@ -462,12 +477,44 @@ class DaftarSkemaBaru extends Component
 
         $validated = $this->validateProfileStep();
 
-        $user->fill($validated);
+        $user->update([
+            'nama' => $validated['name'] ?? $user->nama,
+            'email' => $validated['email'] ?? $user->email,
+        ]);
+
+        $user->profile()->updateOrCreate([], [
+            'tempat_lahir' => $validated['tempat_lahir'] ?? null,
+            'tanggal_lahir' => $validated['tanggal_lahir'] ?? null,
+            'jenis_kelamin' => $validated['jenis_kelamin'] ?? null,
+            'alamat_rumah' => $validated['alamat_rumah'] ?? null,
+            'domisili_provinsi' => $validated['domisili_provinsi'] ?? null,
+            'domisili_kota' => $validated['domisili_kota'] ?? null,
+            'domisili_kecamatan' => $validated['domisili_kecamatan'] ?? null,
+            'no_wa' => $validated['no_wa'] ?? null,
+            'fakultas' => $validated['fakultas'] ?? null,
+            'program_studi' => $validated['program_studi'] ?? null,
+        ]);
+
+        $user->umumProfile()->updateOrCreate([], [
+            'no_ktp' => $validated['no_ktp'] ?? null,
+            'pendidikan_terakhir' => $validated['pendidikan_terakhir'] ?? null,
+            'nama_pekerjaan' => $validated['pekerjaan'] ?? null,
+            'nama_perusahaan' => $validated['nama_perusahaan'] ?? null,
+            'jabatan' => $validated['jabatan'] ?? null,
+            'alamat_perusahaan' => $validated['alamat_perusahaan'] ?? null,
+            'kode_pos_perusahaan' => $validated['kode_pos_perusahaan'] ?? null,
+            'no_telp_perusahaan' => $validated['no_telp_perusahaan'] ?? null,
+            'email_perusahaan' => $validated['email_perusahaan'] ?? null,
+        ]);
+
         $user->syncProfileCompletionStatus();
         $user->save();
 
-        $this->faculty = $user->fakultas ?? '';
-        $this->studyProgram = $user->program_studi ?? '';
+        $this->faculty = $this->resolveFacultyFilterValue($user->profile?->fakultas);
+        $this->studyProgram = $this->resolveStudyProgramFilterValue(
+            $user->profile?->program_studi,
+            $this->faculty,
+        );
     }
 
     private function guardRegistrationRules(): bool
@@ -522,13 +569,13 @@ class DaftarSkemaBaru extends Component
         $user = Auth::user();
 
         if ($user->isGeneralUser()) {
-            $nik = preg_replace('/\D+/', '', (string) $user->no_ktp);
+            $nik = preg_replace('/\D+/', '', (string) $user->umumProfile?->no_ktp);
 
             return '98'.substr(str_pad($nik, 8, '0', STR_PAD_LEFT), -8).now()->format('His');
         }
 
         $existingCount = $user->registrations()->count();
-        $nim = preg_replace('/\D+/', '', (string) $user->nim);
+        $nim = preg_replace('/\D+/', '', (string) $user->mahasiswaProfile?->nim);
 
         return '98'.$nim.($existingCount > 0 ? '-'.($existingCount + 1) : '');
     }
@@ -577,8 +624,8 @@ class DaftarSkemaBaru extends Component
             ->where('user_id', $user->id)
             ->whereHas('scheme', function ($query): void {
                 $query->where('is_active', true)
-                    ->when($this->faculty !== '', fn ($schemeQuery) => $schemeQuery->where('faculty', $this->faculty))
-                    ->when($this->studyProgram !== '', fn ($schemeQuery) => $schemeQuery->where('study_program', $this->studyProgram));
+                    ->when($this->faculty !== '', fn ($schemeQuery) => $schemeQuery->where('faculty_id', $this->faculty))
+                    ->when($this->studyProgram !== '', fn ($schemeQuery) => $schemeQuery->where('study_program_id', $this->studyProgram));
             })
             ->exists();
     }
@@ -599,14 +646,40 @@ class DaftarSkemaBaru extends Component
 
         $paths = array_fill_keys($documentFields, null);
 
-        $registrations = $user->registrations()
+        // Fetch all documents from past registrations
+        $pastDocuments = RegistrationDocument::query()
+            ->whereHas('registration', fn ($q) => $q->where('user_id', $user->id))
+            ->whereIn('document_type', $documentFields)
             ->latest('id')
-            ->get($documentFields);
+            ->get();
 
         foreach ($documentFields as $field) {
-            $paths[$field] = $registrations->first(fn (Registration $registration): bool => filled($registration->{$field}))?->{$field};
+            $paths[$field] = $pastDocuments->firstWhere('document_type', $field)?->file_path;
         }
 
         return $paths;
+    }
+
+    private function resolveFacultyFilterValue(?string $facultyName): string
+    {
+        if (blank($facultyName)) {
+            return '';
+        }
+
+        return (string) (Faculty::query()
+            ->where('name', $facultyName)
+            ->value('id') ?? '');
+    }
+
+    private function resolveStudyProgramFilterValue(?string $studyProgramName, string $facultyId = ''): string
+    {
+        if (blank($studyProgramName)) {
+            return '';
+        }
+
+        return (string) (StudyProgram::query()
+            ->when($facultyId !== '', fn ($query) => $query->where('faculty_id', $facultyId))
+            ->where('nama', $studyProgramName)
+            ->value('id') ?? '');
     }
 }

@@ -17,7 +17,7 @@ trait ProfileValidationRules
         $isGeneralUser = $userType === 'umum';
 
         return [
-            'name' => $this->nameRules(),
+            'nama' => $this->nameRules(),
             'email' => $this->emailRules($userId),
             'nim' => ['nullable', 'string', 'max:255'],
             'no_ktp' => [$isGeneralUser ? 'required' : 'nullable', 'string', 'max:255'],

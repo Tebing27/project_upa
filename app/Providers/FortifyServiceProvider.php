@@ -68,7 +68,7 @@ class FortifyServiceProvider extends ServiceProvider
             }
 
             $user = User::query()
-                ->where('nim', $login)
+                ->whereHas('mahasiswaProfile', fn ($query) => $query->where('nim', $login))
                 ->orWhere('email', $login)
                 ->first();
 

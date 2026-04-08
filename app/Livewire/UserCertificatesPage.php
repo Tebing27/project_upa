@@ -44,9 +44,11 @@ class UserCertificatesPage extends Component
         }
 
         return Scheme::query()
+            ->with('faculty')
             ->whereIn('id', $schemeIds)
-            ->whereNotNull('faculty')
-            ->pluck('faculty')
+            ->get()
+            ->pluck('faculty.name')
+            ->filter()
             ->unique()
             ->sort()
             ->values();
@@ -70,7 +72,7 @@ class UserCertificatesPage extends Component
         }
 
         if ($this->filterFaculty !== '') {
-            $certificates = $certificates->filter(fn ($cert): bool => $cert->scheme?->faculty === $this->filterFaculty);
+            $certificates = $certificates->filter(fn ($cert): bool => $cert->scheme?->faculty?->name === $this->filterFaculty);
         }
 
         return view('livewire.user-certificates-page', [
