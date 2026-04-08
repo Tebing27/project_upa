@@ -104,5 +104,14 @@ class DatabaseSeeder extends Seeder
             'jenis_kelamin' => 'L',
             'no_wa' => '081234567891',
         ]);
+
+        User::factory()->create([
+            'name' => 'Admin System',
+            'nim' => '987654321',
+            'email' => 'admin@example.com',
+            'password' => Hash::make('password'),
+            'role' => 'admin',
+            'user_type' => 'admin',
+        ]);
     }
 }

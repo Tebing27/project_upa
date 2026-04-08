@@ -37,7 +37,6 @@ class CekSertifikat extends Component
 
         if (RateLimiter::tooManyAttempts($key, 10)) {
             $seconds = RateLimiter::availableIn($key);
-
             throw ValidationException::withMessages([
                 'search' => "Sistem mendeteksi indikasi bot. Silakan coba lagi dalam {$seconds} detik.",
             ]);

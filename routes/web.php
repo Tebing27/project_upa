@@ -17,9 +17,14 @@ use App\Livewire\SchemeDetail;
 use App\Livewire\UserCertificatesPage;
 use App\Livewire\UserRegistrationStatus;
 use App\Livewire\UserSchemesPage;
+use App\Models\Scheme;
 use Illuminate\Support\Facades\Route;
 
-Route::view('/', 'welcome')->name('home');
+Route::get('/', function () {
+    $latestSchemes = Scheme::latest()->take(3)->get();
+
+    return view('welcome', compact('latestSchemes'));
+})->name('home');
 Route::get('cek-sertifikat', CekSertifikat::class)->name('cek-sertifikat');
 Route::get('kontak', ContactPage::class)->name('kontak');
 Route::get('profil', ProfilPage::class)->name('profil');
