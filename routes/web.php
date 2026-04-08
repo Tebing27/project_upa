@@ -20,11 +20,9 @@ use App\Livewire\UserSchemesPage;
 use App\Models\Scheme;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/', function () {
-    $latestSchemes = Scheme::latest()->take(3)->get();
-
-    return view('welcome', compact('latestSchemes'));
-})->name('home');
+Route::get('/', [App\Http\Controllers\LandingPageController::class, 'index'])->name('home');
+Route::get('/artikel', [App\Http\Controllers\LandingPageController::class, 'articlesIndex'])->name('article.index');
+Route::get('/artikel/{article:slug}', [App\Http\Controllers\LandingPageController::class, 'showArticle'])->name('article.show');
 Route::get('cek-sertifikat', CekSertifikat::class)->name('cek-sertifikat');
 Route::get('kontak', ContactPage::class)->name('kontak');
 Route::get('profil', ProfilPage::class)->name('profil');
