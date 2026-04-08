@@ -28,4 +28,10 @@ class LandingPageController extends Controller
         $article->increment('views_count');
         return view('article-detail', compact('article'));
     }
+
+    public function galleryIndex()
+    {
+        $galleries = \App\Models\Gallery::latest()->paginate(12);
+        return view('gallery-index', compact('galleries'));
+    }
 }

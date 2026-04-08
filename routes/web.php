@@ -23,6 +23,7 @@ use Illuminate\Support\Facades\Route;
 Route::get('/', [App\Http\Controllers\LandingPageController::class, 'index'])->name('home');
 Route::get('/artikel', [App\Http\Controllers\LandingPageController::class, 'articlesIndex'])->name('article.index');
 Route::get('/artikel/{article:slug}', [App\Http\Controllers\LandingPageController::class, 'showArticle'])->name('article.show');
+Route::get('/galeri', [App\Http\Controllers\LandingPageController::class, 'galleryIndex'])->name('gallery.index');
 Route::get('cek-sertifikat', CekSertifikat::class)->name('cek-sertifikat');
 Route::get('kontak', ContactPage::class)->name('kontak');
 Route::get('profil', ProfilPage::class)->name('profil');
