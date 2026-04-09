@@ -13,21 +13,23 @@ class GallerySeeder extends Seeder
      */
     public function run(): void
     {
+        Gallery::truncate(); // Kosongkan agar data tidak double
+
         $galleries = [
             [
                 'title' => 'Pelatihan Asesor Internal',
                 'description' => 'Kegiatan pelatihan intensif selama 3 hari bagi dosen untuk menjadi asesor kompetensi bersertifikat BNSP.',
-                'image_path' => 'images/kegiatan-1.jpeg',
+                'image_path' => 'https://i.ibb.co.com/yBPy1KGh/kegiatan-1.jpg',
             ],
             [
                 'title' => 'Uji Kompetensi Batch 1',
                 'description' => 'Pelaksanaan uji kompetensi skema Network Administrator di Fakultas Ilmu Komputer.',
-                'image_path' => 'images/kegiatan-2.jpeg',
+                'image_path' => 'https://i.ibb.co.com/ccsdqVGM/kegiatan-2.jpg',
             ],
             [
                 'title' => 'Sosialisasi Sertifikasi ke Mahasiswa',
                 'description' => 'Pemaparan pentingnya sertifikasi kompetensi ke mahasiswa tingkat akhir oleh Tim UPA LUK.',
-                'image_path' => 'images/kegiatan-3.jpeg',
+                'image_path' => 'https://i.ibb.co.com/wZKJ2B9h/kegiatan-3.jpg',
             ],
             [
                 'title' => 'Visitasi Master Asesor',

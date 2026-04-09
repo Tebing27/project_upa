@@ -36,7 +36,12 @@
             @if(isset($galleries) && $galleries->count() > 0)
                 <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-12">
                     @foreach($galleries as $gallery)
-                    @php $imgUrl = $gallery->image_path ? Storage::url($gallery->image_path) : 'https://placehold.co/800x600/e2e8f0/475569?text=Galeri'; @endphp
+                    @php 
+                        $imgUrl = 'https://placehold.co/800x600/e2e8f0/475569?text=Galeri';
+                        if($gallery->image_path) {
+                            $imgUrl = Str::startsWith($gallery->image_path, 'http') ? $gallery->image_path : Storage::url($gallery->image_path);
+                        }
+                    @endphp
                     
                     <div class="group relative overflow-hidden rounded-xl bg-gray-900 aspect-[4/3] cursor-pointer"
                          @click="modalOpen = true; modalImage = '{{ $imgUrl }}'; modalTitle = '{{ addslashes($gallery->title) }}'; modalDesc = '{{ addslashes($gallery->description) }}';">

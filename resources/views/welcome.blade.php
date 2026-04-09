@@ -548,7 +548,7 @@
                     @foreach($galleries as $gallery)
                     <div class="group relative overflow-hidden rounded-xl bg-gray-900 aspect-[4/3] cursor-pointer">
                         @if($gallery->image_path)
-                            <img src="{{ Storage::url($gallery->image_path) }}" alt="{{ $gallery->title }}" class="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-110">
+                            <img src="{{ Str::startsWith($gallery->image_path, 'http') ? $gallery->image_path : Storage::url($gallery->image_path) }}" alt="{{ $gallery->title }}" class="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-110">
                         @else
                             <img src="https://placehold.co/800x600/e2e8f0/475569?text=Galeri" alt="Gallery Placeholder" class="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-110">
                         @endif
