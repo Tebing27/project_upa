@@ -25,6 +25,7 @@ Route::get('/artikel', [App\Http\Controllers\LandingPageController::class, 'arti
 Route::get('/artikel/{article:slug}', [App\Http\Controllers\LandingPageController::class, 'showArticle'])->name('article.show');
 Route::get('/galeri', [App\Http\Controllers\LandingPageController::class, 'galleryIndex'])->name('gallery.index');
 Route::get('cek-sertifikat', CekSertifikat::class)->name('cek-sertifikat');
+Route::view('faq', 'faq')->name('faq');
 Route::get('kontak', ContactPage::class)->name('kontak');
 Route::get('profil', ProfilPage::class)->name('profil');
 Route::get('skema', PublicSchemesPage::class)->name('skema.index');

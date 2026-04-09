@@ -6,7 +6,14 @@
         'home' => ['label' => 'HOME', 'route' => 'home'],
         'profil' => ['label' => 'PROFIL', 'route' => 'profil'],
         'skema' => ['label' => 'SKEMA', 'route' => 'skema.index'],
-        'kontak' => ['label' => 'KONTAK', 'route' => 'kontak'],
+        'informasi' => [
+            'label' => 'INFORMASI', 
+            'submenus' => [
+                ['label' => 'FAQ (Q & A)', 'url' => url('/faq')],
+                ['label' => 'Galeri Kegiatan', 'route' => 'gallery.index'],
+                ['label' => 'Kontak', 'route' => 'kontak']
+            ]
+        ],
         'validasi' => ['label' => 'VALIDASI SERTIFIKAT', 'route' => 'cek-sertifikat'],
     ];
 @endphp
@@ -52,13 +59,37 @@
 
                 <div class="hidden items-center gap-8 text-sm font-bold tracking-wide lg:flex">
                     @foreach ($navLinks as $key => $link)
-                        <a href="{{ route($link['route']) }}" :class="[
-                            {{ $isStickyOrScrolled }}
-                                ? '{{ $active === $key ? 'text-[#2563eb]' : 'text-gray-700 hover:text-[#2563eb]' }}'
-                                : '{{ $active === $key ? 'text-orange-500 drop-shadow-sm' : 'text-white hover:text-orange-400 drop-shadow-sm' }}'
-                        ]" class="transition-colors duration-300">
-                            {{ $link['label'] }}
-                        </a>
+                        @if(isset($link['submenus']))
+                            <div class="relative group" x-data="{ dropdownOpen: false }" @mouseenter="dropdownOpen = true" @mouseleave="dropdownOpen = false">
+                                <button class="flex items-center gap-1 transition-colors duration-300 focus:outline-none" 
+                                    :class="[{{ $isStickyOrScrolled }} ? '{{ $active === $key ? 'text-[#2563eb]' : 'text-gray-700 hover:text-[#2563eb]' }}' : '{{ $active === $key ? 'text-orange-500 drop-shadow-sm' : 'text-white hover:text-orange-400 drop-shadow-sm' }}']">
+                                    {{ $link['label'] }}
+                                    <svg class="w-4 h-4 transition-transform duration-300" :class="dropdownOpen ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                                </button>
+                                <div x-show="dropdownOpen" 
+                                     x-transition:enter="transition ease-out duration-200" 
+                                     x-transition:enter-start="opacity-0 translate-y-2" 
+                                     x-transition:enter-end="opacity-100 translate-y-0"
+                                     x-transition:leave="transition ease-in duration-150"
+                                     x-transition:leave-start="opacity-100 translate-y-0"
+                                     x-transition:leave-end="opacity-0 translate-y-2"
+                                     class="absolute left-0 top-full mt-2 w-56 bg-white rounded-xl shadow-xl border border-gray-100 py-3 flex flex-col gap-1" style="display: none;">
+                                    @foreach($link['submenus'] as $sub)
+                                        <a href="{{ isset($sub['route']) ? route($sub['route']) : $sub['url'] }}" class="block px-5 py-2.5 text-sm font-semibold text-gray-600 hover:bg-blue-50 hover:text-[#2563eb] transition-colors">
+                                            {{ $sub['label'] }}
+                                        </a>
+                                    @endforeach
+                                </div>
+                            </div>
+                        @else
+                            <a href="{{ route($link['route']) }}" :class="[
+                                {{ $isStickyOrScrolled }}
+                                    ? '{{ $active === $key ? 'text-[#2563eb]' : 'text-gray-700 hover:text-[#2563eb]' }}'
+                                    : '{{ $active === $key ? 'text-orange-500 drop-shadow-sm' : 'text-white hover:text-orange-400 drop-shadow-sm' }}'
+                            ]" class="transition-colors duration-300">
+                                {{ $link['label'] }}
+                            </a>
+                        @endif
                     @endforeach
 
                     <div :class="{{ $isStickyOrScrolled }} ? 'bg-gray-300' : 'bg-white/40'"
@@ -124,10 +155,30 @@
 
                 <div class="flex flex-1 flex-col gap-2 overflow-y-auto px-6 py-5">
                     @foreach ($navLinks as $key => $link)
-                        <a href="{{ route($link['route']) }}"
-                            class="{{ $active === $key ? 'bg-blue-50 text-[#2563eb]' : 'text-gray-700 hover:bg-gray-50 hover:text-[#2563eb]' }} rounded-xl px-4 py-3 font-bold transition-colors">
-                            {{ $link['label'] }}
-                        </a>
+                        @if(isset($link['submenus']))
+                            <div x-data="{ accordionOpen: false }" class="flex flex-col">
+                                <button @click="accordionOpen = !accordionOpen" class="{{ $active === $key ? 'bg-blue-50 text-[#2563eb]' : 'text-gray-700 hover:bg-gray-50 hover:text-[#2563eb]' }} rounded-xl px-4 py-3 font-bold transition-colors flex justify-between items-center w-full focus:outline-none">
+                                    {{ $link['label'] }}
+                                    <svg class="h-5 w-5 transition-transform duration-300 text-gray-400" :class="accordionOpen ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                                </button>
+                                <div x-show="accordionOpen" 
+                                     x-transition:enter="transition ease-out duration-200"
+                                     x-transition:enter-start="opacity-0 -translate-y-2"
+                                     x-transition:enter-end="opacity-100 translate-y-0"
+                                     class="pl-4 pr-2 pt-2 pb-1 flex flex-col gap-1 border-l-2 border-gray-100 ml-4 mb-2 mt-1" style="display: none;">
+                                    @foreach($link['submenus'] as $sub)
+                                        <a href="{{ isset($sub['route']) ? route($sub['route']) : $sub['url'] }}" class="block px-4 py-2.5 rounded-lg text-sm font-semibold text-gray-500 hover:bg-blue-50 hover:text-[#2563eb] transition-colors relative before:content-[''] before:absolute before:left-[-1.1rem] before:w-3 before:h-px before:bg-gray-200 before:top-1/2">
+                                            {{ $sub['label'] }}
+                                        </a>
+                                    @endforeach
+                                </div>
+                            </div>
+                        @else
+                            <a href="{{ route($link['route']) }}"
+                                class="{{ $active === $key ? 'bg-blue-50 text-[#2563eb]' : 'text-gray-700 hover:bg-gray-50 hover:text-[#2563eb]' }} rounded-xl px-4 py-3 font-bold transition-colors">
+                                {{ $link['label'] }}
+                            </a>
+                        @endif
                     @endforeach
                 </div>
 
