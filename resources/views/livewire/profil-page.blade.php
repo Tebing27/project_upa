@@ -151,39 +151,68 @@
     </div>
 
     <!-- Struktur Organisasi Section -->
-    <div class="py-24 px-6 lg:px-16 bg-white border-t border-gray-100">
-        <div class="max-w-340 mx-auto w-full text-center">
+    <div class="py-24 px-6 lg:px-16 bg-white border-t border-gray-100" x-data="{ modalOpen: false, modalImage: '' }">
+        <div class="max-w-6xl mx-auto w-full text-center">
             <h2 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4">Struktur Organisasi</h2>
             <div class="w-16 h-1 bg-[#1e40af] mx-auto mb-20 rounded-full"></div>
 
-            <div class="flex flex-col items-center gap-24">
-                @foreach ($staff as $person)
-                    <div class="flex flex-col items-center">
-                        <div class="relative mb-6 group cursor-pointer">
-                            <img src="{{ $person['image'] }}" alt="{{ $person['name'] }}"
-                                class="w-64 h-80 object-cover rounded-t-3xl rounded-b-xl shadow-md transition-transform duration-500 group-hover:scale-[1.02]">
+            <div class="flex flex-col items-center gap-16">
+                <!-- Kepala UPA LUK Card -->
+                <div class="flex flex-col items-center">
+                    <div class="relative mb-6 group hover:-translate-y-2 transition-transform duration-300">
+                        <img src="{{ asset('assets/Dr.Kusumajanti.webp') }}" alt="Dr. Kusumajanti"
+                            class="w-64 h-80 object-cover rounded-t-3xl rounded-b-xl shadow-md border border-gray-100">
 
-                            <!-- Overlapping Icon -->
-                            <div
-                                class="absolute -bottom-8 left-1/2 transform -translate-x-1/2 w-16 h-16 bg-white rounded-full shadow-lg flex items-center justify-center border-4 border-gray-50 z-10 group-hover:-translate-y-2 transition-transform duration-300">
-                                <svg class="w-6 h-6 text-gray-700" fill="none" stroke="currentColor"
-                                    viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
-                                </svg>
-                            </div>
-                        </div>
-
-                        <div class="mt-10">
-                            @if ($person['prefix'])
-                                <p class="text-gray-500 text-sm font-medium mb-1 uppercase tracking-wider">
-                                    {{ $person['prefix'] }}</p>
-                            @endif
-                            <h3 class="text-2xl font-bold text-[#1e40af] mb-2">{{ $person['name'] }}</h3>
-                            <p class="text-gray-600 font-medium">{{ $person['title'] }}</p>
+                        <!-- Overlapping Icon -->
+                        <div class="absolute -bottom-8 left-1/2 transform -translate-x-1/2 w-16 h-16 bg-white rounded-full shadow-lg flex items-center justify-center border-4 border-gray-50 z-10">
+                            <svg class="w-6 h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                            </svg>
                         </div>
                     </div>
-                @endforeach
+
+                    <div class="mt-10">
+                        <h3 class="text-2xl font-bold text-[#1e40af] mb-2">Dr. Kusumajanti, S.Sos., M.M., M.Si.</h3>
+                        <p class="text-gray-600 font-medium">Kepala UPA-LUK UPN Veteran Jakarta</p>
+                    </div>
+                </div>
+
+                <!-- Bagan Struktur Organisasi -->
+                <div class="w-full mt-4">
+                    <h3 class="text-xl font-bold text-gray-800 mb-8 font-medium">Bagan Susunan Pengurus</h3>
+                    <img @click="modalOpen = true; modalImage = '{{ asset('images/struktur-organisasi-luk.jpeg') }}'" src="{{ asset('images/struktur-organisasi-luk.jpeg') }}" alt="Struktur Organisasi UPA LUK" 
+                         class="w-full max-w-5xl mx-auto rounded-xl shadow-sm border border-gray-100 object-contain cursor-pointer transition-all duration-300 hover:scale-[1.01] hover:shadow-lg bg-gray-50">
+                    <p class="text-sm text-gray-400 mt-3 italic">*Klik gambar untuk memperbesar</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Lightbox Modal (Alpine.js) -->
+        <div x-show="modalOpen" 
+             class="fixed inset-0 z-[100] flex items-center justify-center overflow-auto p-4 sm:p-8 bg-black/90 backdrop-blur-sm"
+             x-transition:enter="transition ease-out duration-300"
+             x-transition:enter-start="opacity-0"
+             x-transition:enter-end="opacity-100"
+             x-transition:leave="transition ease-in duration-200"
+             x-transition:leave-start="opacity-100"
+             x-transition:leave-end="opacity-0"
+             style="display: none;"
+             @keydown.escape.window="modalOpen = false">
+             
+            <!-- Tutup dengan klik backdrop -->
+            <div class="absolute inset-0 cursor-pointer" @click="modalOpen = false"></div>
+            
+            <!-- Konten Gambar Zoom -->
+            <div class="relative max-w-7xl w-full mx-auto flex flex-col justify-center items-center pointer-events-none"
+             x-transition:enter="transition ease-out duration-300 delay-150"
+             x-transition:enter-start="opacity-0 scale-95"
+             x-transition:enter-end="opacity-100 scale-100">
+                
+                <button @click="modalOpen = false" class="absolute -top-12 md:-top-16 right-0 text-white hover:text-gray-300 pointer-events-auto transition rounded-full p-2 bg-black/40 hover:bg-black/80">
+                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+                
+                <img :src="modalImage" alt="Zoom Struktur Organisasi" class="max-h-[85vh] w-auto max-w-full rounded-lg shadow-2xl bg-white mx-auto pointer-events-auto border border-gray-700">
             </div>
         </div>
     </div>
