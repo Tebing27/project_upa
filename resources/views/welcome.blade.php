@@ -287,17 +287,7 @@
                 </div>
             </div>
 
-            <!-- Profile Head -->
-            <div class="mt-32 text-center max-w-xl mx-auto border-t border-gray-200 pt-16">
-                <div class="relative inline-block mb-6 group">
-                    <img src="{{ asset('assets/Dr.Kusumajanti.webp') }}" alt="Dr. Kusumajanti"
-                        class="w-56 h-72 object-cover mx-auto rounded-xl shadow-lg relative z-10 group-hover:-translate-y-2 group-hover:shadow-2xl transition-all duration-300">
-                    <div class="absolute inset-0 bg-blue-200 transform translate-x-4 translate-y-4 rounded-xl -z-10 group-hover:bg-[#ea580c]/50 transition-colors duration-300">
-                    </div>
-                </div>
-                <h3 class="text-xl font-bold text-gray-900">Dr. Kusumajanti, S.Sos., M.M., M.Si.</h3>
-                <p class="text-gray-600 mt-2 font-medium">Kepala UPA LUK UPN Veteran Jakarta</p>
-            </div>
+           
         </div>
     </div>
 
