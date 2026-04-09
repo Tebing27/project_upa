@@ -19,6 +19,9 @@
     @include('partials.head')
     @livewireStyles
     
+    <!-- Swiper CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css" />
+    
     <style>
         /* Gradient hero background */
         .hero-gradient {
@@ -31,6 +34,9 @@
             margin-top: -4vw;
             padding-top: 8vw;
         }
+
+        /* Swiper Navigation Customization */
+        .swiper-button-next, .swiper-button-prev { color: white !important; transform: scale(0.7); }
     </style>
 </head>
 
@@ -39,43 +45,70 @@
 
     <x-public.navbar active="home" />
 
-    <!-- Hero Section -->
-    <div class="hero-gradient min-h-screen flex items-center px-6 lg:px-16 pt-32 pb-32 relative overflow-hidden">
-        <div class="max-w-[85rem] mx-auto w-full grid lg:grid-cols-12 gap-12 items-center relative z-10">
-            <div class="text-white lg:col-span-7">
-                <h1 class="text-5xl lg:text-[4rem] font-bold mb-6 leading-tight">Welcome To UPA - LUK</h1>
-                <p class="text-lg lg:text-xl mb-10 leading-relaxed text-gray-100 font-medium max-w-2xl drop-shadow-sm">
-                    UPN "Veteran" Jakarta Competency Test Service Academic Support Unit or commonly known as LSP has
-                    the task of carrying out training and competency test services to students. Students have the
-                    opportunity to choose certification according to their competence. Certification to UPN
-                    "Veteran" Jakarta students is free of charge (Free) for the first certificate. Students who are
-                    declared competent will get a Certificate of Competence from BNSP and are valid nationally.
-                </p>
-                <div class="flex flex-wrap gap-5">
-                    <!-- Primary CTA -->
-                    <a href="{{ route('register') }}"
-                        class="bg-[#ea580c] hover:bg-[#c2410c] text-white px-8 py-3.5 rounded-full font-bold transition flex items-center gap-3 text-sm tracking-wide shadow-lg shadow-orange-500/30">
-                        <span class="w-1.5 h-1.5 bg-white rounded-full"></span>
-                        DAFTAR
-                        <span class="w-1.5 h-1.5 bg-white rounded-full"></span>
-                    </a>
-                    <!-- Secondary CTA -->
-                    <a href="{{ route('login') }}"
-                        class="bg-transparent border-2 border-white/70 hover:bg-white/10 hover:border-white text-white px-8 py-3.5 rounded-full font-bold transition flex items-center gap-3 text-sm tracking-wide">
-                        MASUK
+    <!-- Hero Section (Swiper Carousel) -->
+    <div class="swiper myHeroSwiper w-full min-h-[85vh] lg:h-screen relative overflow-hidden">
+        <div class="swiper-wrapper">
+            <!-- Slide 1 -->
+            <div class="swiper-slide relative flex items-center justify-center">
+                <!-- Background Image & Overlay -->
+                <img src="{{ asset('images/hero-3.jpeg') }}" alt="Hero 1" class="absolute inset-0 w-full h-full object-cover">
+                <div class="absolute inset-0 bg-black/60 z-10"></div>
+                
+                <!-- Content (dengan pt-28 untuk mengimbangi fixed navbar) -->
+                <div class="relative z-20 text-center text-white px-6 w-full max-w-4xl mx-auto pt-24 md:pt-32">
+                    <h1 class="text-4xl md:text-5xl lg:text-6xl font-bold mb-6 leading-tight drop-shadow-md">Asesor Kompeten & Berpengalaman</h1>
+                    <p class="text-lg md:text-xl text-gray-200 mb-10 font-medium max-w-2xl mx-auto drop-shadow-sm">
+                        Sistem penilaian dilakukan secara transparan dan objektif oleh para Master Asesor yang memiliki keahlian spesifik di bidangnya.
+                    </p>
+                    <a href="{{ route('profil') }}" class="inline-flex items-center gap-2 bg-[#ea580c] hover:bg-[#c2410c] text-white px-8 py-3.5 rounded-full font-bold transition shadow-lg shadow-orange-500/30 text-sm tracking-wide">
+                        PROFIL LSP
                     </a>
                 </div>
             </div>
-            <div class="lg:col-span-5 flex justify-center lg:justify-end">
-                <img src="{{ asset('assets/logo.webp') }}" alt="LSP Logo"
-                    class="w-72 h-72 md:w-[26rem] md:h-[26rem] object-contain rounded-xl bg-white p-6 shadow-2xl rotate-2 hover:rotate-0 transition-transform duration-500">
+
+            <!-- Slide 2 -->
+            <div class="swiper-slide relative flex items-center justify-center">
+                <img src="{{ asset('images/hero-2.jpeg') }}" alt="Hero 2" class="absolute inset-0 w-full h-full object-cover">
+                <div class="absolute inset-0 bg-black/60 z-10"></div>
+                
+                <div class="relative z-20 text-center text-white px-6 w-full max-w-4xl mx-auto pt-24 md:pt-32">
+                    <h1 class="text-4xl md:text-5xl lg:text-6xl font-bold mb-6 leading-tight drop-shadow-md">Fasilitas Lab Terakreditasi</h1>
+                    <p class="text-lg md:text-xl text-gray-200 mb-10 font-medium max-w-2xl mx-auto drop-shadow-sm">
+                        Praktik langsung menggunakan perangkat mutakhir di Tempat Uji Kompetensi (TUK) Mandiri kami yang didesain menyesuaikan standar industri modern.
+                    </p>
+                    <a href="#skema-section" @click.prevent="document.getElementById('skema-section')?.scrollIntoView({behavior: 'smooth'})" class="inline-flex items-center gap-2 bg-white text-gray-900 hover:bg-gray-100 px-8 py-3.5 rounded-full font-bold transition shadow-lg text-sm tracking-wide">
+                        LIHAT SKEMA KAMI
+                    </a>
+                </div>
+            </div>
+
+            <!-- Slide 3 -->
+            <div class="swiper-slide relative flex items-center justify-center">
+                <img src="{{ asset('images/hero-upnvj.png') }}" alt="Hero 3" class="absolute inset-0 w-full h-full object-cover">
+                <div class="absolute inset-0 bg-black/60 z-10"></div>
+                
+                <div class="relative z-20 text-center text-white px-6 w-full max-w-4xl mx-auto pt-24 md:pt-32">
+                    <h1 class="text-4xl md:text-5xl lg:text-6xl font-bold mb-6 leading-tight drop-shadow-md">Pendaftaran Uji Kompetensi Dibuka</h1>
+                    <p class="text-lg md:text-xl text-gray-200 mb-10 font-medium max-w-2xl mx-auto drop-shadow-sm">
+                        Lembaga Sertifikasi Profesi UPN "Veteran" Jakarta melayani uji kompetensi mahasiswa dengan lisensi resmi dari Badan Nasional Sertifikasi Profesi (BNSP). Gratis untuk sertifikat pertama!
+                    </p>
+                    <div class="flex flex-wrap justify-center gap-4">
+                        <a href="{{ route('register') }}" class="bg-[#ea580c] hover:bg-[#c2410c] text-white px-8 py-3.5 rounded-full font-bold transition flex items-center justify-center gap-3 text-sm tracking-wide shadow-lg shadow-orange-500/30">
+                            DAFTAR SEKARANG
+                        </a>
+                        <a href="{{ route('login') }}" class="bg-transparent border-2 border-white/70 hover:bg-white/10 text-white px-8 py-3.5 rounded-full font-bold transition flex items-center justify-center gap-3 text-sm tracking-wide">
+                            MASUK
+                        </a>
+                    </div>
+                </div>
             </div>
         </div>
 
-        <!-- Decorative background elements -->
-        <div class="absolute -top-40 -left-40 w-[40rem] h-[40rem] bg-blue-400/10 rounded-full blur-3xl"></div>
-        <div class="absolute -bottom-40 -right-40 w-[40rem] h-[40rem] bg-cyan-400/10 rounded-full blur-3xl"></div>
+        <!-- Custom Navigation Arrows -->
+        <div class="swiper-button-next"></div>
+        <div class="swiper-button-prev"></div>
     </div>
+
 
     <!-- Floating Cek Sertifikat Widget -->
     <div class="relative z-30 -mt-20 md:-mt-28 px-6 lg:px-16 max-w-5xl mx-auto w-full">
@@ -635,7 +668,25 @@
     </button>
 
     @livewireScripts
+    
+    <!-- Swiper JS -->
+    <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
     <script>
+        // Init Swiper
+        document.addEventListener('DOMContentLoaded', function () {
+            const swiper = new Swiper(".myHeroSwiper", {
+                loop: true,
+                autoplay: {
+                    delay: 6000,
+                    disableOnInteraction: false,
+                },
+                navigation: {
+                    nextEl: ".swiper-button-next",
+                    prevEl: ".swiper-button-prev",
+                },
+            });
+        });
+
         // Ensure Alpine.js knows about the scroll position on load
         document.addEventListener('alpine:init', () => {
             window.dispatchEvent(new CustomEvent('scroll'));
