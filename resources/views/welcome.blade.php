@@ -45,68 +45,60 @@
 
     <x-public.navbar active="home" />
 
-    <!-- Hero Section (Swiper Carousel) -->
-    <div class="swiper myHeroSwiper w-full min-h-[85vh] lg:h-screen relative overflow-hidden">
-        <div class="swiper-wrapper">
-            <!-- Slide 1 -->
-            <div class="swiper-slide relative flex items-center justify-center">
-                <!-- Background Image & Overlay -->
-                <img src="{{ asset('images/hero-3.jpeg') }}" alt="Hero 1" class="absolute inset-0 w-full h-full object-cover">
-                <div class="absolute inset-0 bg-black/60 z-10"></div>
-                
-                <!-- Content (dengan pt-28 untuk mengimbangi fixed navbar) -->
-                <div class="relative z-20 text-center text-white px-6 w-full max-w-4xl mx-auto pt-24 md:pt-32">
-                    <h1 class="text-4xl md:text-5xl lg:text-6xl font-bold mb-6 leading-tight drop-shadow-md">Asesor Kompeten & Berpengalaman</h1>
-                    <p class="text-lg md:text-xl text-gray-200 mb-10 font-medium max-w-2xl mx-auto drop-shadow-sm">
-                        Sistem penilaian dilakukan secara transparan dan objektif oleh para Master Asesor yang memiliki keahlian spesifik di bidangnya.
-                    </p>
-                    <a href="{{ route('profil') }}" class="inline-flex items-center gap-2 bg-[#ea580c] hover:bg-[#c2410c] text-white px-8 py-3.5 rounded-full font-bold transition shadow-lg shadow-orange-500/30 text-sm tracking-wide">
-                        PROFIL LSP
-                    </a>
-                </div>
-            </div>
+    <!-- Hero Section (Static Text Overlay + Background Swiper Carousel) -->
+    <div class="relative w-full min-h-[85vh] lg:h-screen overflow-hidden group">
+        
+        <!-- Global Dark Overlay for Text Readability -->
+        <div class="absolute inset-0 bg-slate-900/60 z-20 pointer-events-none mix-blend-multiply"></div>
 
-            <!-- Slide 2 -->
-            <div class="swiper-slide relative flex items-center justify-center">
-                <img src="{{ asset('images/hero-2.jpeg') }}" alt="Hero 2" class="absolute inset-0 w-full h-full object-cover">
-                <div class="absolute inset-0 bg-black/60 z-10"></div>
-                
-                <div class="relative z-20 text-center text-white px-6 w-full max-w-4xl mx-auto pt-24 md:pt-32">
-                    <h1 class="text-4xl md:text-5xl lg:text-6xl font-bold mb-6 leading-tight drop-shadow-md">Fasilitas Lab Terakreditasi</h1>
-                    <p class="text-lg md:text-xl text-gray-200 mb-10 font-medium max-w-2xl mx-auto drop-shadow-sm">
-                        Praktik langsung menggunakan perangkat mutakhir di Tempat Uji Kompetensi (TUK) Mandiri kami yang didesain menyesuaikan standar industri modern.
-                    </p>
-                    <a href="#skema-section" @click.prevent="document.getElementById('skema-section')?.scrollIntoView({behavior: 'smooth'})" class="inline-flex items-center gap-2 bg-white text-gray-900 hover:bg-gray-100 px-8 py-3.5 rounded-full font-bold transition shadow-lg text-sm tracking-wide">
-                        LIHAT SKEMA KAMI
-                    </a>
+        <!-- Static Text Container (Locks text from sliding, stays visible always) -->
+        <div class="absolute inset-0 z-30 flex items-center justify-center pointer-events-none pt-16 pb-28 md:pt-20 md:pb-40">
+            <div class="text-center text-white px-6 w-full max-w-4xl mx-auto pointer-events-auto">
+                <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 border border-white/20 backdrop-blur-md mb-6 shadow-sm">
+                    <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                    <span class="text-xs font-bold tracking-wider text-emerald-100 uppercase">Lisensi Resmi BNSP</span>
                 </div>
-            </div>
-
-            <!-- Slide 3 -->
-            <div class="swiper-slide relative flex items-center justify-center">
-                <img src="{{ asset('images/hero-upnvj.png') }}" alt="Hero 3" class="absolute inset-0 w-full h-full object-cover">
-                <div class="absolute inset-0 bg-black/60 z-10"></div>
-                
-                <div class="relative z-20 text-center text-white px-6 w-full max-w-4xl mx-auto pt-24 md:pt-32">
-                    <h1 class="text-4xl md:text-5xl lg:text-6xl font-bold mb-6 leading-tight drop-shadow-md">Pendaftaran Uji Kompetensi Dibuka</h1>
-                    <p class="text-lg md:text-xl text-gray-200 mb-10 font-medium max-w-2xl mx-auto drop-shadow-sm">
-                        Lembaga Sertifikasi Profesi UPN "Veteran" Jakarta melayani uji kompetensi mahasiswa dengan lisensi resmi dari Badan Nasional Sertifikasi Profesi (BNSP). Gratis untuk sertifikat pertama!
-                    </p>
-                    <div class="flex flex-wrap justify-center gap-4">
-                        <a href="{{ route('register') }}" class="bg-[#ea580c] hover:bg-[#c2410c] text-white px-8 py-3.5 rounded-full font-bold transition flex items-center justify-center gap-3 text-sm tracking-wide shadow-lg shadow-orange-500/30">
-                            DAFTAR SEKARANG
-                        </a>
-                        <a href="{{ route('login') }}" class="bg-transparent border-2 border-white/70 hover:bg-white/10 text-white px-8 py-3.5 rounded-full font-bold transition flex items-center justify-center gap-3 text-sm tracking-wide">
-                            MASUK
-                        </a>
-                    </div>
+                <h1 class="text-4xl md:text-5xl lg:text-[3.5rem] font-bold mb-6 leading-tight drop-shadow-lg">Uji Kompetensi Terakreditasi & Profesional</h1>
+                <p class="text-lg md:text-xl text-gray-200 mb-10 font-medium max-w-3xl mx-auto drop-shadow-md leading-relaxed">
+                    Sistem penilaian dilakukan secara transparan dan objektif oleh Master Asesor yang memiliki keahlian spesifik menggunakan fasilitas berstandar industri.
+                </p>
+                <div class="flex flex-wrap justify-center gap-4">
+                    <a href="{{ route('register') }}" class="bg-[#ea580c] hover:bg-[#c2410c] text-white px-8 py-4 rounded-full font-bold transition flex items-center justify-center gap-3 text-sm tracking-wide shadow-lg shadow-orange-500/30 group/btn">
+                        DAFTAR SEKARANG
+                        <svg class="w-4 h-4 transition-transform group-hover/btn:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
+                    </a>
+                    <a href="#skema-section" @click.prevent="document.getElementById('skema-section')?.scrollIntoView({behavior: 'smooth'})" class="bg-white/10 backdrop-blur-sm border-2 border-white/70 hover:bg-white/20 hover:border-white text-white px-8 py-4 rounded-full font-bold transition flex items-center justify-center gap-3 text-sm tracking-wide">
+                        LIHAT SKEMA
+                    </a>
                 </div>
             </div>
         </div>
 
-        <!-- Custom Navigation Arrows -->
-        <div class="swiper-button-next"></div>
-        <div class="swiper-button-prev"></div>
+        <!-- Navigation Arrows (Floating above overlay) -->
+        <div class="absolute inset-0 z-40 pointer-events-none">
+            <div class="swiper-button-next pointer-events-auto opacity-40 hover:opacity-100 transition-opacity drop-shadow-lg"></div>
+            <div class="swiper-button-prev pointer-events-auto opacity-40 hover:opacity-100 transition-opacity drop-shadow-lg"></div>
+        </div>
+
+        <!-- Background Swiper Carousel -->
+        <div class="swiper myHeroSwiper absolute inset-0 w-full h-full z-10">
+            <div class="swiper-wrapper">
+                <!-- Slide 1 -->
+                <div class="swiper-slide w-full h-full relative">
+                    <img src="{{ asset('images/hero-3.jpeg') }}" alt="Asesor Background" class="w-full h-full object-cover blur-[3px] scale-[1.03] transition-transform duration-[10000ms] hover:scale-110">
+                </div>
+
+                <!-- Slide 2 -->
+                <div class="swiper-slide w-full h-full relative">
+                    <img src="{{ asset('images/hero-2.jpeg') }}" alt="Fasilitas Background" class="w-full h-full object-cover blur-[3px] scale-[1.03] transition-transform duration-[10000ms] hover:scale-110">
+                </div>
+
+                <!-- Slide 3 -->
+                <div class="swiper-slide w-full h-full relative">
+                    <img src="{{ asset('images/hero-upnvj.png') }}" alt="Pendaftaran Background" class="w-full h-full object-cover blur-[3px] scale-[1.03] transition-transform duration-[10000ms] hover:scale-110">
+                </div>
+            </div>
+        </div>
     </div>
 
 
@@ -676,6 +668,8 @@
         document.addEventListener('DOMContentLoaded', function () {
             const swiper = new Swiper(".myHeroSwiper", {
                 loop: true,
+                effect: "fade", /* Optional if you included the fade effect module, visually amazing for backgrounds */
+                fadeEffect: { crossFade: true },
                 autoplay: {
                     delay: 6000,
                     disableOnInteraction: false,
