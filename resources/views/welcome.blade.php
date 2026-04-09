@@ -500,7 +500,9 @@
 
                                     <!-- Title -->
                                     <h3 class="text-xl font-bold text-gray-900 line-clamp-2 mb-3 leading-snug group-hover:text-[#ea580c] transition-colors">
-                                        {{ $article->title }}
+                                        <a href="{{ route('article.show', $article->slug) }}">
+                                            {{ $article->title }}
+                                        </a>
                                     </h3>
                                     
                                     <!-- Excerpt -->
@@ -511,7 +513,7 @@
                                 
                                 <!-- Read More Link -->
                                 <div class="mt-auto pt-5 border-t border-gray-100 flex justify-start items-center">
-                                    <a href="#" class="text-sm font-bold text-[#ea580c] hover:text-[#c2410c] transition-colors flex items-center gap-1">
+                                    <a href="{{ route('article.show', $article->slug) }}" class="text-sm font-bold text-[#ea580c] hover:text-[#c2410c] transition-colors flex items-center gap-1">
                                         Baca Selengkapnya
                                         <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
                                     </a>
