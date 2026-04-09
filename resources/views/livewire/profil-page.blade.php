@@ -100,8 +100,7 @@
                             </svg>
 
                             <p class="text-gray-600 italic text-[1.1rem] md:text-lg leading-relaxed pl-1 font-medium">
-                                Becoming an Independent and Reliable Professional Certification Organization with State
-                                Defense Identity
+                                Menjadi lembaga sertifikasi profesional yang mandiri dan terpercaya dengan identitas bela negara.
                             </p>
                         </div>
                     </div>
@@ -111,12 +110,10 @@
                         <h3 class="text-2xl md:text-[1.75rem] font-bold text-gray-900 mb-8">UPA LUK Mission – UPNVJ</h3>
                         <ol
                             class="list-decimal list-inside space-y-3.5 text-gray-800 text-[1.05rem] md:text-base leading-relaxed">
-                            <li>Organizing professional human resource certification</li>
-                            <li>Developing a trusted state defense-identified study program competency certification
-                                scheme</li>
-                            <li>Increase the recognition and competitiveness of graduates with national defense identity
-                                at home and abroad.</li>
-                            <li>Build synergistic cooperation with stakeholders</li>
+                            <li>Menyelenggarakan sertifikasi sumber daya manusia secara profesional.</li>
+                            <li>Mengembangkan skema sertifikasi kompetensi program studi yang terpercaya dan identitas bela negara.</li>
+                            <li>Meningkatkan pengakuan dan daya saing lulusan yang beridentitas bela negara baik di tingkat nasional maupun internasional.</li>
+                            <li>Membangun kerja sama yang sinergis dengan para pemangku kepentingan.</li>
                         </ol>
                     </div>
                 @elseif($activeTab === 'tugas')
@@ -125,13 +122,13 @@
                         <h3 class="text-2xl md:text-[1.75rem] font-bold text-gray-900 mb-8">Tugas</h3>
                         <ol
                             class="list-decimal list-inside space-y-3.5 text-gray-800 text-[1.05rem] md:text-base leading-relaxed">
-                            <li>Creating competency test materials.</li>
-                            <li>Provide testing personnel (assessors).</li>
-                            <li>Conduct an assessment.</li>
-                            <li>Develop qualifications with reference to KKNI.</li>
-                            <li>Maintain assessor and TUK performance.</li>
-                            <li>Creating competency test materials.</li>
-                            <li>Development of certification schemes</li>
+                            <li>Menyusun materi uji kompetensi.</li>
+                            <li>Menyediakan asesor uji kompetensi.</li>
+                            <li>Melaksanakan asesmen.</li>
+                            <li>Mengembangkan kualifikasi dengan mengacu pada KKNI.</li>
+                            <li>Memelihara kinerja asesor dan TUK.</li>
+                            <li>Menyusun materi uji kompetensi.</li>
+                            <li>Pengembangan skema sertifikasi.</li>
                         </ol>
                     </div>
                 @elseif($activeTab === 'wewenang')
@@ -140,12 +137,12 @@
                         <h3 class="text-2xl md:text-[1.75rem] font-bold text-gray-900 mb-8">Wewenang</h3>
                         <ol
                             class="list-decimal list-inside space-y-3.5 text-gray-800 text-[1.05rem] md:text-base leading-relaxed">
-                            <li>Setting competency fees.</li>
-                            <li>Issue a certificate of competency.</li>
-                            <li>Revoke/cancel competency certification.</li>
-                            <li>Establish and verify the TUK.</li>
-                            <li>Give sanctions to assessors and TUK if they violate the rules.</li>
-                            <li>Propose new competency standards.</li>
+                            <li>Menetapkan biaya sertifikasi kompetensi.</li>
+                            <li>Menerbitkan sertifikat kompetensi.</li>
+                            <li>Mencabut/membatalkan sertifikasi kompetensi.</li>
+                            <li>Mendirikan dan memverifikasi TUK.</li>
+                            <li>Memberikan sanksi kepada asesor dan TUK jika melanggar aturan.</li>
+                            <li>Mengusulkan standar kompetensi baru.</li>
                         </ol>
                     </div>
                 @endif
