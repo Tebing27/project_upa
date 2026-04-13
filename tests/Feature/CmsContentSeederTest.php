@@ -37,7 +37,7 @@ it('seeds dummy cms article and gallery pages', function () {
 it('seeds page field structure via PageFieldsSeeder', function () {
     // Buat page yang dibutuhkan seeder
     $admin = User::factory()->create(['role' => 'admin']);
-    $slugsNeeded = ['home', 'profil', 'kontak', 'media', 'instagram', 'youtube', 'facebook', 'faq'];
+    $slugsNeeded = ['home', 'profil', 'kontak', 'media', 'instagram', 'youtube', 'facebook', 'faq', 'skema', 'alur-sertifikasi', 'tempat-uji', 'jadwal', 'cek-sertifikat', 'artikel', 'galeri'];
     foreach ($slugsNeeded as $slug) {
         Page::factory()->create(['slug' => $slug, 'created_by' => $admin->id]);
     }
@@ -56,6 +56,9 @@ it('seeds page field structure via PageFieldsSeeder', function () {
     $this->assertDatabaseHas('page_sections', ['section_key' => 'faq_intro']);
     $this->assertDatabaseHas('page_sections', ['section_key' => 'faq_items']);
     $this->assertDatabaseHas('page_sections', ['section_key' => 'faq_help']);
+    $this->assertDatabaseHas('page_sections', ['section_key' => 'steps']);
+    $this->assertDatabaseHas('page_sections', ['section_key' => 'hero', 'label' => 'Header Skema']);
+    $this->assertDatabaseHas('page_sections', ['section_key' => 'hero', 'label' => 'Header Validasi Sertifikat']);
 
     // Pastikan fields hero ada
     $this->assertDatabaseHas('section_fields', ['field_key' => 'hero_title', 'type' => 'text']);
@@ -67,7 +70,12 @@ it('seeds page field structure via PageFieldsSeeder', function () {
     $this->assertDatabaseHas('section_fields', ['field_key' => 'faq_title', 'type' => 'text']);
     $this->assertDatabaseHas('section_fields', ['field_key' => 'faq_fallback1_question', 'type' => 'text']);
     $this->assertDatabaseHas('section_fields', ['field_key' => 'faq_help_button_text', 'type' => 'text']);
+    $this->assertDatabaseHas('section_fields', ['field_key' => 'contact_title', 'type' => 'text']);
+    $this->assertDatabaseHas('section_fields', ['field_key' => 'scheme_title', 'type' => 'text']);
+    $this->assertDatabaseHas('section_fields', ['field_key' => 'flow_step_1_title', 'type' => 'text']);
+    $this->assertDatabaseHas('section_fields', ['field_key' => 'certificate_check_title', 'type' => 'text']);
+    $this->assertDatabaseHas('section_fields', ['field_key' => 'gallery_index_title', 'type' => 'text']);
 
-    expect(PageSection::query()->count())->toBeGreaterThanOrEqual(10);
-    expect(SectionField::query()->count())->toBeGreaterThanOrEqual(20);
+    expect(PageSection::query()->count())->toBeGreaterThanOrEqual(20);
+    expect(SectionField::query()->count())->toBeGreaterThanOrEqual(70);
 });

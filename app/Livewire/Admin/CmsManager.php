@@ -9,6 +9,7 @@ use App\Models\Page;
 use App\Models\PageSection;
 use App\Models\SectionField;
 use App\Models\Tag;
+use Database\Seeders\PageFieldsSeeder;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Storage;
@@ -82,6 +83,7 @@ class CmsManager extends Component
     public function mount(): void
     {
         $this->ensurePageDefaultsExist();
+        $this->ensurePageFieldDefaultsExist();
         $this->syncActivePage();
         $this->syncCmsTab();
 
@@ -1124,6 +1126,46 @@ class CmsManager extends Component
                     'created_by' => auth()->id(),
                 ],
             );
+        }
+    }
+
+    private function ensurePageFieldDefaultsExist(): void
+    {
+        foreach (PageFieldsSeeder::pageStructure() as $pageSlug => $sections) {
+            $page = Page::query()->where('slug', $pageSlug)->first();
+
+            if (! $page) {
+                continue;
+            }
+
+            foreach ($sections as $sectionSortOrder => $sectionData) {
+                $pageSection = PageSection::query()->updateOrCreate(
+                    [
+                        'page_id' => $page->id,
+                        'section_key' => $sectionData['key'],
+                    ],
+                    [
+                        'label' => $sectionData['label'],
+                        'sort_order' => $sectionSortOrder,
+                        'is_visible' => true,
+                    ],
+                );
+
+                foreach ($sectionData['fields'] as $fieldSortOrder => $fieldData) {
+                    SectionField::query()->updateOrCreate(
+                        [
+                            'page_section_id' => $pageSection->id,
+                            'field_key' => $fieldData['key'],
+                        ],
+                        [
+                            'label' => $fieldData['label'],
+                            'type' => $fieldData['type'],
+                            'sort_order' => $fieldSortOrder,
+                            'description' => $fieldData['description'] ?? null,
+                        ],
+                    );
+                }
+            }
         }
     }
 }

@@ -11,7 +11,7 @@ class PageFieldsSeeder extends Seeder
 {
     public function run(): void
     {
-        foreach ($this->pageStructure() as $pageSlug => $sections) {
+        foreach (self::pageStructure() as $pageSlug => $sections) {
             $page = Page::query()->where('slug', $pageSlug)->first();
 
             if (! $page) {
@@ -56,7 +56,7 @@ class PageFieldsSeeder extends Seeder
     /**
      * @return array<string, array<int, array<string, mixed>>>
      */
-    private function pageStructure(): array
+    public static function pageStructure(): array
     {
         return [
             'home' => [
@@ -198,13 +198,103 @@ class PageFieldsSeeder extends Seeder
             ],
             'kontak' => [
                 1 => [
-                    'key' => 'content',
-                    'label' => 'Kontak',
+                    'key' => 'hero',
+                    'label' => 'Hero Kontak',
                     'fields' => [
-                        1 => ['key' => 'alamat', 'label' => 'Alamat', 'type' => 'textarea', 'description' => 'Alamat lengkap kantor.'],
-                        2 => ['key' => 'telepon', 'label' => 'Telepon', 'type' => 'text', 'description' => 'Nomor telepon yang bisa dihubungi.'],
-                        3 => ['key' => 'email', 'label' => 'Email', 'type' => 'text', 'description' => 'Alamat email resmi lembaga.'],
-                        4 => ['key' => 'maps_embed', 'label' => 'Google Maps Embed', 'type' => 'textarea', 'description' => 'Kode iframe embed dari Google Maps.'],
+                        1 => ['key' => 'contact_title', 'label' => 'Judul Halaman', 'type' => 'text', 'description' => 'Judul utama halaman kontak.'],
+                        2 => ['key' => 'contact_subtitle', 'label' => 'Subjudul Halaman', 'type' => 'textarea', 'description' => 'Deskripsi singkat di bawah judul kontak.'],
+                    ],
+                ],
+                2 => [
+                    'key' => 'content',
+                    'label' => 'Informasi Kontak',
+                    'fields' => [
+                        1 => ['key' => 'address_label', 'label' => 'Label Alamat', 'type' => 'text', 'description' => 'Judul kartu alamat.'],
+                        2 => ['key' => 'alamat', 'label' => 'Alamat', 'type' => 'textarea', 'description' => 'Alamat lengkap kantor.'],
+                        3 => ['key' => 'email_label', 'label' => 'Label Email', 'type' => 'text', 'description' => 'Judul kartu email.'],
+                        4 => ['key' => 'email', 'label' => 'Email', 'type' => 'text', 'description' => 'Alamat email resmi lembaga.'],
+                        5 => ['key' => 'phone_label', 'label' => 'Label Telepon', 'type' => 'text', 'description' => 'Judul kartu telepon.'],
+                        6 => ['key' => 'telepon', 'label' => 'Telepon', 'type' => 'text', 'description' => 'Nomor telepon yang bisa dihubungi.'],
+                        7 => ['key' => 'maps_embed', 'label' => 'Google Maps Embed', 'type' => 'textarea', 'description' => 'Kode iframe embed dari Google Maps.'],
+                    ],
+                ],
+            ],
+            'skema' => [
+                1 => [
+                    'key' => 'hero',
+                    'label' => 'Header Skema',
+                    'fields' => [
+                        1 => ['key' => 'scheme_title', 'label' => 'Judul Halaman', 'type' => 'text'],
+                        2 => ['key' => 'scheme_subtitle', 'label' => 'Subjudul Halaman', 'type' => 'textarea'],
+                        3 => ['key' => 'scheme_search_placeholder', 'label' => 'Placeholder Pencarian', 'type' => 'text'],
+                    ],
+                ],
+            ],
+            'alur-sertifikasi' => [
+                1 => [
+                    'key' => 'hero',
+                    'label' => 'Header Alur Sertifikasi',
+                    'fields' => [
+                        1 => ['key' => 'flow_title', 'label' => 'Judul Halaman', 'type' => 'text'],
+                        2 => ['key' => 'flow_subtitle', 'label' => 'Subjudul Halaman', 'type' => 'textarea'],
+                    ],
+                ],
+                2 => [
+                    'key' => 'steps',
+                    'label' => 'Langkah Alur',
+                    'fields' => [
+                        1 => ['key' => 'flow_step_1_title', 'label' => 'Judul Langkah 1', 'type' => 'text'],
+                        2 => ['key' => 'flow_step_1_desc', 'label' => 'Deskripsi Langkah 1', 'type' => 'textarea'],
+                        3 => ['key' => 'flow_step_2_title', 'label' => 'Judul Langkah 2', 'type' => 'text'],
+                        4 => ['key' => 'flow_step_2_desc', 'label' => 'Deskripsi Langkah 2', 'type' => 'textarea'],
+                        5 => ['key' => 'flow_step_3_title', 'label' => 'Judul Langkah 3', 'type' => 'text'],
+                        6 => ['key' => 'flow_step_3_desc', 'label' => 'Deskripsi Langkah 3', 'type' => 'textarea'],
+                        7 => ['key' => 'flow_step_4_title', 'label' => 'Judul Langkah 4', 'type' => 'text'],
+                        8 => ['key' => 'flow_step_4_desc', 'label' => 'Deskripsi Langkah 4', 'type' => 'textarea'],
+                        9 => ['key' => 'flow_step_5_title', 'label' => 'Judul Langkah 5', 'type' => 'text'],
+                        10 => ['key' => 'flow_step_5_desc', 'label' => 'Deskripsi Langkah 5', 'type' => 'textarea'],
+                    ],
+                ],
+            ],
+            'tempat-uji' => [
+                1 => [
+                    'key' => 'hero',
+                    'label' => 'Header Tempat Uji',
+                    'fields' => [
+                        1 => ['key' => 'test_center_title', 'label' => 'Judul Halaman', 'type' => 'text'],
+                        2 => ['key' => 'test_center_subtitle', 'label' => 'Subjudul Halaman', 'type' => 'textarea'],
+                    ],
+                ],
+                2 => [
+                    'key' => 'content',
+                    'label' => 'Konten Tempat Uji',
+                    'fields' => [
+                        1 => ['key' => 'test_center_description', 'label' => 'Deskripsi', 'type' => 'rich_text'],
+                        2 => ['key' => 'test_center_address', 'label' => 'Alamat', 'type' => 'textarea'],
+                        3 => ['key' => 'test_center_maps_embed', 'label' => 'Google Maps Embed', 'type' => 'textarea'],
+                        4 => ['key' => 'test_center_image', 'label' => 'Gambar Tempat Uji', 'type' => 'image'],
+                    ],
+                ],
+            ],
+            'jadwal' => [
+                1 => [
+                    'key' => 'hero',
+                    'label' => 'Header Jadwal',
+                    'fields' => [
+                        1 => ['key' => 'schedule_title', 'label' => 'Judul Halaman', 'type' => 'text'],
+                        2 => ['key' => 'schedule_subtitle', 'label' => 'Subjudul Halaman', 'type' => 'textarea'],
+                        3 => ['key' => 'schedule_notice', 'label' => 'Catatan Jadwal', 'type' => 'textarea'],
+                    ],
+                ],
+            ],
+            'cek-sertifikat' => [
+                1 => [
+                    'key' => 'hero',
+                    'label' => 'Header Validasi Sertifikat',
+                    'fields' => [
+                        1 => ['key' => 'certificate_check_title', 'label' => 'Judul Halaman', 'type' => 'text'],
+                        2 => ['key' => 'certificate_check_subtitle', 'label' => 'Subjudul Halaman', 'type' => 'textarea'],
+                        3 => ['key' => 'certificate_check_help_text', 'label' => 'Teks Bantuan', 'type' => 'textarea'],
                     ],
                 ],
             ],
@@ -288,6 +378,26 @@ class PageFieldsSeeder extends Seeder
                         1 => ['key' => 'faq_help_title', 'label' => 'Judul Bantuan', 'type' => 'text'],
                         2 => ['key' => 'faq_help_text', 'label' => 'Deskripsi Bantuan', 'type' => 'textarea'],
                         3 => ['key' => 'faq_help_button_text', 'label' => 'Teks Tombol Bantuan', 'type' => 'text'],
+                    ],
+                ],
+            ],
+            'artikel' => [
+                1 => [
+                    'key' => 'hero',
+                    'label' => 'Header Artikel',
+                    'fields' => [
+                        1 => ['key' => 'article_index_title', 'label' => 'Judul Halaman', 'type' => 'text'],
+                        2 => ['key' => 'article_index_subtitle', 'label' => 'Subjudul Halaman', 'type' => 'textarea'],
+                    ],
+                ],
+            ],
+            'galeri' => [
+                1 => [
+                    'key' => 'hero',
+                    'label' => 'Header Galeri',
+                    'fields' => [
+                        1 => ['key' => 'gallery_index_title', 'label' => 'Judul Halaman', 'type' => 'text'],
+                        2 => ['key' => 'gallery_index_subtitle', 'label' => 'Subjudul Halaman', 'type' => 'textarea'],
                     ],
                 ],
             ],

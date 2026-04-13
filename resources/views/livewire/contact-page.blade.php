@@ -12,11 +12,11 @@
                     <h1 class="text-3xl font-bold tracking-tight text-white md:text-5xl">
                         <span class="text-slate-200 font-medium">UPA LUK</span>
                         <span class="mx-2 font-normal text-white/70">/</span>
-                        Kontak
+                        {{ $pageTitle }}
                     </h1>
-                    <p class="mx-auto mt-4 max-w-2xl text-sm leading-relaxed text-slate-300 md:text-base">Hubungi kami
-                        untuk informasi layanan, pendaftaran,
-                        dan dukungan terkait sertifikasi.</p>
+                    <p class="mx-auto mt-4 max-w-2xl text-sm leading-relaxed text-slate-300 md:text-base">
+                        {{ $pageSubtitle }}
+                    </p>
                 </div>
             </div>
         </section>
@@ -36,8 +36,8 @@
                                 <path d="m51 46.5 4.5 7" />
                             </svg>
                         </div>
-                        <h2 class="mt-6 text-3xl font-semibold text-slate-950">Address</h2>
-                        <p class="mt-4 text-[1.05rem] text-slate-800">Jalan RS. Fatmawati Raya</p>
+                        <h2 class="mt-6 text-3xl font-semibold text-slate-950">{{ $addressLabel }}</h2>
+                        <p class="mt-4 text-[1.05rem] text-slate-800 whitespace-pre-line">{{ $address }}</p>
                     </article>
 
                     <article
@@ -51,8 +51,8 @@
                                 <path d="M24 27h16M24 33h16" />
                             </svg>
                         </div>
-                        <h2 class="mt-6 text-3xl font-semibold text-slate-950">Email Address</h2>
-                        <p class="mt-4 text-[1.05rem] text-slate-800">lsp@upnvj.ac.id</p>
+                        <h2 class="mt-6 text-3xl font-semibold text-slate-950">{{ $emailLabel }}</h2>
+                        <p class="mt-4 text-[1.05rem] text-slate-800">{{ $email }}</p>
                     </article>
 
                     <article
@@ -67,8 +67,8 @@
                                 <path d="M48 20c2 2 3 4.5 3 7s-1 5-3 7" />
                             </svg>
                         </div>
-                        <h2 class="mt-6 text-3xl font-semibold text-slate-950">Phone Number</h2>
-                        <p class="mt-4 text-[1.05rem] text-slate-800">+62 812-8028-0908</p>
+                        <h2 class="mt-6 text-3xl font-semibold text-slate-950">{{ $phoneLabel }}</h2>
+                        <p class="mt-4 text-[1.05rem] text-slate-800">{{ $phone }}</p>
                     </article>
                 </section>
 
@@ -76,7 +76,7 @@
                     class="mt-20 overflow-hidden rounded-md border border-slate-200 bg-white shadow-[0_28px_70px_-45px_rgba(15,23,42,0.3)]">
                     <div class="google-map aspect-16/8 w-full">
                         <iframe
-                            src="https://www.google.com/maps?q=Universitas%20Pembangunan%20Nasional%20Veteran%20Jakarta&z=15&output=embed"
+                            src="{{ $mapsEmbed }}"
                             class="h-full w-full" style="border:0;" allowfullscreen="" loading="lazy"
                             referrerpolicy="no-referrer-when-downgrade"></iframe>
                     </div>

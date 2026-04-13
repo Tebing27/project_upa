@@ -140,6 +140,19 @@ it('seeds missing cms tabs for media menu items', function () {
         ->and(Page::query()->where('slug', 'artikel')->exists())->toBeTrue();
 });
 
+it('auto configures field structure for default cms pages', function () {
+    $admin = User::factory()->create(['role' => 'admin']);
+
+    Livewire::actingAs($admin)
+        ->test(CmsManager::class);
+
+    expect(PageSection::query()->where('section_key', 'hero')->exists())->toBeTrue()
+        ->and(PageSection::query()->where('section_key', 'steps')->exists())->toBeTrue()
+        ->and(SectionField::query()->where('field_key', 'contact_title')->exists())->toBeTrue()
+        ->and(SectionField::query()->where('field_key', 'scheme_title')->exists())->toBeTrue()
+        ->and(SectionField::query()->where('field_key', 'certificate_check_title')->exists())->toBeTrue();
+});
+
 it('saves field values for a page section', function () {
     Storage::fake('public');
 
@@ -216,22 +229,24 @@ it('adds grouped faq item fields from cms manager', function () {
     $admin = User::factory()->create(['role' => 'admin']);
 
     $page = Page::factory()->create(['slug' => 'faq', 'title' => 'FAQ']);
-    $pageSection = PageSection::query()->create([
-        'page_id' => $page->id,
-        'section_key' => 'faq_items',
-        'label' => 'Daftar FAQ',
-        'sort_order' => 1,
-        'is_visible' => true,
-    ]);
 
-    Livewire::actingAs($admin)
+    $component = Livewire::actingAs($admin)
         ->test(CmsManager::class)
-        ->set('activePageSlug', 'faq')
+        ->set('activePageSlug', 'faq');
+
+    $pageSection = PageSection::query()
+        ->where('page_id', $page->id)
+        ->where('section_key', 'faq_items')
+        ->firstOrFail();
+
+    $initialFieldCount = SectionField::query()->where('page_section_id', $pageSection->id)->count();
+
+    $component
         ->call('addFaqItem', $pageSection->id)
         ->assertHasNoErrors()
         ->assertDispatched('toast');
 
-    expect(SectionField::query()->where('page_section_id', $pageSection->id)->count())->toBe(3);
+    expect(SectionField::query()->where('page_section_id', $pageSection->id)->count())->toBe($initialFieldCount + 3);
     expect(SectionField::query()->where('page_section_id', $pageSection->id)->pluck('field_key')->implode(' '))
         ->toContain('_category')
         ->toContain('_question')
