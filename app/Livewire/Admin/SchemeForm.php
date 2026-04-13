@@ -6,6 +6,7 @@ use App\Models\Faculty;
 use App\Models\Scheme;
 use App\Models\StudyProgram;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Layout;
@@ -44,6 +45,14 @@ class SchemeForm extends Component
     /** @var TemporaryUploadedFile|null */
     public $dokumen_skema;
 
+    public string $newFacultyName = '';
+
+    public string $newStudyProgramName = '';
+
+    public ?string $existingGambarUrl = null;
+
+    public ?string $existingDokumenUrl = null;
+
     public string $activeTab = 'info';
 
     /**
@@ -76,6 +85,8 @@ class SchemeForm extends Component
             $this->faculty_id = $scheme->faculty_id;
             $this->study_program_id = $scheme->study_program_id;
             $this->description = $scheme->deskripsi ?? '';
+            $this->existingGambarUrl = $scheme->gambar_path ? Storage::url($scheme->gambar_path) : null;
+            $this->existingDokumenUrl = $scheme->dokumen_skema_path ? Storage::url($scheme->dokumen_skema_path) : null;
             $this->unitKompetensis = $scheme->unitKompetensis->map(fn ($uk) => [
                 'kode_unit' => $uk->kode_unit,
                 'nama_unit' => $uk->nama_unit,
@@ -114,6 +125,46 @@ class SchemeForm extends Component
     public function updatedFacultyId(): void
     {
         $this->study_program_id = null;
+    }
+
+    public function createFaculty(): void
+    {
+        $validated = $this->validate([
+            'newFacultyName' => 'required|string|max:255',
+        ], [
+            'newFacultyName.required' => 'Nama fakultas wajib diisi.',
+        ]);
+
+        $faculty = Faculty::query()->firstOrCreate([
+            'name' => trim($validated['newFacultyName']),
+        ]);
+
+        $this->faculty_id = $faculty->id;
+        $this->study_program_id = null;
+        $this->newFacultyName = '';
+
+        unset($this->faculties, $this->studyPrograms);
+    }
+
+    public function createStudyProgram(): void
+    {
+        $validated = $this->validate([
+            'faculty_id' => 'required|exists:faculties,id',
+            'newStudyProgramName' => 'required|string|max:255',
+        ], [
+            'faculty_id.required' => 'Pilih fakultas sebelum menambah program studi.',
+            'newStudyProgramName.required' => 'Nama program studi wajib diisi.',
+        ]);
+
+        $studyProgram = StudyProgram::query()->firstOrCreate([
+            'faculty_id' => $validated['faculty_id'],
+            'nama' => trim($validated['newStudyProgramName']),
+        ]);
+
+        $this->study_program_id = $studyProgram->id;
+        $this->newStudyProgramName = '';
+
+        unset($this->studyPrograms);
     }
 
     /**

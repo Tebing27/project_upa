@@ -4,21 +4,25 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    
+
     <!-- SEO & Metadata -->
     <title>{{ config('app.name', 'LSP UPN Veteran Jakarta') }} - Lembaga Sertifikasi Profesi</title>
-    <meta name="description" content="Unit Penunjang Akademik - Layanan Uji Kompetensi (UPA-LUK) UPN Veteran Jakarta melayani uji kompetensi bersertifikat BNSP untuk mahasiswa.">
-    
+    <meta name="description"
+        content="Unit Penunjang Akademik - Layanan Uji Kompetensi (UPA-LUK) UPN Veteran Jakarta melayani uji kompetensi bersertifikat BNSP untuk mahasiswa.">
+
     <!-- Open Graph Tags -->
     <meta property="og:title" content="{{ config('app.name', 'LSP UPN Veteran Jakarta') }} - Terlisensi BNSP">
-    <meta property="og:description" content="Dapatkan sertifikat kompetensi dari BNSP melalui UPA-LUK UPN Veteran Jakarta. Skema sertifikasi lengkap.">
+    <meta property="og:description"
+        content="Dapatkan sertifikat kompetensi dari BNSP melalui UPA-LUK UPN Veteran Jakarta. Skema sertifikasi lengkap.">
     <meta property="og:image" content="{{ asset('assets/logo.webp') }}">
     <meta property="og:url" content="{{ url()->current() }}">
     <meta property="og:type" content="website">
 
     @include('partials.head')
     @livewireStyles
-    
+
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css" />
+
     <style>
         /* Gradient hero background */
         .hero-gradient {
@@ -31,6 +35,12 @@
             margin-top: -4vw;
             padding-top: 8vw;
         }
+
+        .swiper-button-next,
+        .swiper-button-prev {
+            color: white !important;
+            transform: scale(0.7);
+        }
     </style>
 </head>
 
@@ -39,42 +49,66 @@
 
     <x-public.navbar active="home" />
 
-    <!-- Hero Section -->
-    <div class="hero-gradient min-h-screen flex items-center px-6 lg:px-16 pt-32 pb-32 relative overflow-hidden">
-        <div class="max-w-[85rem] mx-auto w-full grid lg:grid-cols-12 gap-12 items-center relative z-10">
-            <div class="text-white lg:col-span-7">
-                <h1 class="text-5xl lg:text-[4rem] font-bold mb-6 leading-tight">Welcome To UPA - LUK</h1>
-                <p class="text-lg lg:text-xl mb-10 leading-relaxed text-gray-100 font-medium max-w-2xl drop-shadow-sm">
-                    UPN "Veteran" Jakarta Competency Test Service Academic Support Unit or commonly known as LSP has
-                    the task of carrying out training and competency test services to students. Students have the
-                    opportunity to choose certification according to their competence. Certification to UPN
-                    "Veteran" Jakarta students is free of charge (Free) for the first certificate. Students who are
-                    declared competent will get a Certificate of Competence from BNSP and are valid nationally.
+    <!-- Hero Section (Static Text Overlay + Background Swiper Carousel) -->
+    <div class="group relative min-h-[85vh] w-full overflow-hidden lg:h-screen">
+        <div class="pointer-events-none absolute inset-0 z-20 bg-slate-900/60 mix-blend-multiply"></div>
+
+        <div class="pointer-events-none absolute inset-0 z-30 flex items-center justify-center pt-16 pb-28 md:pt-20 md:pb-40">
+            <div class="mx-auto w-full max-w-4xl px-6 text-center text-white pointer-events-auto">
+                <div
+                    class="mb-6 inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-2 shadow-sm backdrop-blur-md">
+                    <span class="h-2 w-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                    <span class="text-xs font-bold tracking-wider text-emerald-100 uppercase">Lisensi Resmi BNSP</span>
+                </div>
+                <h1 class="mb-6 text-4xl font-bold leading-tight drop-shadow-lg md:text-5xl lg:text-[3.5rem]">
+                    Uji Kompetensi Terakreditasi & Profesional
+                </h1>
+                <p class="mx-auto mb-10 max-w-3xl text-lg font-medium leading-relaxed text-gray-200 drop-shadow-md md:text-xl">
+                    Sistem penilaian dilakukan secara transparan dan objektif oleh Master Asesor yang memiliki
+                    keahlian spesifik menggunakan fasilitas berstandar industri.
                 </p>
-                <div class="flex flex-wrap gap-5">
-                    <!-- Primary CTA -->
+                <div class="flex flex-wrap justify-center gap-4">
                     <a href="{{ route('register') }}"
-                        class="bg-[#ea580c] hover:bg-[#c2410c] text-white px-8 py-3.5 rounded-full font-bold transition flex items-center gap-3 text-sm tracking-wide shadow-lg shadow-orange-500/30">
-                        <span class="w-1.5 h-1.5 bg-white rounded-full"></span>
-                        DAFTAR
-                        <span class="w-1.5 h-1.5 bg-white rounded-full"></span>
+                        class="group/btn flex items-center justify-center gap-3 rounded-full bg-[#ea580c] px-8 py-4 text-sm font-bold tracking-wide text-white transition hover:bg-[#c2410c] shadow-lg shadow-orange-500/30">
+                        DAFTAR SEKARANG
+                        <svg class="w-4 h-4 transition-transform group-hover/btn:translate-x-1" fill="none"
+                            stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M14 5l7 7m0 0l-7 7m7-7H3"></path>
+                        </svg>
                     </a>
-                    <!-- Secondary CTA -->
-                    <a href="{{ route('login') }}"
-                        class="bg-transparent border-2 border-white/70 hover:bg-white/10 hover:border-white text-white px-8 py-3.5 rounded-full font-bold transition flex items-center gap-3 text-sm tracking-wide">
-                        MASUK
+                    <a href="#skema-section"
+                        @click.prevent="document.getElementById('skema-section')?.scrollIntoView({behavior: 'smooth'})"
+                        class="flex items-center justify-center gap-3 rounded-full border-2 border-white/70 bg-white/10 px-8 py-4 text-sm font-bold tracking-wide text-white transition hover:border-white hover:bg-white/20 backdrop-blur-sm">
+                        LIHAT SKEMA
                     </a>
                 </div>
             </div>
-            <div class="lg:col-span-5 flex justify-center lg:justify-end">
-                <img src="{{ asset('assets/logo.webp') }}" alt="LSP Logo"
-                    class="w-72 h-72 md:w-[26rem] md:h-[26rem] object-contain rounded-xl bg-white p-6 shadow-2xl rotate-2 hover:rotate-0 transition-transform duration-500">
-            </div>
         </div>
 
-        <!-- Decorative background elements -->
-        <div class="absolute -top-40 -left-40 w-[40rem] h-[40rem] bg-blue-400/10 rounded-full blur-3xl"></div>
-        <div class="absolute -bottom-40 -right-40 w-[40rem] h-[40rem] bg-cyan-400/10 rounded-full blur-3xl"></div>
+        <div class="pointer-events-none absolute inset-0 z-40">
+            <div class="swiper-button-next pointer-events-auto opacity-40 transition-opacity drop-shadow-lg hover:opacity-100"></div>
+            <div class="swiper-button-prev pointer-events-auto opacity-40 transition-opacity drop-shadow-lg hover:opacity-100"></div>
+        </div>
+
+        <div class="swiper myHeroSwiper absolute inset-0 z-10 h-full w-full">
+            <div class="swiper-wrapper">
+                <div class="swiper-slide relative h-full w-full">
+                    <img src="{{ asset('images/hero-3.jpeg') }}" alt="Asesor Background"
+                        class="h-full w-full object-cover blur-[3px] scale-[1.03] transition-transform duration-[10000ms] hover:scale-110">
+                </div>
+
+                <div class="swiper-slide relative h-full w-full">
+                    <img src="{{ asset('images/hero-2.jpeg') }}" alt="Fasilitas Background"
+                        class="h-full w-full object-cover blur-[3px] scale-[1.03] transition-transform duration-[10000ms] hover:scale-110">
+                </div>
+
+                <div class="swiper-slide relative h-full w-full">
+                    <img src="{{ asset('images/hero-upnvj.png') }}" alt="Pendaftaran Background"
+                        class="h-full w-full object-cover blur-[3px] scale-[1.03] transition-transform duration-[10000ms] hover:scale-110">
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- Floating Cek Sertifikat Widget -->
@@ -82,25 +116,40 @@
         <div class="bg-white rounded-[1.5rem] shadow-2xl shadow-[#1a9bc3]/10 border border-gray-100 p-8">
             <div class="flex flex-col md:flex-row items-center gap-8 md:gap-10">
                 <div class="md:w-1/3 text-center md:text-left">
-                    <div class="inline-flex items-center justify-center p-3.5 bg-blue-50 rounded-xl text-blue-600 mb-4 shadow-sm border border-blue-100">
-                        <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"></path></svg>
+                    <div
+                        class="inline-flex items-center justify-center p-3.5 bg-blue-50 rounded-xl text-blue-600 mb-4 shadow-sm border border-blue-100">
+                        <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z">
+                            </path>
+                        </svg>
                     </div>
                     <h3 class="text-2xl font-bold text-gray-900 mb-2">Cek Sertifikat</h3>
-                    <p class="text-gray-500 text-sm leading-relaxed">Verifikasi keaslian sertifikat kompetensi Anda di LSP UPNVJ secara online untuk membuktikan validitasnya.</p>
+                    <p class="text-gray-500 text-sm leading-relaxed">Verifikasi keaslian sertifikat kompetensi Anda di
+                        LSP UPNVJ secara online untuk membuktikan validitasnya.</p>
                 </div>
                 <div class="md:w-2/3 w-full border-t md:border-t-0 md:border-l border-gray-100 pt-6 md:pt-0 md:pl-10">
-                    <form action="{{ route('cek-sertifikat') }}" method="GET" class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                    <form action="{{ route('cek-sertifikat') }}" method="GET"
+                        class="grid grid-cols-1 sm:grid-cols-2 gap-5">
                         <div class="flex flex-col">
                             <label for="nama" class="text-sm font-bold text-gray-700 mb-2">Nama Lengkap</label>
-                            <input type="text" id="nama" name="nama" placeholder="Isi nama sesuai KTP" class="border border-gray-200 rounded-xl px-4 py-3.5 outline-none focus:border-[#2563eb] focus:ring-2 focus:ring-[#2563eb]/20 transition-all text-gray-700 bg-gray-50/50 w-full placeholder-gray-400">
+                            <input type="text" id="nama" name="nama" placeholder="Isi nama sesuai KTP"
+                                class="border border-gray-200 rounded-xl px-4 py-3.5 outline-none focus:border-[#2563eb] focus:ring-2 focus:ring-[#2563eb]/20 transition-all text-gray-700 bg-gray-50/50 w-full placeholder-gray-400">
                         </div>
                         <div class="flex flex-col">
-                            <label for="reg_no" class="text-sm font-bold text-gray-700 mb-2">No. Registrasi / Sertifikat</label>
-                            <input type="text" id="reg_no" name="nomor" placeholder="Contoh: REG-2025-XXXX" class="border border-gray-200 rounded-xl px-4 py-3.5 outline-none focus:border-[#2563eb] focus:ring-2 focus:ring-[#2563eb]/20 transition-all text-gray-700 bg-gray-50/50 w-full placeholder-gray-400">
+                            <label for="reg_no" class="text-sm font-bold text-gray-700 mb-2">No. Registrasi /
+                                Sertifikat</label>
+                            <input type="text" id="reg_no" name="nomor" placeholder="Contoh: REG-2025-XXXX"
+                                class="border border-gray-200 rounded-xl px-4 py-3.5 outline-none focus:border-[#2563eb] focus:ring-2 focus:ring-[#2563eb]/20 transition-all text-gray-700 bg-gray-50/50 w-full placeholder-gray-400">
                         </div>
                         <div class="sm:col-span-2 mt-2">
-                            <button type="submit" class="w-full bg-[#2563eb] hover:bg-[#1d4ed8] text-white font-bold py-4 rounded-xl shadow-md hover:shadow-lg transition-all flex justify-center items-center gap-2 group">
-                                <svg class="w-5 h-5 transition-transform group-hover:scale-110" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                            <button type="submit"
+                                class="w-full bg-[#2563eb] hover:bg-[#1d4ed8] text-white font-bold py-4 rounded-xl shadow-md hover:shadow-lg transition-all flex justify-center items-center gap-2 group">
+                                <svg class="w-5 h-5 transition-transform group-hover:scale-110" fill="none"
+                                    stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                                </svg>
                                 Cek Sertifikat Sekarang
                             </button>
                         </div>
@@ -118,14 +167,20 @@
                     <h2 class="text-4xl lg:text-[2.5rem] font-bold mb-6 text-gray-900 leading-tight">Selamat Datang di
                         UPA-LUK</h2>
                     <p class="text-gray-600 mb-8 leading-relaxed text-lg">
-                        Lembaga Sertifikasi Profesi (LSP) UPN "Veteran" Jakarta melayani pelaksanaan kegiatan uji kompetensi mahasiswa dengan lisensi resmi dari Badan Nasional Sertifikasi Profesi (BNSP).
+                        Lembaga Sertifikasi Profesi (LSP) UPN "Veteran" Jakarta melayani pelaksanaan kegiatan uji
+                        kompetensi mahasiswa dengan lisensi resmi dari Badan Nasional Sertifikasi Profesi (BNSP).
                     </p>
-                    
+
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-10">
                         <!-- Benefit 1 -->
                         <div class="flex items-start gap-4">
-                            <div class="bg-blue-50 p-2.5 rounded-lg text-blue-600 shadow-sm border border-blue-100 flex-shrink-0">
-                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"></path></svg>
+                            <div
+                                class="bg-blue-50 p-2.5 rounded-lg text-blue-600 shadow-sm border border-blue-100 flex-shrink-0">
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z">
+                                    </path>
+                                </svg>
                             </div>
                             <div>
                                 <h4 class="font-bold text-gray-900 mb-1">Terlisensi BNSP</h4>
@@ -134,8 +189,13 @@
                         </div>
                         <!-- Benefit 2 -->
                         <div class="flex items-start gap-4">
-                            <div class="bg-orange-50 p-2.5 rounded-lg text-[#ea580c] shadow-sm border border-orange-100 flex-shrink-0">
-                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
+                            <div
+                                class="bg-orange-50 p-2.5 rounded-lg text-[#ea580c] shadow-sm border border-orange-100 flex-shrink-0">
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z">
+                                    </path>
+                                </svg>
                             </div>
                             <div>
                                 <h4 class="font-bold text-gray-900 mb-1">Asesor Kompeten</h4>
@@ -144,8 +204,13 @@
                         </div>
                         <!-- Benefit 3 -->
                         <div class="flex items-start gap-4">
-                            <div class="bg-emerald-50 p-2.5 rounded-lg text-emerald-600 shadow-sm border border-emerald-100 flex-shrink-0">
-                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg>
+                            <div
+                                class="bg-emerald-50 p-2.5 rounded-lg text-emerald-600 shadow-sm border border-emerald-100 flex-shrink-0">
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4">
+                                    </path>
+                                </svg>
                             </div>
                             <div>
                                 <h4 class="font-bold text-gray-900 mb-1">TUK Standar</h4>
@@ -154,8 +219,12 @@
                         </div>
                         <!-- Benefit 4 -->
                         <div class="flex items-start gap-4">
-                            <div class="bg-purple-50 p-2.5 rounded-lg text-purple-600 shadow-sm border border-purple-100 flex-shrink-0">
-                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                            <div
+                                class="bg-purple-50 p-2.5 rounded-lg text-purple-600 shadow-sm border border-purple-100 flex-shrink-0">
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                                </svg>
                             </div>
                             <div>
                                 <h4 class="font-bold text-gray-900 mb-1">Akses Mudah</h4>
@@ -184,95 +253,126 @@
                 </div>
             </div>
 
-            </div>
         </div>
+    </div>
     </div> <!-- Close Selamat Datang wrapper early -->
 
     <!-- Pendaftaran Pipeline Section -->
     <div class="bg-slate-50 border-t border-gray-100 py-24 px-6 lg:px-16 relative z-10 overflow-hidden shadow-inner">
         <!-- Subtle dotted background -->
-        <div class="absolute inset-0 opacity-[0.03]" style="background-image: radial-gradient(#000 1.5px, transparent 1.5px); background-size: 28px 28px;"></div>
-        
+        <div class="absolute inset-0 opacity-[0.03]"
+            style="background-image: radial-gradient(#000 1.5px, transparent 1.5px); background-size: 28px 28px;">
+        </div>
+
         <div class="max-w-[85rem] mx-auto w-full relative z-10">
             <div class="text-center mb-16">
-                <h2 class="text-3xl lg:text-4xl font-bold text-gray-900 leading-tight">Langkah Mudah <span class="text-[#ea580c]">Mendapatkan Sertifikat</span></h2>
-                <p class="text-gray-600 mt-4 text-lg">Proses sertifikasi kompetensi di UPA LUK dirancang agar cepat, transparan, dan terstruktur.</p>
+                <h2 class="text-3xl lg:text-4xl font-bold text-gray-900 leading-tight">Langkah Mudah <span
+                        class="text-[#ea580c]">Mendapatkan Sertifikat</span></h2>
+                <p class="text-gray-600 mt-4 text-lg">Proses sertifikasi kompetensi di UPA LUK dirancang agar cepat,
+                    transparan, dan terstruktur.</p>
             </div>
-            
-            <div class="flex flex-col md:flex-row justify-between items-start md:items-center relative w-full px-4 md:px-0">
+
+            <div
+                class="flex flex-col md:flex-row justify-between items-start md:items-center relative w-full px-4 md:px-0">
                 <!-- Connecting line for desktop -->
-                <div class="hidden md:block absolute top-10 left-[10%] w-[80%] h-1 bg-gray-200 -translate-y-1/2 z-0"></div>
-                
+                <div class="hidden md:block absolute top-10 left-[10%] w-[80%] h-1 bg-gray-200 -translate-y-1/2 z-0">
+                </div>
+
                 <!-- Connecting line for mobile -->
-                <div class="md:hidden absolute top-[10%] left-[3.25rem] w-1 h-[80%] bg-gray-200 -translate-x-1/2 z-0"></div>
+                <div class="md:hidden absolute top-[10%] left-[3.25rem] w-1 h-[80%] bg-gray-200 -translate-x-1/2 z-0">
+                </div>
 
                 <!-- Step 1 -->
-                <div class="relative z-10 flex flex-row md:flex-col items-center bg-transparent w-full md:w-1/5 group mb-8 md:mb-0 gap-6 md:gap-0 mt-2">
-                    <div class="w-16 h-16 shrink-0 rounded-full bg-blue-50 text-blue-600 border-4 border-white shadow-md flex items-center justify-center md:mb-5 group-hover:bg-blue-600 group-hover:text-white group-hover:scale-110 transition-all duration-300 relative z-10">
-                        <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"></path></svg>
+                <div
+                    class="relative z-10 flex flex-row md:flex-col items-center bg-transparent w-full md:w-1/5 group mb-8 md:mb-0 gap-6 md:gap-0 mt-2">
+                    <div
+                        class="w-16 h-16 shrink-0 rounded-full bg-blue-50 text-blue-600 border-4 border-white shadow-md flex items-center justify-center md:mb-5 group-hover:bg-blue-600 group-hover:text-white group-hover:scale-110 transition-all duration-300 relative z-10">
+                        <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z">
+                            </path>
+                        </svg>
                     </div>
-                    <div class="md:text-center mt-2 p-2 w-full md:w-auto bg-white/50 backdrop-blur-sm rounded-lg md:bg-transparent">
+                    <div
+                        class="md:text-center mt-2 p-2 w-full md:w-auto bg-white/50 backdrop-blur-sm rounded-lg md:bg-transparent">
                         <h4 class="font-bold text-gray-900 text-lg md:text-base">1. Daftar Akun</h4>
                         <p class="text-sm text-gray-500 mt-1 md:mt-2">Buat akun untuk masuk ke portal</p>
                     </div>
                 </div>
 
                 <!-- Step 2 -->
-                <div class="relative z-10 flex flex-row md:flex-col items-center bg-transparent w-full md:w-1/5 group mb-8 md:mb-0 gap-6 md:gap-0 mt-2">
-                    <div class="w-16 h-16 shrink-0 rounded-full bg-orange-50 text-[#ea580c] border-4 border-white shadow-md flex items-center justify-center md:mb-5 group-hover:bg-[#ea580c] group-hover:text-white group-hover:scale-110 transition-all duration-300 relative z-10">
-                        <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                <div
+                    class="relative z-10 flex flex-row md:flex-col items-center bg-transparent w-full md:w-1/5 group mb-8 md:mb-0 gap-6 md:gap-0 mt-2">
+                    <div
+                        class="w-16 h-16 shrink-0 rounded-full bg-orange-50 text-[#ea580c] border-4 border-white shadow-md flex items-center justify-center md:mb-5 group-hover:bg-[#ea580c] group-hover:text-white group-hover:scale-110 transition-all duration-300 relative z-10">
+                        <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
                     </div>
-                    <div class="md:text-center mt-2 p-2 w-full md:w-auto bg-white/50 backdrop-blur-sm rounded-lg md:bg-transparent">
+                    <div
+                        class="md:text-center mt-2 p-2 w-full md:w-auto bg-white/50 backdrop-blur-sm rounded-lg md:bg-transparent">
                         <h4 class="font-bold text-gray-900 text-lg md:text-base">2. Verifikasi Berkas</h4>
                         <p class="text-sm text-gray-500 mt-1 md:mt-2">Upload dokumen persyaratan</p>
                     </div>
                 </div>
 
                 <!-- Step 3 -->
-                <div class="relative z-10 flex flex-row md:flex-col items-center bg-transparent w-full md:w-1/5 group mb-8 md:mb-0 gap-6 md:gap-0 mt-2">
-                    <div class="w-16 h-16 shrink-0 rounded-full bg-emerald-50 text-emerald-500 border-4 border-white shadow-md flex items-center justify-center md:mb-5 group-hover:bg-emerald-500 group-hover:text-white group-hover:scale-110 transition-all duration-300 relative z-10">
-                        <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path></svg>
+                <div
+                    class="relative z-10 flex flex-row md:flex-col items-center bg-transparent w-full md:w-1/5 group mb-8 md:mb-0 gap-6 md:gap-0 mt-2">
+                    <div
+                        class="w-16 h-16 shrink-0 rounded-full bg-emerald-50 text-emerald-500 border-4 border-white shadow-md flex items-center justify-center md:mb-5 group-hover:bg-emerald-500 group-hover:text-white group-hover:scale-110 transition-all duration-300 relative z-10">
+                        <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z">
+                            </path>
+                        </svg>
                     </div>
-                    <div class="md:text-center mt-2 p-2 w-full md:w-auto bg-white/50 backdrop-blur-sm rounded-lg md:bg-transparent">
+                    <div
+                        class="md:text-center mt-2 p-2 w-full md:w-auto bg-white/50 backdrop-blur-sm rounded-lg md:bg-transparent">
                         <h4 class="font-bold text-gray-900 text-lg md:text-base">3. Pembayaran VA</h4>
                         <p class="text-sm text-gray-500 mt-1 md:mt-2">Selesaikan biaya administrasi</p>
                     </div>
                 </div>
 
                 <!-- Step 4 -->
-                <div class="relative z-10 flex flex-row md:flex-col items-center bg-transparent w-full md:w-1/5 group mb-8 md:mb-0 gap-6 md:gap-0 mt-2">
-                    <div class="w-16 h-16 shrink-0 rounded-full bg-purple-50 text-purple-600 border-4 border-white shadow-md flex items-center justify-center md:mb-5 group-hover:bg-purple-600 group-hover:text-white group-hover:scale-110 transition-all duration-300 relative z-10">
-                        <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path></svg>
+                <div
+                    class="relative z-10 flex flex-row md:flex-col items-center bg-transparent w-full md:w-1/5 group mb-8 md:mb-0 gap-6 md:gap-0 mt-2">
+                    <div
+                        class="w-16 h-16 shrink-0 rounded-full bg-purple-50 text-purple-600 border-4 border-white shadow-md flex items-center justify-center md:mb-5 group-hover:bg-purple-600 group-hover:text-white group-hover:scale-110 transition-all duration-300 relative z-10">
+                        <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253">
+                            </path>
+                        </svg>
                     </div>
-                    <div class="md:text-center mt-2 p-2 w-full md:w-auto bg-white/50 backdrop-blur-sm rounded-lg md:bg-transparent">
+                    <div
+                        class="md:text-center mt-2 p-2 w-full md:w-auto bg-white/50 backdrop-blur-sm rounded-lg md:bg-transparent">
                         <h4 class="font-bold text-gray-900 text-lg md:text-base">4. Ujian Kompetensi</h4>
                         <p class="text-sm text-gray-500 mt-1 md:mt-2">Jadwal asesmen tatap muka / online</p>
                     </div>
                 </div>
 
                 <!-- Step 5 -->
-                <div class="relative z-10 flex flex-row md:flex-col items-center bg-transparent w-full md:w-1/5 group gap-6 md:gap-0 mt-2">
-                    <div class="w-16 h-16 shrink-0 rounded-full bg-blue-50 text-blue-600 border-4 border-white shadow-md flex items-center justify-center md:mb-5 group-hover:bg-blue-600 group-hover:text-white group-hover:scale-110 transition-all duration-300 relative z-10">
-                        <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
+                <div
+                    class="relative z-10 flex flex-row md:flex-col items-center bg-transparent w-full md:w-1/5 group gap-6 md:gap-0 mt-2">
+                    <div
+                        class="w-16 h-16 shrink-0 rounded-full bg-blue-50 text-blue-600 border-4 border-white shadow-md flex items-center justify-center md:mb-5 group-hover:bg-blue-600 group-hover:text-white group-hover:scale-110 transition-all duration-300 relative z-10">
+                        <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z">
+                            </path>
+                        </svg>
                     </div>
-                    <div class="md:text-center mt-2 p-2 w-full md:w-auto bg-white/50 backdrop-blur-sm rounded-lg md:bg-transparent">
+                    <div
+                        class="md:text-center mt-2 p-2 w-full md:w-auto bg-white/50 backdrop-blur-sm rounded-lg md:bg-transparent">
                         <h4 class="font-bold text-gray-900 text-lg md:text-base">5. Terbit Sertifikat</h4>
                         <p class="text-sm text-gray-500 mt-1 md:mt-2">Sertifikat BNSP dirilis ke akun</p>
                     </div>
                 </div>
             </div>
 
-            <!-- Profile Head -->
-            <div class="mt-32 text-center max-w-xl mx-auto border-t border-gray-200 pt-16">
-                <div class="relative inline-block mb-6 group">
-                    <img src="{{ asset('assets/Dr.Kusumajanti.webp') }}" alt="Dr. Kusumajanti"
-                        class="w-56 h-72 object-cover mx-auto rounded-xl shadow-lg relative z-10 group-hover:-translate-y-2 group-hover:shadow-2xl transition-all duration-300">
-                    <div class="absolute inset-0 bg-blue-200 transform translate-x-4 translate-y-4 rounded-xl -z-10 group-hover:bg-[#ea580c]/50 transition-colors duration-300">
-                    </div>
-                </div>
-                <h3 class="text-xl font-bold text-gray-900">Dr. Kusumajanti, S.Sos., M.M., M.Si.</h3>
-                <p class="text-gray-600 mt-2 font-medium">Kepala UPA LUK UPN Veteran Jakarta</p>
-            </div>
+
         </div>
     </div>
 
@@ -316,10 +416,15 @@
 
             <!-- Minimal Search Bar -->
             <form action="{{ route('skema.index') }}" method="GET" class="max-w-xl mx-auto mb-12 relative group">
-                <input type="text" name="q" placeholder="Cari nama skema kompetensi..." 
+                <input type="text" name="q" placeholder="Cari nama skema kompetensi..."
                     class="w-full pl-12 pr-4 py-3.5 rounded-full border border-gray-200 focus:border-[#ea580c] focus:ring-2 focus:ring-[#ea580c]/20 outline-none transition-all shadow-sm text-gray-700 bg-white placeholder-gray-400">
-                <button type="submit" aria-label="Cari Skema" class="absolute left-4 top-1/2 -translate-y-1/2 z-10 focus:outline-none">
-                    <svg class="w-5 h-5 text-gray-400 group-focus-within:text-[#ea580c] hover:text-[#ea580c] transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                <button type="submit" aria-label="Cari Skema"
+                    class="absolute left-4 top-1/2 -translate-y-1/2 z-10 focus:outline-none">
+                    <svg class="w-5 h-5 text-gray-400 group-focus-within:text-[#ea580c] hover:text-[#ea580c] transition-colors"
+                        fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                    </svg>
                 </button>
             </form>
 
@@ -444,63 +549,90 @@
     <div class="bg-gray-50 py-24 px-6 lg:px-16 relative z-10 border-t border-gray-100">
         <div class="max-w-[85rem] mx-auto w-full relative z-10">
             <div class="text-center mb-16">
-                <h2 class="text-3xl lg:text-4xl font-bold text-gray-900 leading-tight">Berita & <span class="text-[#ea580c]">Pengumuman Terbaru</span></h2>
-                <p class="text-gray-600 mt-4 text-lg">Informasi dan pembaruan terkini seputar kegiatan sertifikasi LSP UPNVJ.</p>
+                <h2 class="text-3xl lg:text-4xl font-bold text-gray-900 leading-tight">Berita & <span
+                        class="text-[#ea580c]">Pengumuman Terbaru</span></h2>
+                <p class="text-gray-600 mt-4 text-lg">Informasi dan pembaruan terkini seputar kegiatan sertifikasi LSP
+                    UPNVJ.</p>
             </div>
 
-            @if(isset($articles) && $articles->count() > 0)
+            @if (isset($articles) && $articles->count() > 0)
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                    @foreach($articles as $article)
-                        <div class="group flex flex-col overflow-hidden rounded-[1.25rem] bg-white shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] transition-all hover:shadow-[0_4px_20px_-4px_rgba(0,0,0,0.1)] border border-gray-50">
+                    @foreach ($articles as $article)
+                        <div
+                            class="group flex flex-col overflow-hidden rounded-[1.25rem] bg-white shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] transition-all hover:shadow-[0_4px_20px_-4px_rgba(0,0,0,0.1)] border border-gray-50">
                             <!-- Thumbnail 16:9 -->
                             <div class="relative w-full aspect-video overflow-hidden bg-gray-200">
-                                @if($article->image_path)
-                                    <img src="{{ Storage::url($article->image_path) }}" alt="{{ $article->title }}" class="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105">
+                                @if ($article->image_path)
+                                    <img src="{{ Storage::url($article->image_path) }}" alt="{{ $article->title }}"
+                                        class="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105">
                                 @else
-                                    <img src="https://placehold.co/600x338/f1f5f9/64748b?text=News+Update" alt="News Placeholder" class="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105">
+                                    <img src="https://placehold.co/600x338/f1f5f9/64748b?text=News+Update"
+                                        alt="News Placeholder"
+                                        class="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105">
                                 @endif
                             </div>
-                            
+
                             <!-- Content -->
                             <div class="flex flex-1 flex-col p-6 lg:p-8">
                                 <div class="flex-1">
                                     <!-- Meta -->
-                                    <div class="flex items-center justify-between gap-3 mb-4 text-xs font-semibold text-gray-500">
+                                    <div
+                                        class="flex items-center justify-between gap-3 mb-4 text-xs font-semibold text-gray-500">
                                         <div class="flex items-center gap-1.5">
-                                            <svg class="w-4 h-4 text-[#ea580c]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                                            <svg class="w-4 h-4 text-[#ea580c]" fill="none" stroke="currentColor"
+                                                viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                    d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z">
+                                                </path>
+                                            </svg>
                                             {{ $article->published_at ? $article->published_at->format('d M Y') : $article->created_at->format('d M Y') }}
                                         </div>
-                                        <div class="flex items-center gap-1.5" title="Dilihat {{ $article->views_count }} kali">
-                                            <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
+                                        <div class="flex items-center gap-1.5"
+                                            title="Dilihat {{ $article->views_count }} kali">
+                                            <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor"
+                                                viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                    d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                    d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z">
+                                                </path>
+                                            </svg>
                                             {{ $article->views_count }}
                                         </div>
                                     </div>
-                                    
+
                                     <!-- Tags -->
-                                    @if($article->tags && is_array($article->tags) && count($article->tags) > 0)
+                                    @if ($article->tags && is_array($article->tags) && count($article->tags) > 0)
                                         <div class="flex flex-wrap gap-2 mb-3">
-                                            @foreach($article->tags as $tag)
-                                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 text-blue-700">{{ $tag }}</span>
+                                            @foreach ($article->tags as $tag)
+                                                <span
+                                                    class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 text-blue-700">{{ $tag }}</span>
                                             @endforeach
                                         </div>
                                     @endif
 
                                     <!-- Title -->
-                                    <h3 class="text-xl font-bold text-gray-900 line-clamp-2 mb-3 leading-snug group-hover:text-[#ea580c] transition-colors">
+                                    <h3
+                                        class="text-xl font-bold text-gray-900 line-clamp-2 mb-3 leading-snug group-hover:text-[#ea580c] transition-colors">
                                         {{ $article->title }}
                                     </h3>
-                                    
+
                                     <!-- Excerpt -->
                                     <p class="text-sm text-gray-600 line-clamp-3 mb-4 leading-relaxed">
                                         {{ $article->excerpt ?? \Illuminate\Support\Str::limit(strip_tags($article->body), 100) }}
                                     </p>
                                 </div>
-                                
+
                                 <!-- Read More Link -->
                                 <div class="mt-auto pt-5 border-t border-gray-100 flex justify-start items-center">
-                                    <a href="#" class="text-sm font-bold text-[#ea580c] hover:text-[#c2410c] transition-colors flex items-center gap-1">
+                                    <a href="{{ route('article.show', $article->slug) }}"
+                                        class="text-sm font-bold text-[#ea580c] hover:text-[#c2410c] transition-colors flex items-center gap-1">
                                         Baca Selengkapnya
-                                        <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
+                                        <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor"
+                                            viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M14 5l7 7m0 0l-7 7m7-7H3"></path>
+                                        </svg>
                                     </a>
                                 </div>
                             </div>
@@ -514,9 +646,13 @@
             @endif
 
             <div class="mt-12 text-center">
-                <a href="{{ route('article.index') }}" class="inline-flex items-center justify-center px-6 py-3 border border-gray-300 shadow-sm text-sm font-medium rounded-full text-gray-700 bg-white hover:bg-gray-50 hover:text-[#ea580c] hover:border-[#ea580c] transition-colors gap-2">
+                <a href="{{ route('article.index') }}"
+                    class="inline-flex items-center justify-center px-6 py-3 border border-gray-300 shadow-sm text-sm font-medium rounded-full text-gray-700 bg-white hover:bg-gray-50 hover:text-[#ea580c] hover:border-[#ea580c] transition-colors gap-2">
                     Lihat Semua Berita
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M14 5l7 7m0 0l-7 7m7-7H3"></path>
+                    </svg>
                 </a>
             </div>
         </div>
@@ -526,28 +662,38 @@
     <div class="bg-white py-24 px-6 lg:px-16 relative z-10 border-t border-gray-100">
         <div class="max-w-[85rem] mx-auto w-full relative z-10">
             <div class="text-center mb-16">
-                <h2 class="text-3xl lg:text-4xl font-bold text-gray-900 leading-tight">Galeri Kegiatan <span class="text-[#ea580c]">UPA LUK</span></h2>
-                <p class="text-gray-600 mt-4 text-lg">Dokumentasi kegiatan dan uji kompetensi di lingkungan Universitas Pembangunan Nasional Veteran Jakarta.</p>
+                <h2 class="text-3xl lg:text-4xl font-bold text-gray-900 leading-tight">Galeri Kegiatan <span
+                        class="text-[#ea580c]">UPA LUK</span></h2>
+                <p class="text-gray-600 mt-4 text-lg">Dokumentasi kegiatan dan uji kompetensi di lingkungan Universitas
+                    Pembangunan Nasional Veteran Jakarta.</p>
             </div>
 
-            @if(isset($galleries) && $galleries->count() > 0)
+            @if (isset($galleries) && $galleries->count() > 0)
                 <div class="grid grid-cols-2 md:grid-cols-3 gap-2 md:gap-4">
-                    @foreach($galleries as $gallery)
-                    <div class="group relative overflow-hidden rounded-xl bg-gray-900 aspect-[4/3] cursor-pointer">
-                        @if($gallery->image_path)
-                            <img src="{{ Storage::url($gallery->image_path) }}" alt="{{ $gallery->title }}" class="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-110">
-                        @else
-                            <img src="https://placehold.co/800x600/e2e8f0/475569?text=Galeri" alt="Gallery Placeholder" class="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-110">
-                        @endif
-
-                        <!-- Hover Overlay -->
-                        <div class="absolute inset-0 flex flex-col justify-end bg-gradient-to-t from-black/80 via-black/40 to-transparent p-4 md:p-6 opacity-0 transition-all duration-300 group-hover:opacity-100">
-                            <h3 class="mb-1 text-sm md:text-lg font-bold text-white leading-snug transform translate-y-4 transition-transform duration-300 group-hover:translate-y-0">{{ $gallery->title }}</h3>
-                            @if($gallery->description)
-                                <p class="text-xs md:text-sm text-gray-300 line-clamp-2 transform translate-y-4 transition-transform duration-300 opacity-0 group-hover:opacity-100 group-hover:translate-y-0 delay-75">{{ $gallery->description }}</p>
+                    @foreach ($galleries as $gallery)
+                        <div class="group relative overflow-hidden rounded-xl bg-gray-900 aspect-[4/3] cursor-pointer">
+                            @if ($gallery->image_path)
+                                <img src="{{ $gallery->image_path }}" alt="{{ $gallery->title }}"
+                                    class="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-110">
+                            @else
+                                <img src="https://placehold.co/800x600/e2e8f0/475569?text=Galeri"
+                                    alt="Gallery Placeholder"
+                                    class="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-110">
                             @endif
+
+                            <!-- Hover Overlay -->
+                            <div
+                                class="absolute inset-0 flex flex-col justify-end bg-gradient-to-t from-black/80 via-black/40 to-transparent p-4 md:p-6 opacity-0 transition-all duration-300 group-hover:opacity-100">
+                                <h3
+                                    class="mb-1 text-sm md:text-lg font-bold text-white leading-snug transform translate-y-4 transition-transform duration-300 group-hover:translate-y-0">
+                                    {{ $gallery->title }}</h3>
+                                @if ($gallery->description)
+                                    <p
+                                        class="text-xs md:text-sm text-gray-300 line-clamp-2 transform translate-y-4 transition-transform duration-300 opacity-0 group-hover:opacity-100 group-hover:translate-y-0 delay-75">
+                                        {{ $gallery->description }}</p>
+                                @endif
+                            </div>
                         </div>
-                    </div>
                     @endforeach
                 </div>
             @else
@@ -557,9 +703,14 @@
             @endif
 
             <div class="mt-12 text-center">
-                <a href="{{ route('gallery.index') }}" class="inline-flex items-center justify-center px-6 py-3 border border-gray-300 shadow-sm text-sm font-medium rounded-full text-gray-700 bg-white hover:bg-gray-50 hover:text-[#ea580c] hover:border-[#ea580c] transition-colors gap-2">
+                <a href="{{ route('gallery.index') }}"
+                    class="inline-flex items-center justify-center px-6 py-3 border border-gray-300 shadow-sm text-sm font-medium rounded-full text-gray-700 bg-white hover:bg-gray-50 hover:text-[#ea580c] hover:border-[#ea580c] transition-colors gap-2">
                     Lihat Semua Dokumentasi
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z">
+                        </path>
+                    </svg>
                 </a>
             </div>
         </div>
@@ -568,7 +719,8 @@
     <!-- Testimoni Section -->
     <div class="relative py-28 px-6 lg:px-16 overflow-hidden z-10 flex items-center">
         <!-- Background Image & Overlay -->
-        <img src="{{ asset('assets/background.webp') }}" alt="Campus Background" class="absolute inset-0 w-full h-full object-cover z-0 filter blur-[2px] scale-105">
+        <img src="{{ asset('assets/background.webp') }}" alt="Campus Background"
+            class="absolute inset-0 w-full h-full object-cover z-0 filter blur-[2px] scale-105">
         <div class="absolute inset-0 bg-slate-900/80 z-0"></div>
 
         <div class="max-w-[85rem] mx-auto w-full relative z-10">
@@ -576,43 +728,75 @@
                 <h4 class="text-[#f97316] font-bold tracking-widest mb-4 text-sm uppercase">CERITA ALUMNI</h4>
                 <h2 class="text-4xl font-bold text-white drop-shadow-md">Apa Kata Mereka?</h2>
             </div>
-            
+
             <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
                 <!-- Testimoni 1 -->
-                <div class="bg-white p-8 rounded-2xl shadow-[0_4px_24px_-8px_rgba(0,0,0,0.1)] border border-gray-50 relative group hover:-translate-y-2 transition-transform duration-300">
-                    <svg class="w-10 h-10 text-gray-100 absolute top-6 right-6 transition-colors group-hover:text-blue-50" fill="currentColor" viewBox="0 0 24 24"><path d="M14.017 21v-7.391c0-5.704 3.731-9.57 8.983-10.609l.995 2.151c-2.432.917-3.995 3.638-3.995 5.849h4v10h-9.983zm-14.017 0v-7.391c0-5.704 3.748-9.57 9-10.609l.996 2.151c-2.433.917-3.996 3.638-3.996 5.849h3.983v10h-9.983z"></path></svg>
-                    <p class="text-gray-600 leading-relaxed mb-8 relative z-10 text-[0.95rem]">"Memiliki sertifikat kompetensi Web Programmer dari BNSP membuat portofolio dan CV saya jauh lebih menonjol di mata rekruter. Proses sertifikasinya di UPA LUK sangat profesional dan membantu saya saat wawancara kerja pertama."</p>
+                <div
+                    class="bg-white p-8 rounded-2xl shadow-[0_4px_24px_-8px_rgba(0,0,0,0.1)] border border-gray-50 relative group hover:-translate-y-2 transition-transform duration-300">
+                    <svg class="w-10 h-10 text-gray-100 absolute top-6 right-6 transition-colors group-hover:text-blue-50"
+                        fill="currentColor" viewBox="0 0 24 24">
+                        <path
+                            d="M14.017 21v-7.391c0-5.704 3.731-9.57 8.983-10.609l.995 2.151c-2.432.917-3.995 3.638-3.995 5.849h4v10h-9.983zm-14.017 0v-7.391c0-5.704 3.748-9.57 9-10.609l.996 2.151c-2.433.917-3.996 3.638-3.996 5.849h3.983v10h-9.983z">
+                        </path>
+                    </svg>
+                    <p class="text-gray-600 leading-relaxed mb-8 relative z-10 text-[0.95rem]">"Memiliki sertifikat
+                        kompetensi Web Programmer dari BNSP membuat portofolio dan CV saya jauh lebih menonjol di mata
+                        rekruter. Proses sertifikasinya di UPA LUK sangat profesional dan membantu saya saat wawancara
+                        kerja pertama."</p>
                     <div class="flex items-center gap-4 relative z-10 border-t border-gray-100 pt-5">
-                        <img src="https://ui-avatars.com/api/?name=Budi+Santoso&background=eff6ff&color=1e40af&bold=true" alt="Budi Santoso" class="w-12 h-12 rounded-full object-cover">
+                        <img src="https://ui-avatars.com/api/?name=Budi+Santoso&background=eff6ff&color=1e40af&bold=true"
+                            alt="Budi Santoso" class="w-12 h-12 rounded-full object-cover">
                         <div>
                             <h4 class="font-bold text-gray-900">Budi Santoso</h4>
-                            <p class="text-xs text-[#ea580c] font-bold tracking-wide uppercase mt-0.5">Alumni Informatika</p>
+                            <p class="text-xs text-[#ea580c] font-bold tracking-wide uppercase mt-0.5">Alumni
+                                Informatika</p>
                         </div>
                     </div>
                 </div>
 
                 <!-- Testimoni 2 -->
-                <div class="bg-white p-8 rounded-2xl shadow-[0_4px_24px_-8px_rgba(0,0,0,0.1)] border border-gray-50 relative group hover:-translate-y-2 transition-transform duration-300">
-                    <svg class="w-10 h-10 text-gray-100 absolute top-6 right-6 transition-colors group-hover:text-orange-50" fill="currentColor" viewBox="0 0 24 24"><path d="M14.017 21v-7.391c0-5.704 3.731-9.57 8.983-10.609l.995 2.151c-2.432.917-3.995 3.638-3.995 5.849h4v10h-9.983zm-14.017 0v-7.391c0-5.704 3.748-9.57 9-10.609l.996 2.151c-2.433.917-3.996 3.638-3.996 5.849h3.983v10h-9.983z"></path></svg>
-                    <p class="text-gray-600 leading-relaxed mb-8 relative z-10 text-[0.95rem]">"Asesornya sangat kompeten. Ujiannya sungguh relevan dengan kebutuhan industri saat ini, tidak sekadar menguji teori semata. Berkat lisensi ini, saya lebih percaya diri saat melamar posisi UI/UX Designer internship."</p>
+                <div
+                    class="bg-white p-8 rounded-2xl shadow-[0_4px_24px_-8px_rgba(0,0,0,0.1)] border border-gray-50 relative group hover:-translate-y-2 transition-transform duration-300">
+                    <svg class="w-10 h-10 text-gray-100 absolute top-6 right-6 transition-colors group-hover:text-orange-50"
+                        fill="currentColor" viewBox="0 0 24 24">
+                        <path
+                            d="M14.017 21v-7.391c0-5.704 3.731-9.57 8.983-10.609l.995 2.151c-2.432.917-3.995 3.638-3.995 5.849h4v10h-9.983zm-14.017 0v-7.391c0-5.704 3.748-9.57 9-10.609l.996 2.151c-2.433.917-3.996 3.638-3.996 5.849h3.983v10h-9.983z">
+                        </path>
+                    </svg>
+                    <p class="text-gray-600 leading-relaxed mb-8 relative z-10 text-[0.95rem]">"Asesornya sangat
+                        kompeten. Ujiannya sungguh relevan dengan kebutuhan industri saat ini, tidak sekadar menguji
+                        teori semata. Berkat lisensi ini, saya lebih percaya diri saat melamar posisi UI/UX Designer
+                        internship."</p>
                     <div class="flex items-center gap-4 relative z-10 border-t border-gray-100 pt-5">
-                        <img src="https://ui-avatars.com/api/?name=Siti+Aminah&background=fff7ed&color=c2410c&bold=true" alt="Siti Aminah" class="w-12 h-12 rounded-full object-cover">
+                        <img src="https://ui-avatars.com/api/?name=Siti+Aminah&background=fff7ed&color=c2410c&bold=true"
+                            alt="Siti Aminah" class="w-12 h-12 rounded-full object-cover">
                         <div>
                             <h4 class="font-bold text-gray-900">Siti Aminah</h4>
-                            <p class="text-xs text-[#ea580c] font-bold tracking-wide uppercase mt-0.5">Mahasiswa Sistem Informasi</p>
+                            <p class="text-xs text-[#ea580c] font-bold tracking-wide uppercase mt-0.5">Mahasiswa Sistem
+                                Informasi</p>
                         </div>
                     </div>
                 </div>
 
                 <!-- Testimoni 3 -->
-                <div class="bg-white p-8 rounded-2xl shadow-[0_4px_24px_-8px_rgba(0,0,0,0.1)] border border-gray-50 relative group hover:-translate-y-2 transition-transform duration-300">
-                    <svg class="w-10 h-10 text-gray-100 absolute top-6 right-6 transition-colors group-hover:text-emerald-50" fill="currentColor" viewBox="0 0 24 24"><path d="M14.017 21v-7.391c0-5.704 3.731-9.57 8.983-10.609l.995 2.151c-2.432.917-3.995 3.638-3.995 5.849h4v10h-9.983zm-14.017 0v-7.391c0-5.704 3.748-9.57 9-10.609l.996 2.151c-2.433.917-3.996 3.638-3.996 5.849h3.983v10h-9.983z"></path></svg>
-                    <p class="text-gray-600 leading-relaxed mb-8 relative z-10 text-[0.95rem]">"Sistem pendaftarannya sangat mudah dan layanannya benar-benar responsif. Fasilitas TUK (Tempat Uji Kompetensi) yang disediakan langsung oleh kampus UPNVJ juga terbukti sangat lengkap setara standar BNSP."</p>
+                <div
+                    class="bg-white p-8 rounded-2xl shadow-[0_4px_24px_-8px_rgba(0,0,0,0.1)] border border-gray-50 relative group hover:-translate-y-2 transition-transform duration-300">
+                    <svg class="w-10 h-10 text-gray-100 absolute top-6 right-6 transition-colors group-hover:text-emerald-50"
+                        fill="currentColor" viewBox="0 0 24 24">
+                        <path
+                            d="M14.017 21v-7.391c0-5.704 3.731-9.57 8.983-10.609l.995 2.151c-2.432.917-3.995 3.638-3.995 5.849h4v10h-9.983zm-14.017 0v-7.391c0-5.704 3.748-9.57 9-10.609l.996 2.151c-2.433.917-3.996 3.638-3.996 5.849h3.983v10h-9.983z">
+                        </path>
+                    </svg>
+                    <p class="text-gray-600 leading-relaxed mb-8 relative z-10 text-[0.95rem]">"Sistem pendaftarannya
+                        sangat mudah dan layanannya benar-benar responsif. Fasilitas TUK (Tempat Uji Kompetensi) yang
+                        disediakan langsung oleh kampus UPNVJ juga terbukti sangat lengkap setara standar BNSP."</p>
                     <div class="flex items-center gap-4 relative z-10 border-t border-gray-100 pt-5">
-                        <img src="https://ui-avatars.com/api/?name=Randi+Pratama&background=ecfdf5&color=047857&bold=true" alt="Randi Pratama" class="w-12 h-12 rounded-full object-cover">
+                        <img src="https://ui-avatars.com/api/?name=Randi+Pratama&background=ecfdf5&color=047857&bold=true"
+                            alt="Randi Pratama" class="w-12 h-12 rounded-full object-cover">
                         <div>
                             <h4 class="font-bold text-gray-900">Randi Pratama</h4>
-                            <p class="text-xs text-[#ea580c] font-bold tracking-wide uppercase mt-0.5">Alumni D3 Keperawatan</p>
+                            <p class="text-xs text-[#ea580c] font-bold tracking-wide uppercase mt-0.5">Alumni D3
+                                Keperawatan</p>
                         </div>
                     </div>
                 </div>
@@ -623,19 +807,135 @@
     <!-- Footer Component -->
     <x-public.footer />
 
-    <!-- Scroll to Top -->
-    <button @click="window.scrollTo({top: 0, behavior: 'smooth'})" x-show="scrolled"
-        x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 translate-y-10"
-        x-transition:enter-end="opacity-100 translate-y-0" x-transition:leave="transition ease-in duration-200"
-        x-transition:leave-start="opacity-100 translate-y-0" x-transition:leave-end="opacity-0 translate-y-10"
-        class="fixed bottom-8 right-8 bg-[#1e40af] text-white p-3.5 rounded-full shadow-2xl hover:bg-blue-800 transition z-50 hover:-translate-y-1">
-        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"></path>
-        </svg>
-    </button>
+    <div x-data="{ open: false, message: '', now: new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) }"
+        class="fixed bottom-4 right-4 sm:bottom-8 sm:right-8 z-50 flex flex-col items-end font-sans drop-shadow-2xl">
+
+        <div x-show="open" x-transition:enter="transition-all ease-out duration-300 origin-bottom-right"
+            x-transition:enter-start="opacity-0 translate-y-10 scale-50"
+            x-transition:enter-end="opacity-100 translate-y-0 scale-100"
+            x-transition:leave="transition-all ease-in duration-200 origin-bottom-right"
+            x-transition:leave-start="opacity-100 translate-y-0 scale-100"
+            x-transition:leave-end="opacity-0 translate-y-10 scale-50"
+            class="mb-4 w-[calc(100vw-2rem)] sm:w-[22rem] max-w-[24rem] overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-2xl"
+            style="display: none;">
+
+            <div
+                class="flex items-center justify-between bg-gradient-to-r from-[#075e54] to-[#128c7e] px-4 py-3.5 text-white">
+                <div class="flex items-center gap-3">
+                    <div class="relative">
+                        <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white/20 p-1">
+                            <img src="{{ asset('assets/logo.webp') }}" alt="Admin"
+                                class="h-full w-full rounded-full object-cover bg-white"
+                                onerror="this.src='https://ui-avatars.com/api/?name=LSP&background=fff&color=128c7e'">
+                        </div>
+                        <span
+                            class="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full border-2 border-[#128c7e] bg-green-400"></span>
+                    </div>
+                    <div>
+                        <p class="text-[0.95rem] font-bold leading-tight text-white line-clamp-1">Admin UPA-LUK</p>
+                        <p class="text-xs text-green-100 line-clamp-1">Biasanya membalas seketika</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="min-h-[14rem] sm:min-h-[16rem] bg-[#efeae2] px-4 py-5 relative flex flex-col justify-end"
+                style="background-image: url('https://www.transparenttextures.com/patterns/cubes.png');">
+                <div x-show="open" x-transition:enter="transition-all ease-out duration-500 delay-200"
+                    x-transition:enter-start="opacity-0 translate-y-4 scale-90"
+                    x-transition:enter-end="opacity-100 translate-y-0 scale-100"
+                    class="relative max-w-[85%] rounded-2xl rounded-tl-none bg-white px-4 py-2.5 text-slate-800 shadow-sm border border-gray-100/50 mb-auto">
+                    <div class="absolute -left-2 top-0 text-white">
+                        <svg width="12" height="15" viewBox="0 0 12 15" fill="currentColor">
+                            <path d="M12 0H0L12 15V0Z" />
+                        </svg>
+                    </div>
+                    <p class="text-sm sm:text-[0.95rem] leading-snug">Halo! Ada yang bisa kami bantu terkait layanan
+                        sertifikasi di UPN Veteran Jakarta? 😊</p>
+                    <p class="mt-1 text-right text-[0.65rem] font-medium text-slate-400" x-text="now"></p>
+                </div>
+            </div>
+
+            <div class="bg-gray-50 px-3 py-3 border-t border-gray-200">
+                <form action="https://web.whatsapp.com/send" method="GET" target="_blank"
+                    class="flex items-center gap-2"
+                    @submit="if (!message.trim()) { message = 'Halo, saya ingin bertanya tentang sertifikasi.' }">
+                    <input type="hidden" name="phone" value="6287784644193">
+
+                    <div
+                        class="flex min-w-0 flex-1 items-center gap-2 rounded-full border border-gray-200 bg-white px-3 sm:px-4 py-2 sm:py-2.5 shadow-sm focus-within:border-[#128c7e] focus-within:ring-1 focus-within:ring-[#128c7e] transition-all">
+                        <input x-model="message" name="text" type="text" placeholder="Ketik pesan..."
+                            class="min-w-0 flex-1 border-0 bg-transparent p-0 text-base sm:text-sm text-slate-800 outline-none placeholder:text-slate-400 focus:ring-0">
+                    </div>
+
+                    <button type="submit"
+                        class="flex h-10 w-10 sm:h-11 sm:w-11 shrink-0 items-center justify-center rounded-full bg-[#128c7e] text-white shadow-md transition hover:scale-105 hover:bg-[#075e54]"
+                        aria-label="Kirim pesan">
+                        <svg class="h-4 w-4 sm:h-5 sm:w-5 translate-x-[2px]" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" />
+                        </svg>
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <div class="relative z-50">
+            <div x-show="!open" class="absolute -top-1 -right-1 z-10 flex h-4 w-4">
+                <span
+                    class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                <span class="relative inline-flex rounded-full h-4 w-4 border-2 border-white bg-red-500"></span>
+            </div>
+
+            <button type="button" @click="open = !open"
+                class="group relative flex h-12 w-12 sm:h-14 sm:w-14 items-center justify-center rounded-full text-white shadow-[0_4px_20px_rgba(37,211,102,0.4)] transition-all duration-300 hover:scale-110"
+                :class="open ? 'bg-slate-800 hover:bg-slate-700' : 'bg-[#25D366] hover:bg-[#20bd5a]'"
+                aria-label="Toggle WhatsApp">
+
+                <svg x-show="!open" x-transition:enter="transition-all duration-300 ease-out"
+                    x-transition:enter-start="opacity-0 rotate-45 scale-50"
+                    x-transition:enter-end="opacity-100 rotate-0 scale-100"
+                    x-transition:leave="transition-all duration-200 ease-in"
+                    x-transition:leave-start="opacity-100 rotate-0 scale-100"
+                    x-transition:leave-end="opacity-0 -rotate-45 scale-50" class="absolute h-7 w-7 sm:h-8 sm:w-8"
+                    viewBox="0 0 24 24" fill="currentColor">
+                    <path
+                        d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51h-.57c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
+                </svg>
+
+                <svg x-show="open" x-transition:enter="transition-all duration-300 ease-out delay-100"
+                    x-transition:enter-start="opacity-0 -rotate-45 scale-50"
+                    x-transition:enter-end="opacity-100 rotate-0 scale-100"
+                    x-transition:leave="transition-all duration-200 ease-in"
+                    x-transition:leave-start="opacity-100 rotate-0 scale-100"
+                    x-transition:leave-end="opacity-0 rotate-45 scale-50" class="absolute h-6 w-6 sm:h-7 sm:w-7"
+                    fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"
+                    style="display: none;">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+            </button>
+        </div>
+    </div>
 
     @livewireScripts
+    <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
     <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            new Swiper('.myHeroSwiper', {
+                loop: true,
+                effect: 'fade',
+                fadeEffect: {
+                    crossFade: true,
+                },
+                autoplay: {
+                    delay: 6000,
+                    disableOnInteraction: false,
+                },
+                navigation: {
+                    nextEl: '.swiper-button-next',
+                    prevEl: '.swiper-button-prev',
+                },
+            });
+        });
+
         // Ensure Alpine.js knows about the scroll position on load
         document.addEventListener('alpine:init', () => {
             window.dispatchEvent(new CustomEvent('scroll'));
@@ -644,4 +944,3 @@
 </body>
 
 </html>
-

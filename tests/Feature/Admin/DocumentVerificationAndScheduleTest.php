@@ -111,6 +111,33 @@ it('redirects document-approved participants to the payment verification page wi
     expect($registration->status)->toBe('dokumen_ok');
 });
 
+it('can continue to the payment verification page after a rejected document is later verified', function () {
+    $admin = User::factory()->create(['role' => 'admin']);
+    $scheme = Scheme::factory()->create(['name' => 'Junior Web Developer']);
+    $participant = User::factory()->create();
+    $registration = Registration::factory()->create([
+        'user_id' => $participant->id,
+        'scheme_id' => $scheme->id,
+        'status' => 'menunggu_verifikasi',
+        'document_statuses' => [
+            '_meta_condensed_flow' => ['status' => 'meta'],
+            'fr_apl_01_path' => ['status' => 'rejected', 'note' => 'Perbaiki formulir.'],
+            'fr_apl_02_path' => ['status' => 'verified'],
+        ],
+        'fr_apl_01_path' => 'documents/fr_apl_01/form-1.pdf',
+        'fr_apl_02_path' => 'documents/fr_apl_02/form-2.pdf',
+    ]);
+
+    Livewire::actingAs($admin)
+        ->test(DetailDokumen::class, ['registration' => $registration])
+        ->call('verifikasiDokumen', 'fr_apl_01_path')
+        ->assertSee('Lanjut ke Pembayaran')
+        ->call('lanjutkanKeJadwal')
+        ->assertRedirect(route('admin.payment', ['highlight' => $registration->id], absolute: false));
+
+    expect($registration->refresh()->status)->toBe('dokumen_ok');
+});
+
 it('shows the Data Pribadi modal button and correct user data in DetailDokumen', function () {
     $admin = User::factory()->create(['role' => 'admin']);
     $scheme = Scheme::factory()->create(['name' => 'Junior Web Developer']);

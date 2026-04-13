@@ -34,7 +34,7 @@ trait ProfileValidationRules
             'total_sks' => ['nullable', 'integer', 'min:0'],
             'status_semester' => ['nullable', 'string', 'max:255'],
             'fakultas' => ['nullable', 'string', 'max:255'],
-            'program_studi' => [$isGeneralUser ? 'required' : 'nullable', 'string', 'max:255'],
+            'program_studi' => ['nullable', 'string', 'max:255'],
             'pekerjaan' => [$isGeneralUser ? 'required' : 'nullable', 'string', 'max:255'],
             'nama_perusahaan' => ['nullable', 'string', 'max:255'],
             'jabatan' => ['nullable', 'string', 'max:255'],

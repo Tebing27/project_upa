@@ -105,16 +105,8 @@ class DatabaseSeeder extends Seeder
             'no_wa' => '081234567891',
         ]);
 
-        // ... kode lo sebelumnya ...
-        $umum->profile()->create([
-            'jenis_kelamin' => 'L',
-            'no_wa' => '081234567891',
-        ]);
-
-        // Seeder Artikel & Galeri
         $this->call([
-            ArticleSeeder::class,
-            GallerySeeder::class,
+            CmsContentSeeder::class,
         ]);
     }
 }

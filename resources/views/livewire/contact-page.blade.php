@@ -85,14 +85,4 @@
         </main>
 
         <x-public.footer />
-
-        <button @click="window.scrollTo({ top: 0, behavior: 'smooth' })" x-show="scrolled"
-            x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 translate-y-8"
-            x-transition:enter-end="opacity-100 translate-y-0" x-transition:leave="transition ease-in duration-200"
-            x-transition:leave-start="opacity-100 translate-y-0" x-transition:leave-end="opacity-0 translate-y-8"
-            class="fixed bottom-8 right-8 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-[#2f65d9] text-white shadow-[0_18px_35px_-18px_rgba(47,101,217,0.95)] transition hover:-translate-y-1 hover:bg-[#1f4fb7]">
-            <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="m5 15 7-7 7 7" />
-            </svg>
-        </button>
     </div>

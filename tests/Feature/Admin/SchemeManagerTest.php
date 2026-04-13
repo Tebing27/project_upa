@@ -6,6 +6,8 @@ use App\Models\Faculty;
 use App\Models\Scheme;
 use App\Models\StudyProgram;
 use App\Models\User;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 use Livewire\Livewire;
 
 it('renders the scheme manager component successfully for admin', function () {
@@ -180,4 +182,61 @@ it('validates required fields on the form', function () {
         ->set('name', '')
         ->call('save')
         ->assertHasErrors(['name', 'faculty_id']);
+});
+
+it('can add a new faculty and study program from the scheme form flow', function () {
+    $admin = User::factory()->create(['role' => 'admin']);
+
+    Livewire::actingAs($admin)
+        ->test(SchemeForm::class)
+        ->set('newFacultyName', 'Fakultas Kedokteran')
+        ->call('createFaculty')
+        ->assertSet('newFacultyName', '')
+        ->set('newStudyProgramName', 'Profesi Dokter')
+        ->call('createStudyProgram')
+        ->assertSet('newStudyProgramName', '');
+
+    $faculty = Faculty::query()->where('name', 'Fakultas Kedokteran')->first();
+
+    expect($faculty)->not->toBeNull();
+
+    $this->assertDatabaseHas('study_programs', [
+        'faculty_id' => $faculty->id,
+        'nama' => 'Profesi Dokter',
+    ]);
+});
+
+it('shows existing file previews when editing a scheme', function () {
+    Storage::fake('public');
+
+    $admin = User::factory()->create(['role' => 'admin']);
+    Storage::disk('public')->put('schemes/images/skema.png', 'image');
+    Storage::disk('public')->put('schemes/documents/skema.pdf', 'pdf');
+
+    $scheme = createScheme([
+        'gambar_path' => 'schemes/images/skema.png',
+        'dokumen_skema_path' => 'schemes/documents/skema.pdf',
+    ]);
+
+    Livewire::actingAs($admin)
+        ->test(SchemeForm::class, ['scheme' => $scheme])
+        ->assertSee('Preview Gambar Saat Ini')
+        ->assertSee('Preview Dokumen Saat Ini')
+        ->assertSee('skema.pdf');
+});
+
+it('shows selected upload previews on the scheme form before saving', function () {
+    Storage::fake('public');
+
+    $admin = User::factory()->create(['role' => 'admin']);
+
+    Livewire::actingAs($admin)
+        ->test(SchemeForm::class)
+        ->set('gambar', UploadedFile::fake()->image('preview.png'))
+        ->set('dokumen_skema', UploadedFile::fake()->create('preview.pdf', 100, 'application/pdf'))
+        ->assertSee('Preview Gambar Baru')
+        ->assertSee('Buka Gambar')
+        ->assertSee('Preview Dokumen Baru')
+        ->assertSee('Buka PDF')
+        ->assertSee('preview.pdf');
 });

@@ -103,7 +103,7 @@
                             class="inline-flex items-center justify-center gap-2 rounded-xl border border-gray-200 bg-white px-5 py-2.5 text-sm font-bold text-gray-700 hover:bg-gray-50">
                             Lihat Detail
                         </a>
-                        @if ($reg->status === 'dokumen_ok')
+                        @if (in_array($reg->status, ['dokumen_ok', 'pending_payment', 'paid', 'terjadwal', 'kompeten', 'tidak_kompeten', 'sertifikat_terbit'], true))
                             <button wire:click="lanjutkanKeJadwal({{ $reg->id }})"
                                 class="inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-400 px-5 py-2.5 text-sm font-bold text-black hover:bg-emerald-500">
                                 Lanjut ke Pembayaran

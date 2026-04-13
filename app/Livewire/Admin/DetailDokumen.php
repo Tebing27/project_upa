@@ -15,6 +15,19 @@ class DetailDokumen extends Component
 
     public string $rejectNote = '';
 
+    public function canProceedToPayment(): bool
+    {
+        return in_array($this->registration->status, [
+            'dokumen_ok',
+            'pending_payment',
+            'paid',
+            'terjadwal',
+            'kompeten',
+            'tidak_kompeten',
+            'sertifikat_terbit',
+        ], true);
+    }
+
     public function mount(Registration $registration): void
     {
         $this->registration = $registration->load('documents', 'documentStatuses');
@@ -70,7 +83,7 @@ class DetailDokumen extends Component
 
     public function lanjutkanKeJadwal(): void
     {
-        if ($this->registration->status === 'dokumen_ok') {
+        if ($this->canProceedToPayment()) {
             $this->redirectRoute('admin.payment', ['highlight' => $this->registration->id], navigate: true);
         }
     }

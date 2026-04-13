@@ -154,12 +154,12 @@
     </div>
 
     <!-- Struktur Organisasi Section -->
-    <div class="py-24 px-6 lg:px-16 bg-white border-t border-gray-100">
-        <div class="max-w-340 mx-auto w-full text-center">
+    <div class="py-24 px-6 lg:px-16 bg-white border-t border-gray-100" x-data="{ modalOpen: false, modalImage: '' }">
+        <div class="max-w-6xl mx-auto w-full text-center">
             <h2 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4">Struktur Organisasi</h2>
             <div class="w-16 h-1 bg-[#1e40af] mx-auto mb-20 rounded-full"></div>
 
-            <div class="flex flex-col items-center gap-24">
+            <div class="flex flex-col items-center gap-16">
                 @foreach ($staff as $person)
                     <div class="flex flex-col items-center">
                         <div class="relative mb-6 group cursor-pointer">
@@ -187,20 +187,42 @@
                         </div>
                     </div>
                 @endforeach
+
+                <div class="w-full mt-4">
+                    <h3 class="text-xl font-bold text-gray-800 mb-8 font-medium">Bagan Susunan Pengurus</h3>
+                    <img
+                        @click="modalOpen = true; modalImage = '{{ asset('images/struktur-organisasi-luk.jpeg') }}'"
+                        src="{{ asset('images/struktur-organisasi-luk.jpeg') }}" alt="Struktur Organisasi UPA LUK"
+                        class="w-full max-w-5xl mx-auto rounded-xl shadow-sm border border-gray-100 object-contain cursor-pointer transition-all duration-300 hover:scale-[1.01] hover:shadow-lg bg-gray-50">
+                    <p class="text-sm text-gray-400 mt-3 italic">*Klik gambar untuk memperbesar</p>
+                </div>
+            </div>
+        </div>
+
+        <div x-show="modalOpen"
+            class="fixed inset-0 z-[100] flex items-center justify-center overflow-auto p-4 sm:p-8 bg-black/90 backdrop-blur-sm"
+            x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0"
+            x-transition:enter-end="opacity-100" x-transition:leave="transition ease-in duration-200"
+            x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0" style="display: none;"
+            @keydown.escape.window="modalOpen = false">
+            <div class="absolute inset-0 cursor-pointer" @click="modalOpen = false"></div>
+
+            <div class="relative max-w-7xl w-full mx-auto flex flex-col justify-center items-center pointer-events-none"
+                x-transition:enter="transition ease-out duration-300 delay-150"
+                x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100">
+                <button @click="modalOpen = false"
+                    class="absolute -top-12 md:-top-16 right-0 text-white hover:text-gray-300 pointer-events-auto transition rounded-full p-2 bg-black/40 hover:bg-black/80">
+                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+
+                <img :src="modalImage" alt="Zoom Struktur Organisasi"
+                    class="max-h-[85vh] w-auto max-w-full rounded-lg shadow-2xl bg-white mx-auto pointer-events-auto border border-gray-700">
             </div>
         </div>
     </div>
 
     <x-public.footer />
-
-    <!-- Scroll to Top -->
-    <button @click="window.scrollTo({top: 0, behavior: 'smooth'})" x-show="scrolled"
-        x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 translate-y-10"
-        x-transition:enter-end="opacity-100 translate-y-0" x-transition:leave="transition ease-in duration-200"
-        x-transition:leave-start="opacity-100 translate-y-0" x-transition:leave-end="opacity-0 translate-y-10"
-        class="fixed bottom-8 right-8 bg-[#1e40af] text-white p-3.5 rounded-full shadow-2xl hover:bg-blue-800 transition z-50 hover:-translate-y-1">
-        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"></path>
-        </svg>
-    </button>
 </div>

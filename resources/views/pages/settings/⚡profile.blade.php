@@ -123,8 +123,9 @@ new #[Title('Profile settings')] class extends Component {
         $user->umumProfile()->updateOrCreate([], [
             'no_ktp' => $validated['no_ktp'] ?? null,
             'pendidikan_terakhir' => $validated['pendidikan_terakhir'] ?? null,
+            'nama_institusi' => $validated['nama_institusi'] ?? null,
             'nama_pekerjaan' => $validated['pekerjaan'] ?? null,
-            'nama_perusahaan' => $validated['nama_perusahaan'] ?? ($validated['nama_institusi'] ?? null),
+            'nama_perusahaan' => $validated['nama_perusahaan'] ?? null,
             'jabatan' => $validated['jabatan'] ?? null,
             'alamat_perusahaan' => $validated['alamat_perusahaan'] ?? null,
             'kode_pos_perusahaan' => $validated['kode_pos_perusahaan'] ?? null,

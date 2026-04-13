@@ -124,6 +124,7 @@ function createGeneralUser(array $user = [], array $profile = [], array $umumPro
             array_merge([
                 'no_ktp' => '3174000000000001',
                 'pendidikan_terakhir' => 'S1',
+                'nama_institusi' => 'Universitas Contoh',
                 'nama_pekerjaan' => 'Karyawan Swasta',
                 'nama_perusahaan' => 'Perusahaan Contoh',
                 'jabatan' => 'Staf',

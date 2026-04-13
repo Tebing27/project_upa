@@ -46,7 +46,15 @@ class VerifikasiDokumen extends Component
     {
         Registration::query()
             ->whereKey($registrationId)
-            ->where('status', 'dokumen_ok')
+            ->whereIn('status', [
+                'dokumen_ok',
+                'pending_payment',
+                'paid',
+                'terjadwal',
+                'kompeten',
+                'tidak_kompeten',
+                'sertifikat_terbit',
+            ])
             ->firstOrFail();
 
         $this->redirectRoute('admin.payment', ['highlight' => $registrationId], navigate: true);

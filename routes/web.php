@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Controllers\LandingPageController;
+use App\Livewire\Admin\CmsManager;
 use App\Livewire\Admin\DetailDokumen;
 use App\Livewire\Admin\DetailPembayaran;
 use App\Livewire\Admin\JadwalUji;
@@ -17,13 +19,12 @@ use App\Livewire\SchemeDetail;
 use App\Livewire\UserCertificatesPage;
 use App\Livewire\UserRegistrationStatus;
 use App\Livewire\UserSchemesPage;
-use App\Models\Scheme;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/', [App\Http\Controllers\LandingPageController::class, 'index'])->name('home');
-Route::get('/artikel', [App\Http\Controllers\LandingPageController::class, 'articlesIndex'])->name('article.index');
-Route::get('/artikel/{article:slug}', [App\Http\Controllers\LandingPageController::class, 'showArticle'])->name('article.show');
-Route::get('/galeri', [App\Http\Controllers\LandingPageController::class, 'galleryIndex'])->name('gallery.index');
+Route::get('/', [LandingPageController::class, 'index'])->name('home');
+Route::get('/artikel', [LandingPageController::class, 'articlesIndex'])->name('article.index');
+Route::get('/artikel/{slug}', [LandingPageController::class, 'showArticle'])->name('article.show');
+Route::get('/galeri', [LandingPageController::class, 'galleryIndex'])->name('gallery.index');
 Route::get('cek-sertifikat', CekSertifikat::class)->name('cek-sertifikat');
 Route::get('kontak', ContactPage::class)->name('kontak');
 Route::get('profil', ProfilPage::class)->name('profil');
@@ -43,6 +44,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('dashboard/skema', UserSchemesPage::class)->name('dashboard.skema');
 
     Route::middleware('can:admin')->prefix('admin')->name('admin.')->group(function () {
+        Route::get('cms', CmsManager::class)->name('cms');
         Route::get('schemes', SchemeManager::class)->name('schemes');
         Route::get('schemes/create', SchemeForm::class)->name('schemes.create');
         Route::get('schemes/{scheme}/edit', SchemeForm::class)->name('schemes.edit');

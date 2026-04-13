@@ -64,10 +64,10 @@
                     </div>
                 </div>
                 <div class="mt-6 md:mt-0">
-                    @if ($registration->status === 'dokumen_ok')
+                    @if ($this->canProceedToPayment())
                         <button wire:click="lanjutkanKeJadwal"
                             class="inline-flex items-center gap-2 rounded-xl bg-emerald-400 px-6 py-3 text-sm font-bold text-black shadow-lg shadow-emerald-100 transition-all hover:bg-emerald-500">
-                            Lanjutkan ke Validasi Pembayaran
+                            Lanjut ke Pembayaran
                         </button>
                     @endif
                 </div>
@@ -106,9 +106,7 @@
                                 'Kota Domisili' => $registration->user->domisili_kota ?: '-',
                                 'Kecamatan Domisili' => $registration->user->domisili_kecamatan ?: '-',
                                 'Pendidikan Terakhir' => $registration->user->pendidikan_terakhir ?: '-',
-                                'Institusi' => $registration->user->nama_institusi ?: '-',
-                                'Fakultas' => $registration->user->fakultas ?: '-',
-                                'Program Studi' => $registration->user->program_studi ?: '-',
+                                'Nama Institusi' => $registration->user->nama_institusi ?: '-',
                                 'Pekerjaan' => $registration->user->pekerjaan ?: '-',
                                 'Nama Perusahaan' => $registration->user->nama_perusahaan ?: '-',
                                 'Jabatan' => $registration->user->jabatan ?: '-',

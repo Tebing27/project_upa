@@ -244,9 +244,7 @@
                     'Kota Domisili' => $registration->user->domisili_kota ?: '-',
                     'Kecamatan Domisili' => $registration->user->domisili_kecamatan ?: '-',
                     'Pendidikan Terakhir' => $registration->user->pendidikan_terakhir ?: '-',
-                    'Institusi' => $registration->user->nama_institusi ?: '-',
-                    'Fakultas' => $registration->user->fakultas ?: '-',
-                    'Program Studi' => $registration->user->program_studi ?: '-',
+                    'Nama Institusi' => $registration->user->nama_institusi ?: '-',
                     'Pekerjaan' => $registration->user->pekerjaan ?: '-',
                     'Nama Perusahaan' => $registration->user->nama_perusahaan ?: '-',
                     'Jabatan' => $registration->user->jabatan ?: '-',
@@ -404,9 +402,9 @@
                         <form wire:submit="saveBiodata" class="mt-6 space-y-6">
                             <div class="grid grid-cols-1 gap-5 md:grid-cols-2">
                                 <div><label class="block text-sm font-semibold text-slate-700">Nama Lengkap</label><input
-                                        type="text" wire:model="profile.name"
+                                        type="text" wire:model="profile.nama"
                                         class="mt-2 block w-full rounded-xl border border-slate-200 px-4 py-3 text-sm">
-                                    @error('profile.name')
+                                    @error('profile.nama')
                                         <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
                                     @enderror
                                 </div>
@@ -417,20 +415,24 @@
                                         <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
                                     @enderror
                                 </div>
-                                <div><label class="block text-sm font-semibold text-slate-700">NIM</label><input type="text"
+                                @if (! $this->isGeneralUser())
+                                    <div><label class="block text-sm font-semibold text-slate-700">NIM</label><input type="text"
                                         wire:model="profile.nim"
                                         class="mt-2 block w-full rounded-xl border border-slate-200 px-4 py-3 text-sm">
-                                    @error('profile.nim')
-                                        <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
-                                    @enderror
-                                </div>
-                                <div><label class="block text-sm font-semibold text-slate-700">NIK</label><input type="text"
+                                        @error('profile.nim')
+                                            <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
+                                        @enderror
+                                    </div>
+                                @endif
+                                @if ($this->isGeneralUser())
+                                    <div><label class="block text-sm font-semibold text-slate-700">NIK</label><input type="text"
                                         wire:model="profile.no_ktp"
                                         class="mt-2 block w-full rounded-xl border border-slate-200 px-4 py-3 text-sm">
-                                    @error('profile.no_ktp')
-                                        <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
-                                    @enderror
-                                </div>
+                                        @error('profile.no_ktp')
+                                            <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
+                                        @enderror
+                                    </div>
+                                @endif
                                 <div><label class="block text-sm font-semibold text-slate-700">Tempat Lahir</label><input
                                         type="text" wire:model="profile.tempat_lahir"
                                         class="mt-2 block w-full rounded-xl border border-slate-200 px-4 py-3 text-sm">
@@ -499,91 +501,99 @@
                                         <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
                                     @enderror
                                 </div>
-                                <div><label class="block text-sm font-semibold text-slate-700">Institusi</label><input
+                                @if ($this->isGeneralUser())
+                                    <div><label class="block text-sm font-semibold text-slate-700">Nama Institusi</label><input
                                         type="text" wire:model="profile.nama_institusi"
                                         class="mt-2 block w-full rounded-xl border border-slate-200 px-4 py-3 text-sm">
-                                    @error('profile.nama_institusi')
-                                        <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
-                                    @enderror
-                                </div>
-                                <div><label class="block text-sm font-semibold text-slate-700">Fakultas</label><input
+                                        @error('profile.nama_institusi')
+                                            <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
+                                        @enderror
+                                    </div>
+                                @endif
+                                @if (! $this->isGeneralUser())
+                                    <div><label class="block text-sm font-semibold text-slate-700">Fakultas</label><input
                                         type="text" wire:model="profile.fakultas"
                                         class="mt-2 block w-full rounded-xl border border-slate-200 px-4 py-3 text-sm">
-                                    @error('profile.fakultas')
-                                        <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
-                                    @enderror
-                                </div>
-                                <div><label class="block text-sm font-semibold text-slate-700">Program Studi</label><input
+                                        @error('profile.fakultas')
+                                            <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
+                                        @enderror
+                                    </div>
+                                    <div><label class="block text-sm font-semibold text-slate-700">Program Studi</label><input
                                         type="text" wire:model="profile.program_studi"
                                         class="mt-2 block w-full rounded-xl border border-slate-200 px-4 py-3 text-sm">
-                                    @error('profile.program_studi')
-                                        <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
-                                    @enderror
-                                </div>
-                                <div><label class="block text-sm font-semibold text-slate-700">Total SKS</label><input
+                                        @error('profile.program_studi')
+                                            <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
+                                        @enderror
+                                    </div>
+                                    <div><label class="block text-sm font-semibold text-slate-700">Total SKS</label><input
                                         type="number" wire:model="profile.total_sks"
                                         class="mt-2 block w-full rounded-xl border border-slate-200 px-4 py-3 text-sm">
-                                    @error('profile.total_sks')
-                                        <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
-                                    @enderror
-                                </div>
-                                <div><label class="block text-sm font-semibold text-slate-700">Status Semester</label><input
+                                        @error('profile.total_sks')
+                                            <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
+                                        @enderror
+                                    </div>
+                                    <div><label class="block text-sm font-semibold text-slate-700">Status Semester</label><input
                                         type="text" wire:model="profile.status_semester"
                                         class="mt-2 block w-full rounded-xl border border-slate-200 px-4 py-3 text-sm">
-                                    @error('profile.status_semester')
-                                        <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
-                                    @enderror
-                                </div>
-                                <div><label class="block text-sm font-semibold text-slate-700">Pekerjaan</label><input
+                                        @error('profile.status_semester')
+                                            <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
+                                        @enderror
+                                    </div>
+                                @endif
+                                @if ($this->isGeneralUser())
+                                    <div><label class="block text-sm font-semibold text-slate-700">Pekerjaan</label><input
                                         type="text" wire:model="profile.pekerjaan"
                                         class="mt-2 block w-full rounded-xl border border-slate-200 px-4 py-3 text-sm">
-                                    @error('profile.pekerjaan')
-                                        <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
-                                    @enderror
-                                </div>
-                                <div><label class="block text-sm font-semibold text-slate-700">Nama Perusahaan</label><input
+                                        @error('profile.pekerjaan')
+                                            <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
+                                        @enderror
+                                    </div>
+                                    <div><label class="block text-sm font-semibold text-slate-700">Nama Perusahaan</label><input
                                         type="text" wire:model="profile.nama_perusahaan"
                                         class="mt-2 block w-full rounded-xl border border-slate-200 px-4 py-3 text-sm">
-                                    @error('profile.nama_perusahaan')
-                                        <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
-                                    @enderror
-                                </div>
-                                <div><label class="block text-sm font-semibold text-slate-700">Jabatan</label><input
+                                        @error('profile.nama_perusahaan')
+                                            <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
+                                        @enderror
+                                    </div>
+                                    <div><label class="block text-sm font-semibold text-slate-700">Jabatan</label><input
                                         type="text" wire:model="profile.jabatan"
                                         class="mt-2 block w-full rounded-xl border border-slate-200 px-4 py-3 text-sm">
-                                    @error('profile.jabatan')
-                                        <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
-                                    @enderror
-                                </div>
-                                <div><label class="block text-sm font-semibold text-slate-700">Kode Pos
+                                        @error('profile.jabatan')
+                                            <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
+                                        @enderror
+                                    </div>
+                                    <div><label class="block text-sm font-semibold text-slate-700">Kode Pos
                                         Perusahaan</label><input type="text" wire:model="profile.kode_pos_perusahaan"
                                         class="mt-2 block w-full rounded-xl border border-slate-200 px-4 py-3 text-sm">
-                                    @error('profile.kode_pos_perusahaan')
-                                        <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
-                                    @enderror
-                                </div>
-                                <div><label class="block text-sm font-semibold text-slate-700">Telepon Perusahaan</label><input
+                                        @error('profile.kode_pos_perusahaan')
+                                            <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
+                                        @enderror
+                                    </div>
+                                    <div><label class="block text-sm font-semibold text-slate-700">Telepon Perusahaan</label><input
                                         type="text" wire:model="profile.no_telp_perusahaan"
                                         class="mt-2 block w-full rounded-xl border border-slate-200 px-4 py-3 text-sm">
-                                    @error('profile.no_telp_perusahaan')
-                                        <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
-                                    @enderror
-                                </div>
-                                <div><label class="block text-sm font-semibold text-slate-700">Email Perusahaan</label><input
+                                        @error('profile.no_telp_perusahaan')
+                                            <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
+                                        @enderror
+                                    </div>
+                                    <div><label class="block text-sm font-semibold text-slate-700">Email Perusahaan</label><input
                                         type="email" wire:model="profile.email_perusahaan"
                                         class="mt-2 block w-full rounded-xl border border-slate-200 px-4 py-3 text-sm">
-                                    @error('profile.email_perusahaan')
-                                        <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
-                                    @enderror
-                                </div>
-                                <div class="md:col-span-2"><label class="block text-sm font-semibold text-slate-700">Alamat
+                                        @error('profile.email_perusahaan')
+                                            <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
+                                        @enderror
+                                    </div>
+                                @endif
+                                @if ($this->isGeneralUser())
+                                    <div class="md:col-span-2"><label class="block text-sm font-semibold text-slate-700">Alamat
                                         Perusahaan</label>
-                                    <textarea wire:model="profile.alamat_perusahaan" rows="3"
+                                        <textarea wire:model="profile.alamat_perusahaan" rows="3"
                                         class="mt-2 block w-full rounded-xl border border-slate-200 px-4 py-3 text-sm"></textarea>
-                                    @error('profile.alamat_perusahaan')
-                                        <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
-                                    @enderror
-                                </div>
+                                        @error('profile.alamat_perusahaan')
+                                            <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
+                                        @enderror
+                                    </div>
+                                @endif
                             </div>
 
                             <div class="flex flex-wrap justify-end gap-3 border-t border-slate-100 pt-5">

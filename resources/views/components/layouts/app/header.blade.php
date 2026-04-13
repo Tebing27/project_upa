@@ -22,6 +22,9 @@
                     <a href="{{ route('dashboard') }}" wire:navigate @class(['flex items-center h-full text-sm font-medium transition-colors hover:text-emerald-700 dark:hover:text-emerald-300', 'border-b-2 border-emerald-600 dark:border-emerald-400 text-emerald-700 dark:text-emerald-400' => request()->routeIs('dashboard'), 'border-b-2 border-transparent text-zinc-500 dark:text-zinc-400' => !request()->routeIs('dashboard')])>
                         {{ __('Dashboard Admin') }}
                     </a>
+                    <a href="{{ route('admin.cms') }}" wire:navigate @class(['flex items-center h-full text-sm font-medium transition-colors hover:text-emerald-700 dark:hover:text-emerald-300', 'border-b-2 border-emerald-600 dark:border-emerald-400 text-emerald-700 dark:text-emerald-400' => request()->routeIs('admin.cms'), 'border-b-2 border-transparent text-zinc-500 dark:text-zinc-400' => !request()->routeIs('admin.cms')])>
+                        {{ __('CMS Website') }}
+                    </a>
                     <a href="{{ route('admin.schemes') }}" wire:navigate @class(['flex items-center h-full text-sm font-medium transition-colors hover:text-emerald-700 dark:hover:text-emerald-300', 'border-b-2 border-emerald-600 dark:border-emerald-400 text-emerald-700 dark:text-emerald-400' => request()->routeIs('admin.schemes'), 'border-b-2 border-transparent text-zinc-500 dark:text-zinc-400' => !request()->routeIs('admin.schemes')])>
                         {{ __('Manajemen Skema') }}
                     </a>
@@ -73,6 +76,10 @@
                         <a href="{{ route('dashboard') }}" wire:navigate @class(['flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors', 'bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' => request()->routeIs('dashboard'), 'text-zinc-600 hover:bg-emerald-50/50 hover:text-emerald-600 dark:text-zinc-400 dark:hover:bg-emerald-900/20 dark:hover:text-emerald-300' => !request()->routeIs('dashboard')])>
                             <svg class="size-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
                             {{ __('Dashboard Admin') }}
+                        </a>
+                        <a href="{{ route('admin.cms') }}" wire:navigate @class(['flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors', 'bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' => request()->routeIs('admin.cms'), 'text-zinc-600 hover:bg-emerald-50/50 hover:text-emerald-600 dark:text-zinc-400 dark:hover:bg-emerald-900/20 dark:hover:text-emerald-300' => !request()->routeIs('admin.cms')])>
+                            <svg class="size-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h10" /></svg>
+                            {{ __('CMS Website') }}
                         </a>
                         <a href="{{ route('admin.schemes') }}" wire:navigate @class(['flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors', 'bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' => request()->routeIs('admin.schemes'), 'text-zinc-600 hover:bg-emerald-50/50 hover:text-emerald-600 dark:text-zinc-400 dark:hover:bg-emerald-900/20 dark:hover:text-emerald-300' => !request()->routeIs('admin.schemes')])>
                             <svg class="size-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 002-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" /></svg>

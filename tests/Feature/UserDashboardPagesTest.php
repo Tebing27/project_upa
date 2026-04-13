@@ -252,7 +252,6 @@ it('allows biodata updates from the registration status page when a document is 
         ->set('profile.no_wa', '081234567890')
         ->set('profile.pendidikan_terakhir', 'S1')
         ->set('profile.nama_institusi', 'Universitas Contoh')
-        ->set('profile.program_studi', 'Teknik Informatika')
         ->set('profile.pekerjaan', 'Karyawan Swasta')
         ->call('saveBiodata')
         ->assertSet('isEditingBiodata', false)
@@ -327,6 +326,7 @@ it('shows only general-user biodata fields on the registration status page for g
         [
             'no_ktp' => '3273056010900009',
             'pendidikan_terakhir' => 'asa',
+            'nama_institusi' => 'Institut Contoh',
             'nama_pekerjaan' => 'asa',
             'nama_perusahaan' => null,
             'jabatan' => null,
@@ -346,14 +346,38 @@ it('shows only general-user biodata fields on the registration status page for g
         ->test(UserRegistrationStatus::class, ['registration' => $registration])
         ->call('setActiveTab', 'biodata')
         ->assertSee('NIK')
-        ->assertSee('Program Studi')
+        ->assertSee('Nama Institusi')
         ->assertSee('Pekerjaan')
         ->assertSee('Nama Perusahaan')
         ->assertSee('Jabatan')
         ->assertSee('Telepon Perusahaan')
         ->assertDontSee('NIM')
+        ->assertDontSee('Fakultas')
+        ->assertDontSee('Program Studi')
         ->assertDontSee('Total SKS')
         ->assertDontSee('Status Semester');
+});
+
+it('shows only mahasiswa biodata fields on the registration status page for mahasiswa users', function () {
+    $user = createMahasiswaUser();
+    $scheme = createScheme();
+    $registration = createRegistrationWithRelations($user, $scheme, [
+        'status' => 'menunggu_verifikasi',
+    ]);
+
+    Livewire::actingAs($user)
+        ->test(UserRegistrationStatus::class, ['registration' => $registration])
+        ->call('setActiveTab', 'biodata')
+        ->assertSee('NIM')
+        ->assertSee('Fakultas')
+        ->assertSee('Program Studi')
+        ->assertSee('Total SKS')
+        ->assertSee('Status Semester')
+        ->assertDontSee('Nama Institusi')
+        ->assertDontSee('Pekerjaan')
+        ->assertDontSee('Nama Perusahaan')
+        ->assertDontSee('Jabatan')
+        ->assertDontSee('Email Perusahaan');
 });
 
 it('renders the certificates page with the active certificate and table', function () {

@@ -30,6 +30,11 @@ class UserRegistrationStatus extends Component
 
     public $paymentProof;
 
+    public function isGeneralUser(): bool
+    {
+        return (bool) $this->registration?->user?->isGeneralUser();
+    }
+
     public function mount(?Registration $registration = null): void
     {
         if (! $registration || ! $registration->exists) {
@@ -125,20 +130,27 @@ class UserRegistrationStatus extends Component
             'domisili_kota' => $profileData['domisili_kota'] ?? null,
             'domisili_kecamatan' => $profileData['domisili_kecamatan'] ?? null,
             'no_wa' => $profileData['no_wa'] ?? null,
-            'fakultas' => $profileData['fakultas'] ?? null,
-            'program_studi' => $profileData['program_studi'] ?? null,
+            'fakultas' => $user->isUpnvjUser() ? ($profileData['fakultas'] ?? null) : ($user->profile?->fakultas ?? null),
+            'program_studi' => $user->isUpnvjUser() ? ($profileData['program_studi'] ?? null) : ($user->profile?->program_studi ?? null),
+        ]);
+
+        $user->mahasiswaProfile()->updateOrCreate([], [
+            'nim' => $user->isUpnvjUser() ? ($profileData['nim'] ?? null) : ($user->mahasiswaProfile?->nim ?? null),
+            'total_sks' => $user->isUpnvjUser() ? ($profileData['total_sks'] ?? null) : ($user->mahasiswaProfile?->total_sks ?? null),
+            'status_semester' => $user->isUpnvjUser() ? ($profileData['status_semester'] ?? null) : ($user->mahasiswaProfile?->status_semester ?? null),
         ]);
 
         $user->umumProfile()->updateOrCreate([], [
-            'no_ktp' => $profileData['no_ktp'] ?? null,
-            'pendidikan_terakhir' => $profileData['pendidikan_terakhir'] ?? null,
-            'nama_pekerjaan' => $profileData['pekerjaan'] ?? null,
-            'nama_perusahaan' => $profileData['nama_perusahaan'] ?? null,
-            'jabatan' => $profileData['jabatan'] ?? null,
-            'alamat_perusahaan' => $profileData['alamat_perusahaan'] ?? null,
-            'kode_pos_perusahaan' => $profileData['kode_pos_perusahaan'] ?? null,
-            'no_telp_perusahaan' => $profileData['no_telp_perusahaan'] ?? null,
-            'email_perusahaan' => $profileData['email_perusahaan'] ?? null,
+            'no_ktp' => $user->isGeneralUser() ? ($profileData['no_ktp'] ?? null) : ($user->umumProfile?->no_ktp ?? null),
+            'pendidikan_terakhir' => $user->isGeneralUser() ? ($profileData['pendidikan_terakhir'] ?? null) : ($user->umumProfile?->pendidikan_terakhir ?? null),
+            'nama_institusi' => $user->isGeneralUser() ? ($profileData['nama_institusi'] ?? null) : ($user->umumProfile?->nama_institusi ?? null),
+            'nama_pekerjaan' => $user->isGeneralUser() ? ($profileData['pekerjaan'] ?? null) : ($user->umumProfile?->nama_pekerjaan ?? null),
+            'nama_perusahaan' => $user->isGeneralUser() ? ($profileData['nama_perusahaan'] ?? null) : ($user->umumProfile?->nama_perusahaan ?? null),
+            'jabatan' => $user->isGeneralUser() ? ($profileData['jabatan'] ?? null) : ($user->umumProfile?->jabatan ?? null),
+            'alamat_perusahaan' => $user->isGeneralUser() ? ($profileData['alamat_perusahaan'] ?? null) : ($user->umumProfile?->alamat_perusahaan ?? null),
+            'kode_pos_perusahaan' => $user->isGeneralUser() ? ($profileData['kode_pos_perusahaan'] ?? null) : ($user->umumProfile?->kode_pos_perusahaan ?? null),
+            'no_telp_perusahaan' => $user->isGeneralUser() ? ($profileData['no_telp_perusahaan'] ?? null) : ($user->umumProfile?->no_telp_perusahaan ?? null),
+            'email_perusahaan' => $user->isGeneralUser() ? ($profileData['email_perusahaan'] ?? null) : ($user->umumProfile?->email_perusahaan ?? null),
         ]);
 
         $user->syncProfileCompletionStatus();
@@ -489,7 +501,7 @@ class UserRegistrationStatus extends Component
             'domisili_kecamatan' => $user->profile?->domisili_kecamatan,
             'no_wa' => $user->profile?->no_wa,
             'pendidikan_terakhir' => $user->umumProfile?->pendidikan_terakhir,
-            'nama_institusi' => $user->umumProfile?->nama_perusahaan,
+            'nama_institusi' => $user->umumProfile?->nama_institusi,
             'total_sks' => $user->mahasiswaProfile?->total_sks,
             'status_semester' => $user->mahasiswaProfile?->status_semester,
             'fakultas' => $user->profile?->fakultas,

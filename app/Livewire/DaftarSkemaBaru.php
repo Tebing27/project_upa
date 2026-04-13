@@ -431,7 +431,7 @@ class DaftarSkemaBaru extends Component
         $this->domisili_kecamatan = $user->profile?->domisili_kecamatan;
         $this->no_wa = $user->profile?->no_wa;
         $this->pendidikan_terakhir = $user->umumProfile?->pendidikan_terakhir;
-        $this->nama_institusi = $user->umumProfile?->nama_perusahaan;
+        $this->nama_institusi = $user->umumProfile?->nama_institusi;
         $this->total_sks = $user->mahasiswaProfile?->total_sks;
         $this->status_semester = $user->mahasiswaProfile?->status_semester;
         $this->fakultas = $user->profile?->fakultas;
@@ -498,6 +498,7 @@ class DaftarSkemaBaru extends Component
         $user->umumProfile()->updateOrCreate([], [
             'no_ktp' => $validated['no_ktp'] ?? null,
             'pendidikan_terakhir' => $validated['pendidikan_terakhir'] ?? null,
+            'nama_institusi' => $validated['nama_institusi'] ?? null,
             'nama_pekerjaan' => $validated['pekerjaan'] ?? null,
             'nama_perusahaan' => $validated['nama_perusahaan'] ?? null,
             'jabatan' => $validated['jabatan'] ?? null,

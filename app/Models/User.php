@@ -169,7 +169,7 @@ class User extends Authenticatable implements MustVerifyEmail
             'domisili_kecamatan' => $this->profile->domisili_kecamatan,
             'no_wa' => $this->profile->no_wa,
             'pendidikan_terakhir' => $this->umumProfile->pendidikan_terakhir,
-            'program_studi' => $this->profile->program_studi,
+            'nama_institusi' => $this->umumProfile->nama_institusi,
             'pekerjaan' => $this->umumProfile->nama_pekerjaan,
         ])->every(static fn (mixed $value): bool => filled($value));
     }
@@ -285,7 +285,7 @@ class User extends Authenticatable implements MustVerifyEmail
 
     public function setNamaInstitusiAttribute(?string $value): void
     {
-        $this->legacyUmumProfileAttributes['nama_perusahaan'] = $value;
+        $this->legacyUmumProfileAttributes['nama_institusi'] = $value;
     }
 
     /**
@@ -429,7 +429,7 @@ class User extends Authenticatable implements MustVerifyEmail
             $this->load('umumProfile');
         }
 
-        return $this->umumProfile?->nama_perusahaan;
+        return $this->umumProfile?->nama_institusi;
     }
 
     public function getNamaPerusahaanAttribute(): ?string
