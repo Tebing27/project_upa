@@ -8,6 +8,7 @@ use App\Models\Page;
 use App\Models\Scheme;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Str;
 use Illuminate\View\View;
@@ -60,7 +61,37 @@ class LandingPageController extends Controller
             ->latest('id')
             ->paginate(12);
 
+        if ($galleries->isEmpty()) {
+            $galleries = $this->paginateGalleryPages();
+        }
+
         return view('gallery-index', compact('galleries'));
+    }
+
+    private function paginateGalleryPages(): LengthAwarePaginator
+    {
+        $galleryPages = Page::query()
+            ->galleryEntries()
+            ->latest('published_at')
+            ->latest('id')
+            ->get()
+            ->map(fn (Page $page): stdClass => (object) [
+                'title' => $page->title,
+                'description' => $page->excerpt,
+                'file_path' => null,
+                'type' => 'photo',
+            ]);
+
+        return new LengthAwarePaginator(
+            items: $galleryPages,
+            total: $galleryPages->count(),
+            perPage: 12,
+            currentPage: 1,
+            options: [
+                'path' => request()->url(),
+                'pageName' => 'page',
+            ],
+        );
     }
 
     private function articlesQuery(): Builder
