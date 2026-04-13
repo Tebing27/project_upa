@@ -13,6 +13,7 @@ use App\Livewire\Admin\VerifikasiPembayaran;
 use App\Livewire\CekSertifikat;
 use App\Livewire\ContactPage;
 use App\Livewire\DaftarSkemaBaru;
+use App\Livewire\FaqPage;
 use App\Livewire\ProfilPage;
 use App\Livewire\PublicSchemesPage;
 use App\Livewire\SchemeDetail;
@@ -20,6 +21,7 @@ use App\Livewire\UserCertificatesPage;
 use App\Livewire\UserRegistrationStatus;
 use App\Livewire\UserSchemesPage;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Auth;
 
 Route::get('/', [LandingPageController::class, 'index'])->name('home');
 Route::get('/artikel', [LandingPageController::class, 'articlesIndex'])->name('article.index');
@@ -27,13 +29,14 @@ Route::get('/artikel/{slug}', [LandingPageController::class, 'showArticle'])->na
 Route::get('/galeri', [LandingPageController::class, 'galleryIndex'])->name('gallery.index');
 Route::get('cek-sertifikat', CekSertifikat::class)->name('cek-sertifikat');
 Route::get('kontak', ContactPage::class)->name('kontak');
+Route::get('faq', FaqPage::class)->name('faq');
 Route::get('profil', ProfilPage::class)->name('profil');
 Route::get('skema', PublicSchemesPage::class)->name('skema.index');
 Route::get('skema/{scheme}', SchemeDetail::class)->name('skema.detail');
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('dashboard', function () {
-        return auth()->user()?->can('admin')
+        return request()->user()?->can('admin')
             ? view('admin-dashboard')
             : view('dashboard');
     })->name('dashboard');

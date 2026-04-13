@@ -8,9 +8,9 @@
         'profil' => [
             'label' => 'Profil',
             'children' => [
-                ['label' => 'Tentang kami', 'route' => 'profil'],
-                ['label' => 'Visi & Misi', 'url' => '#'],
-                ['label' => 'Struktur organisasi', 'url' => '#'],
+                ['label' => 'Tentang kami', 'url' => route('profil').'#tentang-kami'],
+                ['label' => 'Visi & Misi', 'url' => route('profil').'#visi-misi'],
+                ['label' => 'Struktur organisasi', 'url' => route('profil').'#struktur-organisasi'],
                 ['label' => 'Program Kerja', 'url' => '#'],
                 ['label' => 'Testimoni', 'url' => '#'],
             ],
@@ -28,16 +28,16 @@
         'media' => [
             'label' => 'Media',
             'children' => [
-                ['label' => 'Instagram', 'url' => '#'],
-                ['label' => 'Youtube', 'url' => '#'],
-                ['label' => 'Facebook', 'url' => '#'],
+                ['label' => 'Instagram', 'url' => 'https://www.instagram.com/lspupnvj/'],
+                ['label' => 'Youtube', 'url' => 'https://www.youtube.com/@UPNVeteranJakarta'],
+                ['label' => 'Facebook', 'url' => 'https://www.facebook.com/'],
                 ['label' => 'Hot News', 'route' => 'article.index'],
             ],
         ],
         'informasi' => [
             'label' => 'Informasi',
             'children' => [
-                ['label' => 'FAQ (Q & A)', 'url' => '#'],
+                ['label' => 'FAQ (Q & A)', 'route' => 'faq'],
                 ['label' => 'Kegiatan (Foto dan Video)', 'route' => 'gallery.index'],
                 ['label' => 'Kontak', 'route' => 'kontak'],
             ],

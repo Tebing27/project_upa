@@ -1,47 +1,36 @@
 <div>
     <x-public.navbar active="profil" />
 
-    <!-- Hero Section -->
-    <div class="relative min-h-[50vh] flex items-center justify-center pt-32 pb-20 overflow-hidden bg-gray-900">
+    <div class="relative flex min-h-[50vh] items-center justify-center overflow-hidden bg-gray-900 pt-32 pb-20">
         <img src="{{ asset('assets/background.webp') }}" alt="Hero Background"
-            class="absolute inset-0 w-full h-full object-cover opacity-55">
+            class="absolute inset-0 h-full w-full object-cover opacity-55">
         <div class="absolute inset-0 bg-[linear-gradient(135deg,rgba(15,23,42,0.62),rgba(30,41,59,0.72))]"></div>
 
-        <div class="relative z-10 text-center px-6">
-            <h1 class="text-3xl md:text-5xl font-bold text-white tracking-wide">
-                <span class="text-gray-300 font-medium">UPA LUK</span> <span class="mx-2 font-normal">/</span> Profil
+        <div class="relative z-10 px-6 text-center">
+            <h1 class="text-3xl font-bold tracking-wide text-white md:text-5xl">
+                <span class="font-medium text-gray-300">UPA LUK</span> <span class="mx-2 font-normal">/</span> Profil
             </h1>
         </div>
     </div>
 
-    <!-- Deskripsi Lembaga Section -->
-    <div class="py-24 px-6 lg:px-16 bg-white">
-        <div class="max-w-340 mx-auto w-full text-center">
-            <h2 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4">Unit Penunjang Akademik - Lembaga Uji
-                Kompetensi</h2>
-            <div class="w-12 h-1 bg-[#1e40af] mx-auto mb-16"></div>
+    <div id="tentang-kami" class="scroll-mt-28 bg-white px-6 py-24 lg:px-16">
+        <div class="mx-auto w-full max-w-340 text-center">
+            <h2 class="mb-4 text-3xl font-bold text-gray-900 md:text-4xl">{{ $profileHeading }}</h2>
+            <div class="mx-auto mb-16 h-1 w-12 bg-[#1e40af]"></div>
 
-            <div
-                class="bg-[#f8f9fa] relative p-8 md:p-12 text-left rounded-xl shadow-[0_4px_20px_rgb(0,0,0,0.03)] mx-auto max-w-5xl">
-                <!-- Short blue line on the left -->
-                <div class="absolute left-0 top-10 h-12 w-0.75 bg-[#1e40af]"></div>
+            <div class="relative mx-auto max-w-5xl rounded-xl bg-[#f8f9fa] p-8 text-left shadow-[0_4px_20px_rgb(0,0,0,0.03)] md:p-12">
+                <div class="absolute top-10 left-0 h-12 w-0.75 bg-[#1e40af]"></div>
 
-                <p class="text-gray-600 leading-relaxed text-[1.1rem] md:text-lg font-medium pl-1">
-                    Lembaga Sertifikasi Profesi (LSP) adalah lembaga pelaksanaan kegiatan sertifikasi profesi yang
-                    memperoleh lisensi dari Badan Nasional Sertifikasi Profesi (BNSP). Lisensi diberikan melalui proses
-                    akreditasi oleh BNSP yang menyatakan bahwa LSP bersangkutan telah memenuhi syarat untuk melakukan
-                    kegiatan sertifikasi profesi. Sebagai organisasi tingkat nasional yang berkedudukan di wilayah
-                    Republik Indonesia, LSP dapat membuka cabang yang berkedudukan di kota lain / suatu tempat.
-                </p>
+                <div class="prose prose-slate max-w-none pl-1 text-[1.1rem] font-medium leading-relaxed text-gray-600 md:text-lg">
+                    {!! $profileText !!}
+                </div>
             </div>
         </div>
     </div>
 
-    <!-- Visi Misi Tab Section -->
-    <div class="py-16 px-6 lg:px-16 bg-white border-t border-gray-100">
-        <div class="max-w-6xl mx-auto w-full">
-            <!-- Tabs Header -->
-            <div class="flex flex-wrap justify-center gap-4 md:gap-8 mb-12">
+    <div id="visi-misi" class="scroll-mt-28 border-t border-gray-100 bg-white px-6 py-16 lg:px-16">
+        <div class="mx-auto w-full max-w-6xl">
+            <div class="mb-12 flex flex-wrap justify-center gap-4 md:gap-8">
                 @php
                     $tabs = [
                         'visi' => [
@@ -69,83 +58,65 @@
 
                 @foreach ($tabs as $key => $tab)
                     <button wire:click="setTab('{{ $key }}')"
-                        class="flex flex-col items-center justify-center w-32 h-32 md:w-40 md:h-40 rounded-lg transition-all duration-300 transform {{ $activeTab === $key ? 'bg-[#f97316] shadow-lg scale-105' : 'bg-[#fdba74] hover:bg-[#fb923c] opacity-90' }}">
-                        <svg class="w-10 h-10 md:w-12 md:h-12 text-white mb-3" fill="none" stroke="currentColor"
+                        class="flex h-32 w-32 transform flex-col items-center justify-center rounded-lg transition-all duration-300 md:h-40 md:w-40 {{ $activeTab === $key ? 'scale-105 bg-[#f97316] shadow-lg' : 'bg-[#fdba74] opacity-90 hover:bg-[#fb923c]' }}">
+                        <svg class="mb-3 h-10 w-10 text-white md:h-12 md:w-12" fill="none" stroke="currentColor"
                             viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
                                 d="{{ $tab['icon'] }}"></path>
                         </svg>
-                        <span class="text-white font-bold text-lg md:text-xl">{{ $tab['title'] }}</span>
+                        <span class="text-lg font-bold text-white md:text-xl">{{ $tab['title'] }}</span>
                     </button>
                 @endforeach
             </div>
 
-            <!-- Tabs Content -->
-            <div
-                class="bg-white rounded-xl p-8 md:p-14 shadow-[0_4px_20px_rgb(0,0,0,0.03)] border border-gray-50 min-h-75 text-left mx-auto max-w-5xl">
+            <div class="mx-auto min-h-75 max-w-5xl rounded-xl border border-gray-50 bg-white p-8 text-left shadow-[0_4px_20px_rgb(0,0,0,0.03)] md:p-14">
                 @if ($activeTab === 'visi')
                     <div x-data="{ show: false }" x-init="setTimeout(() => show = true, 50)" x-show="show"
                         x-transition.opacity.duration.500ms>
-                        <h3 class="text-2xl md:text-[1.75rem] font-bold text-gray-900 mb-8">Visi UPA LUK – UPNVJ</h3>
+                        <h3 class="mb-8 text-2xl font-bold text-gray-900 md:text-[1.75rem]">{{ $tabContent['visi']['title'] }}</h3>
 
-                        <div class="bg-[#f8f9fa] rounded-lg p-8 md:p-10 relative">
-                            <!-- Short blue line -->
-                            <div class="absolute left-0 top-10 h-10 w-0.75 bg-[#1e40af]"></div>
+                        <div class="relative rounded-lg bg-[#f8f9fa] p-8 md:p-10">
+                            <div class="absolute top-10 left-0 h-10 w-0.75 bg-[#1e40af]"></div>
 
-                            <!-- Outline Quote Icon -->
-                            <svg class="w-10 h-10 text-blue-500 mb-5 ml-1" viewBox="0 0 24 24" fill="none"
+                            <svg class="mb-5 ml-1 h-10 w-10 text-blue-500" viewBox="0 0 24 24" fill="none"
                                 stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round">
                                 <path d="M10 11h-4a3 3 0 0 1 -3 -3v-2a3 3 0 0 1 3 -3h2a3 3 0 0 1 3 3v5l-2 4"></path>
                                 <path d="M20 11h-4a3 3 0 0 1 -3 -3v-2a3 3 0 0 1 3 -3h2a3 3 0 0 1 3 3v5l-2 4"></path>
                             </svg>
 
-                            <p class="text-gray-600 italic text-[1.1rem] md:text-lg leading-relaxed pl-1 font-medium">
-                                Becoming an Independent and Reliable Professional Certification Organization with State
-                                Defense Identity
+                            <p class="pl-1 text-[1.1rem] font-medium leading-relaxed text-gray-600 italic md:text-lg">
+                                {{ $tabContent['visi']['quote'] }}
                             </p>
                         </div>
                     </div>
                 @elseif($activeTab === 'misi')
                     <div x-data="{ show: false }" x-init="setTimeout(() => show = true, 50)" x-show="show"
                         x-transition.opacity.duration.500ms>
-                        <h3 class="text-2xl md:text-[1.75rem] font-bold text-gray-900 mb-8">UPA LUK Mission – UPNVJ</h3>
-                        <ol
-                            class="list-decimal list-inside space-y-3.5 text-gray-800 text-[1.05rem] md:text-base leading-relaxed">
-                            <li>Organizing professional human resource certification</li>
-                            <li>Developing a trusted state defense-identified study program competency certification
-                                scheme</li>
-                            <li>Increase the recognition and competitiveness of graduates with national defense identity
-                                at home and abroad.</li>
-                            <li>Build synergistic cooperation with stakeholders</li>
+                        <h3 class="mb-8 text-2xl font-bold text-gray-900 md:text-[1.75rem]">{{ $tabContent['misi']['title'] }}</h3>
+                        <ol class="list-decimal list-inside space-y-3.5 text-[1.05rem] leading-relaxed text-gray-800 md:text-base">
+                            @foreach ($tabContent['misi']['items'] as $item)
+                                <li>{{ $item }}</li>
+                            @endforeach
                         </ol>
                     </div>
                 @elseif($activeTab === 'tugas')
                     <div x-data="{ show: false }" x-init="setTimeout(() => show = true, 50)" x-show="show"
                         x-transition.opacity.duration.500ms>
-                        <h3 class="text-2xl md:text-[1.75rem] font-bold text-gray-900 mb-8">Tugas</h3>
-                        <ol
-                            class="list-decimal list-inside space-y-3.5 text-gray-800 text-[1.05rem] md:text-base leading-relaxed">
-                            <li>Creating competency test materials.</li>
-                            <li>Provide testing personnel (assessors).</li>
-                            <li>Conduct an assessment.</li>
-                            <li>Develop qualifications with reference to KKNI.</li>
-                            <li>Maintain assessor and TUK performance.</li>
-                            <li>Creating competency test materials.</li>
-                            <li>Development of certification schemes</li>
+                        <h3 class="mb-8 text-2xl font-bold text-gray-900 md:text-[1.75rem]">{{ $tabContent['tugas']['title'] }}</h3>
+                        <ol class="list-decimal list-inside space-y-3.5 text-[1.05rem] leading-relaxed text-gray-800 md:text-base">
+                            @foreach ($tabContent['tugas']['items'] as $item)
+                                <li>{{ $item }}</li>
+                            @endforeach
                         </ol>
                     </div>
                 @elseif($activeTab === 'wewenang')
                     <div x-data="{ show: false }" x-init="setTimeout(() => show = true, 50)" x-show="show"
                         x-transition.opacity.duration.500ms>
-                        <h3 class="text-2xl md:text-[1.75rem] font-bold text-gray-900 mb-8">Wewenang</h3>
-                        <ol
-                            class="list-decimal list-inside space-y-3.5 text-gray-800 text-[1.05rem] md:text-base leading-relaxed">
-                            <li>Setting competency fees.</li>
-                            <li>Issue a certificate of competency.</li>
-                            <li>Revoke/cancel competency certification.</li>
-                            <li>Establish and verify the TUK.</li>
-                            <li>Give sanctions to assessors and TUK if they violate the rules.</li>
-                            <li>Propose new competency standards.</li>
+                        <h3 class="mb-8 text-2xl font-bold text-gray-900 md:text-[1.75rem]">{{ $tabContent['wewenang']['title'] }}</h3>
+                        <ol class="list-decimal list-inside space-y-3.5 text-[1.05rem] leading-relaxed text-gray-800 md:text-base">
+                            @foreach ($tabContent['wewenang']['items'] as $item)
+                                <li>{{ $item }}</li>
+                            @endforeach
                         </ol>
                     </div>
                 @endif
@@ -153,23 +124,22 @@
         </div>
     </div>
 
-    <!-- Struktur Organisasi Section -->
-    <div class="py-24 px-6 lg:px-16 bg-white border-t border-gray-100" x-data="{ modalOpen: false, modalImage: '' }">
-        <div class="max-w-6xl mx-auto w-full text-center">
-            <h2 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4">Struktur Organisasi</h2>
-            <div class="w-16 h-1 bg-[#1e40af] mx-auto mb-20 rounded-full"></div>
+    <div id="struktur-organisasi" class="scroll-mt-28 border-t border-gray-100 bg-white px-6 py-24 lg:px-16"
+        x-data="{ modalOpen: false, modalImage: '' }">
+        <div class="mx-auto w-full max-w-6xl text-center">
+            <h2 class="mb-4 text-3xl font-bold text-gray-900 md:text-4xl">Struktur Organisasi</h2>
+            <div class="mx-auto mb-20 h-1 w-16 rounded-full bg-[#1e40af]"></div>
 
             <div class="flex flex-col items-center gap-16">
                 @foreach ($staff as $person)
                     <div class="flex flex-col items-center">
-                        <div class="relative mb-6 group cursor-pointer">
+                        <div class="group relative mb-6 cursor-pointer">
                             <img src="{{ $person['image'] }}" alt="{{ $person['name'] }}"
-                                class="w-64 h-80 object-cover rounded-t-3xl rounded-b-xl shadow-md transition-transform duration-500 group-hover:scale-[1.02]">
+                                class="h-80 w-64 rounded-t-3xl rounded-b-xl object-cover shadow-md transition-transform duration-500 group-hover:scale-[1.02]">
 
-                            <!-- Overlapping Icon -->
                             <div
-                                class="absolute -bottom-8 left-1/2 transform -translate-x-1/2 w-16 h-16 bg-white rounded-full shadow-lg flex items-center justify-center border-4 border-gray-50 z-10 group-hover:-translate-y-2 transition-transform duration-300">
-                                <svg class="w-6 h-6 text-gray-700" fill="none" stroke="currentColor"
+                                class="absolute -bottom-8 left-1/2 flex h-16 w-16 -translate-x-1/2 items-center justify-center rounded-full border-4 border-gray-50 bg-white shadow-lg transition-transform duration-300 group-hover:-translate-y-2">
+                                <svg class="h-6 w-6 text-gray-700" fill="none" stroke="currentColor"
                                     viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                         d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
@@ -179,47 +149,47 @@
 
                         <div class="mt-10">
                             @if ($person['prefix'])
-                                <p class="text-gray-500 text-sm font-medium mb-1 uppercase tracking-wider">
-                                    {{ $person['prefix'] }}</p>
+                                <p class="mb-1 text-sm font-medium tracking-wider text-gray-500 uppercase">
+                                    {{ $person['prefix'] }}
+                                </p>
                             @endif
-                            <h3 class="text-2xl font-bold text-[#1e40af] mb-2">{{ $person['name'] }}</h3>
-                            <p class="text-gray-600 font-medium">{{ $person['title'] }}</p>
+                            <h3 class="mb-2 text-2xl font-bold text-[#1e40af]">{{ $person['name'] }}</h3>
+                            <p class="font-medium text-gray-600">{{ $person['title'] }}</p>
                         </div>
                     </div>
                 @endforeach
 
-                <div class="w-full mt-4">
-                    <h3 class="text-xl font-bold text-gray-800 mb-8 font-medium">Bagan Susunan Pengurus</h3>
-                    <img
-                        @click="modalOpen = true; modalImage = '{{ asset('images/struktur-organisasi-luk.jpeg') }}'"
-                        src="{{ asset('images/struktur-organisasi-luk.jpeg') }}" alt="Struktur Organisasi UPA LUK"
-                        class="w-full max-w-5xl mx-auto rounded-xl shadow-sm border border-gray-100 object-contain cursor-pointer transition-all duration-300 hover:scale-[1.01] hover:shadow-lg bg-gray-50">
-                    <p class="text-sm text-gray-400 mt-3 italic">*Klik gambar untuk memperbesar</p>
+                <div class="mt-4 w-full">
+                    <h3 class="mb-8 text-xl font-bold text-gray-800">{{ $structureHeading }}</h3>
+                    <img @click="modalOpen = true; modalImage = '{{ $structureImage }}'" src="{{ $structureImage }}"
+                        alt="Struktur Organisasi UPA LUK"
+                        class="mx-auto w-full max-w-5xl cursor-pointer rounded-xl border border-gray-100 bg-gray-50 object-contain shadow-sm transition-all duration-300 hover:scale-[1.01] hover:shadow-lg">
+                    <p class="mt-3 text-sm text-gray-400 italic">*Klik gambar untuk memperbesar</p>
                 </div>
             </div>
         </div>
 
         <div x-show="modalOpen"
-            class="fixed inset-0 z-[100] flex items-center justify-center overflow-auto p-4 sm:p-8 bg-black/90 backdrop-blur-sm"
+            class="fixed inset-0 z-[100] flex items-center justify-center overflow-auto bg-black/90 p-4 backdrop-blur-sm sm:p-8"
             x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0"
             x-transition:enter-end="opacity-100" x-transition:leave="transition ease-in duration-200"
             x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0" style="display: none;"
             @keydown.escape.window="modalOpen = false">
             <div class="absolute inset-0 cursor-pointer" @click="modalOpen = false"></div>
 
-            <div class="relative max-w-7xl w-full mx-auto flex flex-col justify-center items-center pointer-events-none"
+            <div class="relative mx-auto flex w-full max-w-7xl flex-col items-center justify-center pointer-events-none"
                 x-transition:enter="transition ease-out duration-300 delay-150"
                 x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100">
                 <button @click="modalOpen = false"
-                    class="absolute -top-12 md:-top-16 right-0 text-white hover:text-gray-300 pointer-events-auto transition rounded-full p-2 bg-black/40 hover:bg-black/80">
-                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    class="pointer-events-auto absolute -top-12 right-0 rounded-full bg-black/40 p-2 text-white transition hover:bg-black/80 hover:text-gray-300 md:-top-16">
+                    <svg class="h-8 w-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                             d="M6 18L18 6M6 6l12 12"></path>
                     </svg>
                 </button>
 
                 <img :src="modalImage" alt="Zoom Struktur Organisasi"
-                    class="max-h-[85vh] w-auto max-w-full rounded-lg shadow-2xl bg-white mx-auto pointer-events-auto border border-gray-700">
+                    class="pointer-events-auto mx-auto max-h-[85vh] max-w-full rounded-lg border border-gray-700 bg-white shadow-2xl">
             </div>
         </div>
     </div>

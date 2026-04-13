@@ -4,25 +4,24 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-
+    
     <!-- SEO & Metadata -->
     <title>{{ config('app.name', 'LSP UPN Veteran Jakarta') }} - Lembaga Sertifikasi Profesi</title>
-    <meta name="description"
-        content="Unit Penunjang Akademik - Layanan Uji Kompetensi (UPA-LUK) UPN Veteran Jakarta melayani uji kompetensi bersertifikat BNSP untuk mahasiswa.">
-
+    <meta name="description" content="Unit Penunjang Akademik - Layanan Uji Kompetensi (UPA-LUK) UPN Veteran Jakarta melayani uji kompetensi bersertifikat BNSP untuk mahasiswa.">
+    
     <!-- Open Graph Tags -->
     <meta property="og:title" content="{{ config('app.name', 'LSP UPN Veteran Jakarta') }} - Terlisensi BNSP">
-    <meta property="og:description"
-        content="Dapatkan sertifikat kompetensi dari BNSP melalui UPA-LUK UPN Veteran Jakarta. Skema sertifikasi lengkap.">
+    <meta property="og:description" content="Dapatkan sertifikat kompetensi dari BNSP melalui UPA-LUK UPN Veteran Jakarta. Skema sertifikasi lengkap.">
     <meta property="og:image" content="{{ asset('assets/logo.webp') }}">
     <meta property="og:url" content="{{ url()->current() }}">
     <meta property="og:type" content="website">
 
     @include('partials.head')
     @livewireStyles
-
+    
+    <!-- Swiper CSS -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css" />
-
+    
     <style>
         /* Gradient hero background */
         .hero-gradient {
@@ -36,11 +35,8 @@
             padding-top: 8vw;
         }
 
-        .swiper-button-next,
-        .swiper-button-prev {
-            color: white !important;
-            transform: scale(0.7);
-        }
+        /* Swiper Navigation Customization */
+        .swiper-button-next, .swiper-button-prev { color: white !important; transform: scale(0.7); }
     </style>
 </head>
 
@@ -50,63 +46,68 @@
     <x-public.navbar active="home" />
 
     <!-- Hero Section (Static Text Overlay + Background Swiper Carousel) -->
-    <div class="group relative min-h-[85vh] w-full overflow-hidden lg:h-screen">
-        <div class="pointer-events-none absolute inset-0 z-20 bg-slate-900/60 mix-blend-multiply"></div>
+    <div class="relative w-full min-h-[85vh] lg:h-screen overflow-hidden group">
+        
+        <!-- Global Dark Overlay for Text Readability -->
+        <div class="absolute inset-0 bg-slate-900/60 z-20 pointer-events-none mix-blend-multiply"></div>
 
-        <div class="pointer-events-none absolute inset-0 z-30 flex items-center justify-center pt-16 pb-28 md:pt-20 md:pb-40">
-            <div class="mx-auto w-full max-w-4xl px-6 text-center text-white pointer-events-auto">
-                <div
-                    class="mb-6 inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-2 shadow-sm backdrop-blur-md">
-                    <span class="h-2 w-2 rounded-full bg-emerald-400 animate-pulse"></span>
+        <!-- Static Text Container (Locks text from sliding, stays visible always) -->
+        <div class="absolute inset-0 z-30 flex items-center justify-center pointer-events-none pt-16 pb-28 md:pt-20 md:pb-40">
+            <div class="text-center text-white px-6 w-full max-w-4xl mx-auto pointer-events-auto">
+                <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 border border-white/20 backdrop-blur-md mb-6 shadow-sm">
+                    <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
                     <span class="text-xs font-bold tracking-wider text-emerald-100 uppercase">Lisensi Resmi BNSP</span>
                 </div>
-                <h1 class="mb-6 text-4xl font-bold leading-tight drop-shadow-lg md:text-5xl lg:text-[3.5rem]">
-                    Uji Kompetensi Terakreditasi & Profesional
+                <!-- Dynamic text from CMS -->
+                <h1 class="text-4xl md:text-5xl lg:text-[3.5rem] font-bold mb-6 leading-tight drop-shadow-lg">
+                    {{ $homeContent['hero_title'] ?? 'Uji Kompetensi Terakreditasi & Profesional' }}
                 </h1>
-                <p class="mx-auto mb-10 max-w-3xl text-lg font-medium leading-relaxed text-gray-200 drop-shadow-md md:text-xl">
-                    Sistem penilaian dilakukan secara transparan dan objektif oleh Master Asesor yang memiliki
-                    keahlian spesifik menggunakan fasilitas berstandar industri.
+                <p class="text-lg md:text-xl text-gray-200 mb-10 font-medium max-w-3xl mx-auto drop-shadow-md leading-relaxed">
+                    {{ $homeContent['hero_subtitle'] ?? 'Sistem penilaian dilakukan secara transparan dan objektif oleh Master Asesor yang memiliki keahlian spesifik menggunakan fasilitas berstandar industri.' }}
                 </p>
                 <div class="flex flex-wrap justify-center gap-4">
-                    <a href="{{ route('register') }}"
-                        class="group/btn flex items-center justify-center gap-3 rounded-full bg-[#ea580c] px-8 py-4 text-sm font-bold tracking-wide text-white transition hover:bg-[#c2410c] shadow-lg shadow-orange-500/30">
-                        DAFTAR SEKARANG
-                        <svg class="w-4 h-4 transition-transform group-hover/btn:translate-x-1" fill="none"
-                            stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M14 5l7 7m0 0l-7 7m7-7H3"></path>
-                        </svg>
+                    <a href="{{ $homeContent['cta_link'] ?? route('register') }}" class="bg-[#ea580c] hover:bg-[#c2410c] text-white px-8 py-4 rounded-full font-bold transition flex items-center justify-center gap-3 text-sm tracking-wide shadow-lg shadow-orange-500/30 group/btn">
+                        {{ $homeContent['cta_text'] ?? 'DAFTAR SEKARANG' }}
+                        <svg class="w-4 h-4 transition-transform group-hover/btn:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
                     </a>
-                    <a href="#skema-section"
-                        @click.prevent="document.getElementById('skema-section')?.scrollIntoView({behavior: 'smooth'})"
-                        class="flex items-center justify-center gap-3 rounded-full border-2 border-white/70 bg-white/10 px-8 py-4 text-sm font-bold tracking-wide text-white transition hover:border-white hover:bg-white/20 backdrop-blur-sm">
+                    <a href="#skema-section" @click.prevent="document.getElementById('skema-section')?.scrollIntoView({behavior: 'smooth'})" class="bg-white/10 backdrop-blur-sm border-2 border-white/70 hover:bg-white/20 hover:border-white text-white px-8 py-4 rounded-full font-bold transition flex items-center justify-center gap-3 text-sm tracking-wide">
                         LIHAT SKEMA
                     </a>
                 </div>
             </div>
         </div>
 
-        <div class="pointer-events-none absolute inset-0 z-40">
-            <div class="swiper-button-next pointer-events-auto opacity-40 transition-opacity drop-shadow-lg hover:opacity-100"></div>
-            <div class="swiper-button-prev pointer-events-auto opacity-40 transition-opacity drop-shadow-lg hover:opacity-100"></div>
+        <!-- Navigation Arrows (Floating above overlay) -->
+        <div class="absolute inset-0 z-40 pointer-events-none">
+            <div class="swiper-button-next pointer-events-auto opacity-40 hover:opacity-100 transition-opacity drop-shadow-lg"></div>
+            <div class="swiper-button-prev pointer-events-auto opacity-40 hover:opacity-100 transition-opacity drop-shadow-lg"></div>
         </div>
 
-        <div class="swiper myHeroSwiper absolute inset-0 z-10 h-full w-full">
+        <!-- Background Swiper Carousel -->
+        <div class="swiper myHeroSwiper absolute inset-0 w-full h-full z-10">
             <div class="swiper-wrapper">
-                <div class="swiper-slide relative h-full w-full">
-                    <img src="{{ asset('images/hero-3.jpeg') }}" alt="Asesor Background"
-                        class="h-full w-full object-cover blur-[3px] scale-[1.03] transition-transform duration-[10000ms] hover:scale-110">
-                </div>
+                @if (isset($homeContent['hero_slides']) && count($homeContent['hero_slides']) > 0)
+                    @foreach ($homeContent['hero_slides'] as $slideUrl)
+                        <div class="swiper-slide w-full h-full relative">
+                            <img src="{{ $slideUrl }}" alt="Hero Slide" class="w-full h-full object-cover blur-[3px] scale-[1.03] transition-transform duration-[10000ms] hover:scale-110">
+                        </div>
+                    @endforeach
+                @else
+                    <!-- Slide 1 -->
+                    <div class="swiper-slide w-full h-full relative">
+                        <img src="{{ asset('images/hero-3.jpeg') }}" alt="Asesor Background" class="w-full h-full object-cover blur-[3px] scale-[1.03] transition-transform duration-[10000ms] hover:scale-110">
+                    </div>
 
-                <div class="swiper-slide relative h-full w-full">
-                    <img src="{{ asset('images/hero-2.jpeg') }}" alt="Fasilitas Background"
-                        class="h-full w-full object-cover blur-[3px] scale-[1.03] transition-transform duration-[10000ms] hover:scale-110">
-                </div>
+                    <!-- Slide 2 -->
+                    <div class="swiper-slide w-full h-full relative">
+                        <img src="{{ asset('images/hero-2.jpeg') }}" alt="Fasilitas Background" class="w-full h-full object-cover blur-[3px] scale-[1.03] transition-transform duration-[10000ms] hover:scale-110">
+                    </div>
 
-                <div class="swiper-slide relative h-full w-full">
-                    <img src="{{ asset('images/hero-upnvj.png') }}" alt="Pendaftaran Background"
-                        class="h-full w-full object-cover blur-[3px] scale-[1.03] transition-transform duration-[10000ms] hover:scale-110">
-                </div>
+                    <!-- Slide 3 -->
+                    <div class="swiper-slide w-full h-full relative">
+                        <img src="{{ asset('images/hero-upnvj.png') }}" alt="Pendaftaran Background" class="w-full h-full object-cover blur-[3px] scale-[1.03] transition-transform duration-[10000ms] hover:scale-110">
+                    </div>
+                @endif
             </div>
         </div>
     </div>
@@ -116,40 +117,25 @@
         <div class="bg-white rounded-[1.5rem] shadow-2xl shadow-[#1a9bc3]/10 border border-gray-100 p-8">
             <div class="flex flex-col md:flex-row items-center gap-8 md:gap-10">
                 <div class="md:w-1/3 text-center md:text-left">
-                    <div
-                        class="inline-flex items-center justify-center p-3.5 bg-blue-50 rounded-xl text-blue-600 mb-4 shadow-sm border border-blue-100">
-                        <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z">
-                            </path>
-                        </svg>
+                    <div class="inline-flex items-center justify-center p-3.5 bg-blue-50 rounded-xl text-blue-600 mb-4 shadow-sm border border-blue-100">
+                        <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"></path></svg>
                     </div>
                     <h3 class="text-2xl font-bold text-gray-900 mb-2">Cek Sertifikat</h3>
-                    <p class="text-gray-500 text-sm leading-relaxed">Verifikasi keaslian sertifikat kompetensi Anda di
-                        LSP UPNVJ secara online untuk membuktikan validitasnya.</p>
+                    <p class="text-gray-500 text-sm leading-relaxed">Verifikasi keaslian sertifikat kompetensi Anda di LSP UPNVJ secara online untuk membuktikan validitasnya.</p>
                 </div>
                 <div class="md:w-2/3 w-full border-t md:border-t-0 md:border-l border-gray-100 pt-6 md:pt-0 md:pl-10">
-                    <form action="{{ route('cek-sertifikat') }}" method="GET"
-                        class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                    <form action="{{ route('cek-sertifikat') }}" method="GET" class="grid grid-cols-1 sm:grid-cols-2 gap-5">
                         <div class="flex flex-col">
                             <label for="nama" class="text-sm font-bold text-gray-700 mb-2">Nama Lengkap</label>
-                            <input type="text" id="nama" name="nama" placeholder="Isi nama sesuai KTP"
-                                class="border border-gray-200 rounded-xl px-4 py-3.5 outline-none focus:border-[#2563eb] focus:ring-2 focus:ring-[#2563eb]/20 transition-all text-gray-700 bg-gray-50/50 w-full placeholder-gray-400">
+                            <input type="text" id="nama" name="nama" placeholder="Isi nama sesuai KTP" class="border border-gray-200 rounded-xl px-4 py-3.5 outline-none focus:border-[#2563eb] focus:ring-2 focus:ring-[#2563eb]/20 transition-all text-gray-700 bg-gray-50/50 w-full placeholder-gray-400">
                         </div>
                         <div class="flex flex-col">
-                            <label for="reg_no" class="text-sm font-bold text-gray-700 mb-2">No. Registrasi /
-                                Sertifikat</label>
-                            <input type="text" id="reg_no" name="nomor" placeholder="Contoh: REG-2025-XXXX"
-                                class="border border-gray-200 rounded-xl px-4 py-3.5 outline-none focus:border-[#2563eb] focus:ring-2 focus:ring-[#2563eb]/20 transition-all text-gray-700 bg-gray-50/50 w-full placeholder-gray-400">
+                            <label for="reg_no" class="text-sm font-bold text-gray-700 mb-2">No. Registrasi / Sertifikat</label>
+                            <input type="text" id="reg_no" name="nomor" placeholder="Contoh: REG-2025-XXXX" class="border border-gray-200 rounded-xl px-4 py-3.5 outline-none focus:border-[#2563eb] focus:ring-2 focus:ring-[#2563eb]/20 transition-all text-gray-700 bg-gray-50/50 w-full placeholder-gray-400">
                         </div>
                         <div class="sm:col-span-2 mt-2">
-                            <button type="submit"
-                                class="w-full bg-[#2563eb] hover:bg-[#1d4ed8] text-white font-bold py-4 rounded-xl shadow-md hover:shadow-lg transition-all flex justify-center items-center gap-2 group">
-                                <svg class="w-5 h-5 transition-transform group-hover:scale-110" fill="none"
-                                    stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
-                                </svg>
+                            <button type="submit" class="w-full bg-[#2563eb] hover:bg-[#1d4ed8] text-white font-bold py-4 rounded-xl shadow-md hover:shadow-lg transition-all flex justify-center items-center gap-2 group">
+                                <svg class="w-5 h-5 transition-transform group-hover:scale-110" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
                                 Cek Sertifikat Sekarang
                             </button>
                         </div>
@@ -166,10 +152,9 @@
                 <div class="pr-0 lg:pr-8">
                     <h2 class="text-4xl lg:text-[2.5rem] font-bold mb-6 text-gray-900 leading-tight">Selamat Datang di
                         UPA-LUK</h2>
-                    <p class="text-gray-600 mb-8 leading-relaxed text-lg">
-                        Lembaga Sertifikasi Profesi (LSP) UPN "Veteran" Jakarta melayani pelaksanaan kegiatan uji
-                        kompetensi mahasiswa dengan lisensi resmi dari Badan Nasional Sertifikasi Profesi (BNSP).
-                    </p>
+                    <div class="text-gray-600 mb-8 leading-relaxed text-lg content-html">
+                        {!! $homeContent['description'] ?? 'Lembaga Sertifikasi Profesi (LSP) UPN "Veteran" Jakarta melayani pelaksanaan kegiatan uji kompetensi mahasiswa dengan lisensi resmi dari Badan Nasional Sertifikasi Profesi (BNSP).' !!}
+                    </div>
 
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-10">
                         <!-- Benefit 1 -->
@@ -240,7 +225,7 @@
                 <div class="overflow-hidden rounded-2xl border-4 border-gray-100 shadow-2xl">
                     <div class="aspect-video w-full bg-slate-950">
                         <iframe class="h-full w-full"
-                            src="{{ config('services.youtube.intro_video', 'https://www.youtube.com/embed/shb_YrytjFM') }}"
+                            src="{{ $homeContent['youtube_url'] ?? config('services.youtube.intro_video', 'https://www.youtube.com/embed/shb_YrytjFM') }}"
                             title="Video Pengenalan Aplikasi LSP"
                             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                             referrerpolicy="strict-origin-when-cross-origin" allowfullscreen>
@@ -282,94 +267,56 @@
                 <div class="md:hidden absolute top-[10%] left-[3.25rem] w-1 h-[80%] bg-gray-200 -translate-x-1/2 z-0">
                 </div>
 
-                <!-- Step 1 -->
-                <div
-                    class="relative z-10 flex flex-row md:flex-col items-center bg-transparent w-full md:w-1/5 group mb-8 md:mb-0 gap-6 md:gap-0 mt-2">
-                    <div
-                        class="w-16 h-16 shrink-0 rounded-full bg-blue-50 text-blue-600 border-4 border-white shadow-md flex items-center justify-center md:mb-5 group-hover:bg-blue-600 group-hover:text-white group-hover:scale-110 transition-all duration-300 relative z-10">
-                        <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z">
-                            </path>
-                        </svg>
-                    </div>
-                    <div
-                        class="md:text-center mt-2 p-2 w-full md:w-auto bg-white/50 backdrop-blur-sm rounded-lg md:bg-transparent">
-                        <h4 class="font-bold text-gray-900 text-lg md:text-base">1. Daftar Akun</h4>
-                        <p class="text-sm text-gray-500 mt-1 md:mt-2">Buat akun untuk masuk ke portal</p>
-                    </div>
-                </div>
+                <!-- Steps -->
+                @for ($i = 1; $i <= 5; $i++)
+                    @php
+                        $defaultTitles = [
+                            1 => 'Daftar Akun',
+                            2 => 'Verifikasi Berkas',
+                            3 => 'Pembayaran VA',
+                            4 => 'Ujian Kompetensi',
+                            5 => 'Terbit Sertifikat',
+                        ];
+                        $defaultDescs = [
+                            1 => 'Buat akun untuk masuk ke portal',
+                            2 => 'Upload dokumen persyaratan',
+                            3 => 'Selesaikan biaya administrasi',
+                            4 => 'Jadwal asesmen tatap muka / online',
+                            5 => 'Sertifikat BNSP dirilis ke akun',
+                        ];
+                        
+                        $colors = [
+                            1 => ['bg' => 'bg-blue-50', 'text' => 'text-blue-600', 'hover_bg' => 'group-hover:bg-blue-600'],
+                            2 => ['bg' => 'bg-orange-50', 'text' => 'text-[#ea580c]', 'hover_bg' => 'group-hover:bg-[#ea580c]'],
+                            3 => ['bg' => 'bg-emerald-50', 'text' => 'text-emerald-500', 'hover_bg' => 'group-hover:bg-emerald-500'],
+                            4 => ['bg' => 'bg-purple-50', 'text' => 'text-purple-600', 'hover_bg' => 'group-hover:bg-purple-600'],
+                            5 => ['bg' => 'bg-blue-50', 'text' => 'text-blue-600', 'hover_bg' => 'group-hover:bg-blue-600'],
+                        ];
+                        
+                        $icons = [
+                            1 => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"></path>',
+                            2 => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>',
+                            3 => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path>',
+                            4 => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>',
+                            5 => '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path>'
+                        ];
 
-                <!-- Step 2 -->
-                <div
-                    class="relative z-10 flex flex-row md:flex-col items-center bg-transparent w-full md:w-1/5 group mb-8 md:mb-0 gap-6 md:gap-0 mt-2">
-                    <div
-                        class="w-16 h-16 shrink-0 rounded-full bg-orange-50 text-[#ea580c] border-4 border-white shadow-md flex items-center justify-center md:mb-5 group-hover:bg-[#ea580c] group-hover:text-white group-hover:scale-110 transition-all duration-300 relative z-10">
-                        <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                        </svg>
-                    </div>
-                    <div
-                        class="md:text-center mt-2 p-2 w-full md:w-auto bg-white/50 backdrop-blur-sm rounded-lg md:bg-transparent">
-                        <h4 class="font-bold text-gray-900 text-lg md:text-base">2. Verifikasi Berkas</h4>
-                        <p class="text-sm text-gray-500 mt-1 md:mt-2">Upload dokumen persyaratan</p>
-                    </div>
-                </div>
+                        $title = $homeContent["step_{$i}_title"] ?? $defaultTitles[$i];
+                        $desc = $homeContent["step_{$i}_desc"] ?? $defaultDescs[$i];
+                    @endphp
 
-                <!-- Step 3 -->
-                <div
-                    class="relative z-10 flex flex-row md:flex-col items-center bg-transparent w-full md:w-1/5 group mb-8 md:mb-0 gap-6 md:gap-0 mt-2">
-                    <div
-                        class="w-16 h-16 shrink-0 rounded-full bg-emerald-50 text-emerald-500 border-4 border-white shadow-md flex items-center justify-center md:mb-5 group-hover:bg-emerald-500 group-hover:text-white group-hover:scale-110 transition-all duration-300 relative z-10">
-                        <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z">
-                            </path>
-                        </svg>
-                    </div>
-                    <div
-                        class="md:text-center mt-2 p-2 w-full md:w-auto bg-white/50 backdrop-blur-sm rounded-lg md:bg-transparent">
-                        <h4 class="font-bold text-gray-900 text-lg md:text-base">3. Pembayaran VA</h4>
-                        <p class="text-sm text-gray-500 mt-1 md:mt-2">Selesaikan biaya administrasi</p>
-                    </div>
-                </div>
-
-                <!-- Step 4 -->
-                <div
-                    class="relative z-10 flex flex-row md:flex-col items-center bg-transparent w-full md:w-1/5 group mb-8 md:mb-0 gap-6 md:gap-0 mt-2">
-                    <div
-                        class="w-16 h-16 shrink-0 rounded-full bg-purple-50 text-purple-600 border-4 border-white shadow-md flex items-center justify-center md:mb-5 group-hover:bg-purple-600 group-hover:text-white group-hover:scale-110 transition-all duration-300 relative z-10">
-                        <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253">
-                            </path>
-                        </svg>
-                    </div>
-                    <div
-                        class="md:text-center mt-2 p-2 w-full md:w-auto bg-white/50 backdrop-blur-sm rounded-lg md:bg-transparent">
-                        <h4 class="font-bold text-gray-900 text-lg md:text-base">4. Ujian Kompetensi</h4>
-                        <p class="text-sm text-gray-500 mt-1 md:mt-2">Jadwal asesmen tatap muka / online</p>
-                    </div>
-                </div>
-
-                <!-- Step 5 -->
-                <div
-                    class="relative z-10 flex flex-row md:flex-col items-center bg-transparent w-full md:w-1/5 group gap-6 md:gap-0 mt-2">
-                    <div
-                        class="w-16 h-16 shrink-0 rounded-full bg-blue-50 text-blue-600 border-4 border-white shadow-md flex items-center justify-center md:mb-5 group-hover:bg-blue-600 group-hover:text-white group-hover:scale-110 transition-all duration-300 relative z-10">
-                        <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z">
-                            </path>
-                        </svg>
-                    </div>
-                    <div
-                        class="md:text-center mt-2 p-2 w-full md:w-auto bg-white/50 backdrop-blur-sm rounded-lg md:bg-transparent">
-                        <h4 class="font-bold text-gray-900 text-lg md:text-base">5. Terbit Sertifikat</h4>
-                        <p class="text-sm text-gray-500 mt-1 md:mt-2">Sertifikat BNSP dirilis ke akun</p>
-                    </div>
-                </div>
+                    @if ($title)
+                        <div class="relative z-10 flex flex-row md:flex-col items-center bg-transparent w-full md:w-1/5 group mb-8 md:mb-0 gap-6 md:gap-0 mt-2">
+                            <div class="w-16 h-16 shrink-0 rounded-full {{ $colors[$i]['bg'] }} {{ $colors[$i]['text'] }} border-4 border-white shadow-md flex items-center justify-center md:mb-5 {{ $colors[$i]['hover_bg'] }} group-hover:text-white group-hover:scale-110 transition-all duration-300 relative z-10">
+                                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">{!! $icons[$i] !!}</svg>
+                            </div>
+                            <div class="md:text-center mt-2 p-2 w-full md:w-auto bg-white/50 backdrop-blur-sm rounded-lg md:bg-transparent">
+                                <h4 class="font-bold text-gray-900 text-lg md:text-base">{{ $title }}</h4>
+                                <p class="text-sm text-gray-500 mt-1 md:mt-2">{{ $desc }}</p>
+                            </div>
+                        </div>
+                    @endif
+                @endfor
             </div>
 
 
@@ -379,25 +326,31 @@
     <!-- Registration Section -->
     <div class="bg-[#2A3F5C] text-white py-32 px-6 lg:px-16 slanted-top relative z-10">
         <div class="max-w-4xl mx-auto w-full text-center z-10 relative">
-            <h4 class="text-[#3b82f6] font-bold tracking-widest mb-4 text-sm uppercase">PENDAFTARAN DIBUKA</h4>
-            <h2 class="text-4xl md:text-5xl font-bold mb-8">Registrasi Sertifikasi Di Buka</h2>
-            <p class="text-lg text-gray-300 mb-12 leading-relaxed">
-                Unit Penunjang Akademik-layanan Uji Kompetensi (UPA-LUK) UPN "Veteran"<br>
-                Jakarta membuka pendaftaran Uji Kompetensi Batch 2 Tahun 2025
-            </p>
+            <h4 class="text-[#3b82f6] font-bold tracking-widest mb-4 text-sm uppercase">{{ $homeContent['reg_subtitle'] ?? 'PENDAFTARAN DIBUKA' }}</h4>
+            <h2 class="text-4xl md:text-5xl font-bold mb-8">{{ $homeContent['reg_title'] ?? 'Registrasi Sertifikasi Di Buka' }}</h2>
+            @if(isset($homeContent['reg_desc']) && $homeContent['reg_desc'])
+                <div class="text-lg text-gray-300 mb-12 leading-relaxed content-html">
+                    {!! $homeContent['reg_desc'] !!}
+                </div>
+            @else
+                <p class="text-lg text-gray-300 mb-12 leading-relaxed">
+                    Unit Penunjang Akademik-layanan Uji Kompetensi (UPA-LUK) UPN "Veteran"<br>
+                    Jakarta membuka pendaftaran Uji Kompetensi Batch 2 Tahun 2025
+                </p>
+            @endif
 
             <div class="mb-6">
-                <p class="text-gray-400 mb-2 font-medium">Periode Pendaftaran:</p>
-                <p class="text-2xl font-bold text-white">30 September - 19 Oktober 2025</p>
+                <p class="text-gray-400 mb-2 font-medium">{{ $homeContent['reg_period_label'] ?? 'Periode Pendaftaran:' }}</p>
+                <p class="text-2xl font-bold text-white">{{ $homeContent['reg_period_value'] ?? '30 September - 19 Oktober 2025' }}</p>
             </div>
 
             <div class="mb-14">
-                <p class="text-gray-400 mb-2 font-medium">Pelaksanaan Uji Kompetensi:</p>
-                <p class="text-2xl font-bold text-white">27 - 31 Oktober 2025</p>
+                <p class="text-gray-400 mb-2 font-medium">{{ $homeContent['reg_exec_label'] ?? 'Pelaksanaan Uji Kompetensi:' }}</p>
+                <p class="text-2xl font-bold text-white">{{ $homeContent['reg_exec_value'] ?? '27 - 31 Oktober 2025' }}</p>
             </div>
 
             <div class="flex flex-col sm:flex-row justify-center gap-5">
-                <a href="/daftar"
+                <a href="{{ route('register') }}"
                     class="bg-[#4ade80] hover:bg-[#22c55e] text-[#064e3b] px-10 py-3.5 rounded text-sm tracking-wide transition font-bold shadow-lg shadow-green-500/20">
                     Pendaftaran
                 </a>
@@ -625,7 +578,7 @@
 
                                 <!-- Read More Link -->
                                 <div class="mt-auto pt-5 border-t border-gray-100 flex justify-start items-center">
-                                    <a href="{{ route('article.show', $article->slug) }}"
+                                    <a href="{{ $article->url }}"
                                         class="text-sm font-bold text-[#ea580c] hover:text-[#c2410c] transition-colors flex items-center gap-1">
                                         Baca Selengkapnya
                                         <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor"
@@ -730,76 +683,75 @@
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
-                <!-- Testimoni 1 -->
-                <div
-                    class="bg-white p-8 rounded-2xl shadow-[0_4px_24px_-8px_rgba(0,0,0,0.1)] border border-gray-50 relative group hover:-translate-y-2 transition-transform duration-300">
-                    <svg class="w-10 h-10 text-gray-100 absolute top-6 right-6 transition-colors group-hover:text-blue-50"
-                        fill="currentColor" viewBox="0 0 24 24">
-                        <path
-                            d="M14.017 21v-7.391c0-5.704 3.731-9.57 8.983-10.609l.995 2.151c-2.432.917-3.995 3.638-3.995 5.849h4v10h-9.983zm-14.017 0v-7.391c0-5.704 3.748-9.57 9-10.609l.996 2.151c-2.433.917-3.996 3.638-3.996 5.849h3.983v10h-9.983z">
-                        </path>
-                    </svg>
-                    <p class="text-gray-600 leading-relaxed mb-8 relative z-10 text-[0.95rem]">"Memiliki sertifikat
-                        kompetensi Web Programmer dari BNSP membuat portofolio dan CV saya jauh lebih menonjol di mata
-                        rekruter. Proses sertifikasinya di UPA LUK sangat profesional dan membantu saya saat wawancara
-                        kerja pertama."</p>
-                    <div class="flex items-center gap-4 relative z-10 border-t border-gray-100 pt-5">
-                        <img src="https://ui-avatars.com/api/?name=Budi+Santoso&background=eff6ff&color=1e40af&bold=true"
-                            alt="Budi Santoso" class="w-12 h-12 rounded-full object-cover">
-                        <div>
-                            <h4 class="font-bold text-gray-900">Budi Santoso</h4>
-                            <p class="text-xs text-[#ea580c] font-bold tracking-wide uppercase mt-0.5">Alumni
-                                Informatika</p>
+                @if (isset($homeContent['testimonials']) && count($homeContent['testimonials']) > 0)
+                    @foreach ($homeContent['testimonials'] as $testimonial)
+                        @if (isset($testimonial['quote']) && $testimonial['quote'])
+                            <div class="bg-white p-8 rounded-2xl shadow-[0_4px_24px_-8px_rgba(0,0,0,0.1)] border border-gray-50 relative group hover:-translate-y-2 transition-transform duration-300">
+                                <svg class="w-10 h-10 text-gray-100 absolute top-6 right-6 transition-colors group-hover:text-blue-50"
+                                    fill="currentColor" viewBox="0 0 24 24">
+                                    <path
+                                        d="M14.017 21v-7.391c0-5.704 3.731-9.57 8.983-10.609l.995 2.151c-2.432.917-3.995 3.638-3.995 5.849h4v10h-9.983zm-14.017 0v-7.391c0-5.704 3.748-9.57 9-10.609l.996 2.151c-2.433.917-3.996 3.638-3.996 5.849h3.983v10h-9.983z">
+                                    </path>
+                                </svg>
+                                <p class="text-gray-600 leading-relaxed mb-8 relative z-10 text-[0.95rem]">"{{ $testimonial['quote'] }}"</p>
+                                <div class="flex items-center gap-4 relative z-10 border-t border-gray-100 pt-5">
+                                    @if (isset($testimonial['avatar']) && $testimonial['avatar'])
+                                        <img src="{{ $testimonial['avatar'] }}" alt="{{ $testimonial['author'] ?? 'Anonim' }}" class="w-12 h-12 rounded-full object-cover">
+                                    @else
+                                        <div class="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold text-lg">
+                                            {{ strtoupper(substr($testimonial['author'] ?? 'A', 0, 1)) }}
+                                        </div>
+                                    @endif
+                                    <div>
+                                        <h4 class="font-bold text-gray-900">{{ $testimonial['author'] ?? 'Anonim' }}</h4>
+                                        @if (isset($testimonial['role']) && $testimonial['role'])
+                                            <p class="text-xs text-[#ea580c] font-bold tracking-wide uppercase mt-0.5">{{ $testimonial['role'] }}</p>
+                                        @endif
+                                    </div>
+                                </div>
+                            </div>
+                        @endif
+                    @endforeach
+                @else
+                    <!-- Testimoni 1 -->
+                    <div class="bg-white p-8 rounded-2xl shadow-[0_4px_24px_-8px_rgba(0,0,0,0.1)] border border-gray-50 relative group hover:-translate-y-2 transition-transform duration-300">
+                        <svg class="w-10 h-10 text-gray-100 absolute top-6 right-6 transition-colors group-hover:text-blue-50" fill="currentColor" viewBox="0 0 24 24"><path d="M14.017 21v-7.391c0-5.704 3.731-9.57 8.983-10.609l.995 2.151c-2.432.917-3.995 3.638-3.995 5.849h4v10h-9.983zm-14.017 0v-7.391c0-5.704 3.748-9.57 9-10.609l.996 2.151c-2.433.917-3.996 3.638-3.996 5.849h3.983v10h-9.983z"></path></svg>
+                        <p class="text-gray-600 leading-relaxed mb-8 relative z-10 text-[0.95rem]">"Memiliki sertifikat kompetensi Web Programmer dari BNSP membuat portofolio dan CV saya jauh lebih menonjol di mata rekruter. Proses sertifikasinya di UPA LUK sangat profesional dan membantu saya saat wawancara kerja pertama."</p>
+                        <div class="flex items-center gap-4 relative z-10 border-t border-gray-100 pt-5">
+                            <img src="https://ui-avatars.com/api/?name=Budi+Santoso&background=eff6ff&color=1e40af&bold=true" alt="Budi Santoso" class="w-12 h-12 rounded-full object-cover">
+                            <div>
+                                <h4 class="font-bold text-gray-900">Budi Santoso</h4>
+                                <p class="text-xs text-[#ea580c] font-bold tracking-wide uppercase mt-0.5">Alumni Informatika</p>
+                            </div>
                         </div>
                     </div>
-                </div>
 
-                <!-- Testimoni 2 -->
-                <div
-                    class="bg-white p-8 rounded-2xl shadow-[0_4px_24px_-8px_rgba(0,0,0,0.1)] border border-gray-50 relative group hover:-translate-y-2 transition-transform duration-300">
-                    <svg class="w-10 h-10 text-gray-100 absolute top-6 right-6 transition-colors group-hover:text-orange-50"
-                        fill="currentColor" viewBox="0 0 24 24">
-                        <path
-                            d="M14.017 21v-7.391c0-5.704 3.731-9.57 8.983-10.609l.995 2.151c-2.432.917-3.995 3.638-3.995 5.849h4v10h-9.983zm-14.017 0v-7.391c0-5.704 3.748-9.57 9-10.609l.996 2.151c-2.433.917-3.996 3.638-3.996 5.849h3.983v10h-9.983z">
-                        </path>
-                    </svg>
-                    <p class="text-gray-600 leading-relaxed mb-8 relative z-10 text-[0.95rem]">"Asesornya sangat
-                        kompeten. Ujiannya sungguh relevan dengan kebutuhan industri saat ini, tidak sekadar menguji
-                        teori semata. Berkat lisensi ini, saya lebih percaya diri saat melamar posisi UI/UX Designer
-                        internship."</p>
-                    <div class="flex items-center gap-4 relative z-10 border-t border-gray-100 pt-5">
-                        <img src="https://ui-avatars.com/api/?name=Siti+Aminah&background=fff7ed&color=c2410c&bold=true"
-                            alt="Siti Aminah" class="w-12 h-12 rounded-full object-cover">
-                        <div>
-                            <h4 class="font-bold text-gray-900">Siti Aminah</h4>
-                            <p class="text-xs text-[#ea580c] font-bold tracking-wide uppercase mt-0.5">Mahasiswa Sistem
-                                Informasi</p>
+                    <!-- Testimoni 2 -->
+                    <div class="bg-white p-8 rounded-2xl shadow-[0_4px_24px_-8px_rgba(0,0,0,0.1)] border border-gray-50 relative group hover:-translate-y-2 transition-transform duration-300">
+                        <svg class="w-10 h-10 text-gray-100 absolute top-6 right-6 transition-colors group-hover:text-orange-50" fill="currentColor" viewBox="0 0 24 24"><path d="M14.017 21v-7.391c0-5.704 3.731-9.57 8.983-10.609l.995 2.151c-2.432.917-3.995 3.638-3.995 5.849h4v10h-9.983zm-14.017 0v-7.391c0-5.704 3.748-9.57 9-10.609l.996 2.151c-2.433.917-3.996 3.638-3.996 5.849h3.983v10h-9.983z"></path></svg>
+                        <p class="text-gray-600 leading-relaxed mb-8 relative z-10 text-[0.95rem]">"Asesornya sangat kompeten. Ujiannya sungguh relevan dengan kebutuhan industri saat ini, tidak sekadar menguji teori semata. Berkat lisensi ini, saya lebih percaya diri saat melamar posisi UI/UX Designer internship."</p>
+                        <div class="flex items-center gap-4 relative z-10 border-t border-gray-100 pt-5">
+                            <img src="https://ui-avatars.com/api/?name=Siti+Aminah&background=fff7ed&color=c2410c&bold=true" alt="Siti Aminah" class="w-12 h-12 rounded-full object-cover">
+                            <div>
+                                <h4 class="font-bold text-gray-900">Siti Aminah</h4>
+                                <p class="text-xs text-[#ea580c] font-bold tracking-wide uppercase mt-0.5">Mahasiswa Sistem Informasi</p>
+                            </div>
                         </div>
                     </div>
-                </div>
 
-                <!-- Testimoni 3 -->
-                <div
-                    class="bg-white p-8 rounded-2xl shadow-[0_4px_24px_-8px_rgba(0,0,0,0.1)] border border-gray-50 relative group hover:-translate-y-2 transition-transform duration-300">
-                    <svg class="w-10 h-10 text-gray-100 absolute top-6 right-6 transition-colors group-hover:text-emerald-50"
-                        fill="currentColor" viewBox="0 0 24 24">
-                        <path
-                            d="M14.017 21v-7.391c0-5.704 3.731-9.57 8.983-10.609l.995 2.151c-2.432.917-3.995 3.638-3.995 5.849h4v10h-9.983zm-14.017 0v-7.391c0-5.704 3.748-9.57 9-10.609l.996 2.151c-2.433.917-3.996 3.638-3.996 5.849h3.983v10h-9.983z">
-                        </path>
-                    </svg>
-                    <p class="text-gray-600 leading-relaxed mb-8 relative z-10 text-[0.95rem]">"Sistem pendaftarannya
-                        sangat mudah dan layanannya benar-benar responsif. Fasilitas TUK (Tempat Uji Kompetensi) yang
-                        disediakan langsung oleh kampus UPNVJ juga terbukti sangat lengkap setara standar BNSP."</p>
-                    <div class="flex items-center gap-4 relative z-10 border-t border-gray-100 pt-5">
-                        <img src="https://ui-avatars.com/api/?name=Randi+Pratama&background=ecfdf5&color=047857&bold=true"
-                            alt="Randi Pratama" class="w-12 h-12 rounded-full object-cover">
-                        <div>
-                            <h4 class="font-bold text-gray-900">Randi Pratama</h4>
-                            <p class="text-xs text-[#ea580c] font-bold tracking-wide uppercase mt-0.5">Alumni D3
-                                Keperawatan</p>
+                    <!-- Testimoni 3 -->
+                    <div class="bg-white p-8 rounded-2xl shadow-[0_4px_24px_-8px_rgba(0,0,0,0.1)] border border-gray-50 relative group hover:-translate-y-2 transition-transform duration-300">
+                        <svg class="w-10 h-10 text-gray-100 absolute top-6 right-6 transition-colors group-hover:text-emerald-50" fill="currentColor" viewBox="0 0 24 24"><path d="M14.017 21v-7.391c0-5.704 3.731-9.57 8.983-10.609l.995 2.151c-2.432.917-3.995 3.638-3.995 5.849h4v10h-9.983zm-14.017 0v-7.391c0-5.704 3.748-9.57 9-10.609l.996 2.151c-2.433.917-3.996 3.638-3.996 5.849h3.983v10h-9.983z"></path></svg>
+                        <p class="text-gray-600 leading-relaxed mb-8 relative z-10 text-[0.95rem]">"Sistem pendaftarannya sangat mudah dan layanannya benar-benar responsif. Fasilitas TUK (Tempat Uji Kompetensi) yang disediakan langsung oleh kampus UPNVJ juga terbukti sangat lengkap setara standar BNSP."</p>
+                        <div class="flex items-center gap-4 relative z-10 border-t border-gray-100 pt-5">
+                            <img src="https://ui-avatars.com/api/?name=Randi+Pratama&background=ecfdf5&color=047857&bold=true" alt="Randi Pratama" class="w-12 h-12 rounded-full object-cover">
+                            <div>
+                                <h4 class="font-bold text-gray-900">Randi Pratama</h4>
+                                <p class="text-xs text-[#ea580c] font-bold tracking-wide uppercase mt-0.5">Alumni D3 Keperawatan</p>
+                            </div>
                         </div>
                     </div>
-                </div>
+                @endif
             </div>
         </div>
     </div>
@@ -859,7 +811,7 @@
                 <form action="https://web.whatsapp.com/send" method="GET" target="_blank"
                     class="flex items-center gap-2"
                     @submit="if (!message.trim()) { message = 'Halo, saya ingin bertanya tentang sertifikasi.' }">
-                    <input type="hidden" name="phone" value="6287784644193">
+                    <input type="hidden" name="phone" value="{{ $homeContent[8][1] ?? '6287784644193' }}">
 
                     <div
                         class="flex min-w-0 flex-1 items-center gap-2 rounded-full border border-gray-200 bg-white px-3 sm:px-4 py-2 sm:py-2.5 shadow-sm focus-within:border-[#128c7e] focus-within:ring-1 focus-within:ring-[#128c7e] transition-all">

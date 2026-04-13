@@ -2,10 +2,13 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Article;
+use App\Models\Gallery;
 use App\Models\Page;
 use App\Models\Scheme;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Support\Collection;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Str;
 use Illuminate\View\View;
 use stdClass;
@@ -15,164 +18,342 @@ class LandingPageController extends Controller
     public function index(): View
     {
         $latestSchemes = Scheme::latest()->take(3)->get();
-        $articles = $this->articlePagesQuery()
+        $articles = $this->articlesQuery()
             ->take(3)
             ->get()
-            ->map(fn (Page $page): stdClass => $this->mapArticlePage($page));
-        $galleries = $this->galleryPagesQuery()
+            ->map(fn (Article $article): stdClass => $this->mapArticle($article));
+        $galleries = Gallery::query()
+            ->where('is_published', true)
+            ->latest('id')
             ->take(6)
-            ->get()
-            ->map(fn (Page $page): stdClass => $this->mapGalleryPage($page));
+            ->get();
 
-        return view('welcome', compact('latestSchemes', 'articles', 'galleries'));
+        $homeContent = $this->buildHomeContent();
+
+        return view('welcome', compact('latestSchemes', 'articles', 'galleries', 'homeContent'));
     }
 
     public function articlesIndex(): View
     {
-        $articles = $this->articlePagesQuery()
+        $articles = $this->articlesQuery()
             ->paginate(9)
-            ->through(fn (Page $page): stdClass => $this->mapArticlePage($page));
+            ->through(fn (Article $article): stdClass => $this->mapArticle($article));
 
         return view('article-index', compact('articles'));
     }
 
     public function showArticle(string $slug): View
     {
-        $page = $this->articlePagesQuery()
-            ->where('slug', $slug)
-            ->firstOrFail();
-        $article = $this->mapArticlePage($page);
+        $article = $this->resolveArticle($slug);
 
-        return view('article-detail', compact('article'));
+        $article->increment('views');
+
+        return view('article-detail', [
+            'article' => $this->mapArticle($article),
+        ]);
     }
 
     public function galleryIndex(): View
     {
-        $galleries = $this->galleryPagesQuery()
-            ->paginate(12)
-            ->through(fn (Page $page): stdClass => $this->mapGalleryPage($page));
+        $galleries = Gallery::query()
+            ->where('is_published', true)
+            ->latest('id')
+            ->paginate(12);
 
         return view('gallery-index', compact('galleries'));
     }
 
-    private function articlePagesQuery(): Builder
+    private function articlesQuery(): Builder
     {
-        return Page::query()
-            ->articleEntries()
-            ->with([
-                'creator',
-                'sections.sectionType',
-                'sections.contentBlocks.blockType',
-                'sections.contentBlocks.textContent',
-                'sections.contentBlocks.imageContent.mediaFile',
-            ])
-            ->latest('updated_at');
+        return Article::query()
+            ->published()
+            ->with(['creator', 'tags'])
+            ->latest('published_at')
+            ->latest('id');
     }
 
-    private function galleryPagesQuery(): Builder
+    private function mapArticle(Article $article): stdClass
     {
-        return Page::query()
-            ->galleryEntries()
-            ->with([
-                'sections.sectionType',
-                'sections.contentBlocks.blockType',
-                'sections.contentBlocks.textContent',
-                'sections.contentBlocks.imageContent.mediaFile',
-            ])
-            ->latest('updated_at');
-    }
-
-    private function mapArticlePage(Page $page): stdClass
-    {
-        $textBlocks = $this->textBlocks($page);
-        $body = $this->renderBody($textBlocks);
-        $excerptSource = $textBlocks->skip(1)->first()?->textContent?->value
-            ?? $textBlocks->first()?->textContent?->value
-            ?? '';
+        $body = $this->normalizeArticleBody($article->body ?? '');
 
         return (object) [
-            'title' => $page->title,
-            'slug' => $page->slug,
-            'image_path' => $this->firstImagePath($page),
-            'tags' => $this->pageTags($page),
-            'views_count' => 0,
-            'excerpt' => Str::limit(strip_tags($excerptSource), 120),
+            'id' => $article->id,
+            'title' => $article->title,
+            'slug' => $article->slug,
+            'url' => $article->publicUrl(),
+            'image_path' => preg_match('/<img[^>]+src="([^">]+)"/', $article->body ?? '', $matches) ? $matches[1] : null,
+            'tags' => $article->tags->pluck('name')->all(),
+            'views_count' => (int) $article->views,
+            'excerpt' => Str::limit(strip_tags($article->excerpt ?: $body), 120),
             'body' => $body,
-            'published_at' => $page->updated_at,
-            'created_at' => $page->created_at,
-            'user' => $page->creator,
+            'body_segments' => $this->splitArticleBody($body, $article),
+            'published_at' => $article->published_at ?? $article->updated_at,
+            'created_at' => $article->created_at,
+            'author_name' => $article->author_name ?: $article->creator?->nama ?: 'Admin LSP',
+            'related_articles' => $this->relatedArticles($article),
         ];
     }
 
-    private function mapGalleryPage(Page $page): stdClass
+    private function normalizeArticleBody(string $html): string
     {
-        $textBlocks = $this->textBlocks($page);
-
-        return (object) [
-            'title' => $page->title,
-            'image_path' => $this->firstImagePath($page),
-            'description' => Str::limit(
-                strip_tags($textBlocks->first()?->textContent?->value ?? ''),
-                160
-            ),
-        ];
-    }
-
-    private function textBlocks(Page $page): Collection
-    {
-        return $this->visibleSections($page)
-            ->flatMap(fn ($section) => $section->contentBlocks)
-            ->filter(fn ($block) => $block->blockType?->name === 'text' && filled($block->textContent?->value))
-            ->values();
-    }
-
-    private function firstImagePath(Page $page): ?string
-    {
-        $filePath = $this->visibleSections($page)
-            ->flatMap(fn ($section) => $section->contentBlocks)
-            ->first(fn ($block) => $block->blockType?->name === 'image' && filled($block->imageContent?->mediaFile?->file_path))
-            ?->imageContent
-            ?->mediaFile
-            ?->file_path;
-
-        if (! is_string($filePath) || blank($filePath)) {
-            return null;
+        if ($html === '') {
+            return '';
         }
 
-        return Str::startsWith($filePath, ['http://', 'https://'])
-            ? $filePath
-            : \Storage::url($filePath);
+        $document = new \DOMDocument('1.0', 'UTF-8');
+        $previous = libxml_use_internal_errors(true);
+
+        $document->loadHTML(
+            '<?xml encoding="utf-8" ?><div id="article-root">'.$html.'</div>',
+            LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD
+        );
+
+        libxml_clear_errors();
+        libxml_use_internal_errors($previous);
+
+        $root = $document->getElementById('article-root');
+
+        if (! $root) {
+            return $html;
+        }
+
+        foreach (iterator_to_array($document->getElementsByTagName('figcaption')) as $caption) {
+            if (! $caption instanceof \DOMElement) {
+                continue;
+            }
+
+            $paragraph = $document->createElement('p');
+
+            while ($caption->firstChild) {
+                $paragraph->appendChild($caption->firstChild);
+            }
+
+            $caption->parentNode?->replaceChild($paragraph, $caption);
+        }
+
+        foreach (iterator_to_array($document->getElementsByTagName('figure')) as $figure) {
+            if (! $figure instanceof \DOMElement || ! $figure->parentNode) {
+                continue;
+            }
+
+            while ($figure->firstChild) {
+                $figure->parentNode->insertBefore($figure->firstChild, $figure);
+            }
+
+            $figure->parentNode->removeChild($figure);
+        }
+
+        foreach ($root->getElementsByTagName('*') as $element) {
+            if (! $element instanceof \DOMElement) {
+                continue;
+            }
+
+            foreach (['data-trix-attachment', 'data-trix-content-type', 'data-trix-attributes'] as $attribute) {
+                if ($element->hasAttribute($attribute)) {
+                    $element->removeAttribute($attribute);
+                }
+            }
+
+            if (! $element->hasAttribute('class')) {
+                continue;
+            }
+
+            $classes = preg_split('/\s+/', trim($element->getAttribute('class'))) ?: [];
+            $classes = array_values(array_filter($classes, function (string $class): bool {
+                return $class !== 'attachment'
+                    && $class !== 'trix-content'
+                    && ! str_starts_with($class, 'attachment--');
+            }));
+
+            if ($classes === []) {
+                $element->removeAttribute('class');
+
+                continue;
+            }
+
+            $element->setAttribute('class', implode(' ', $classes));
+        }
+
+        $normalized = '';
+
+        foreach ($root->childNodes as $childNode) {
+            $normalized .= $document->saveHTML($childNode) ?: '';
+        }
+
+        return trim($normalized);
     }
 
-    private function pageTags(Page $page): array
+    private function resolveArticle(string $slug): Article
     {
-        return $this->visibleSections($page)
-            ->map(fn ($section) => $section->sectionType?->name)
-            ->filter()
+        $articleId = $this->extractArticleId($slug);
+
+        $article = $this->articlesQuery()->find($articleId);
+
+        if (! $article) {
+            throw (new ModelNotFoundException)->setModel(Article::class, [$articleId]);
+        }
+
+        return $article;
+    }
+
+    private function extractArticleId(string $slug): int
+    {
+        if (! preg_match('/-(\d+)$/', $slug, $matches)) {
+            throw (new ModelNotFoundException)->setModel(Article::class, [$slug]);
+        }
+
+        return (int) $matches[1];
+    }
+
+    /**
+     * @return array{before:string,after:string}
+     */
+    private function splitArticleBody(string $html, Article $article): array
+    {
+        if ($html === '' || blank($article->related_article_ids)) {
+            return [
+                'before' => $html,
+                'after' => '',
+            ];
+        }
+
+        $segments = $this->extractHtmlSegments($html);
+
+        if (count($segments) < 2) {
+            return [
+                'before' => $html,
+                'after' => '',
+            ];
+        }
+
+        $splitIndex = (int) ceil(count($segments) / 2);
+
+        return [
+            'before' => implode('', array_slice($segments, 0, $splitIndex)),
+            'after' => implode('', array_slice($segments, $splitIndex)),
+        ];
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    private function extractHtmlSegments(string $html): array
+    {
+        $document = new \DOMDocument('1.0', 'UTF-8');
+        $previous = libxml_use_internal_errors(true);
+
+        $document->loadHTML(
+            '<?xml encoding="utf-8" ?><div id="article-root">'.$html.'</div>',
+            LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD
+        );
+
+        libxml_clear_errors();
+        libxml_use_internal_errors($previous);
+
+        $root = $document->getElementById('article-root');
+
+        if (! $root) {
+            return [$html];
+        }
+
+        $segments = [];
+
+        foreach ($root->childNodes as $childNode) {
+            $segments[] = trim($document->saveHTML($childNode) ?: '');
+        }
+
+        return array_values(array_filter($segments));
+    }
+
+    /**
+     * @return array<int, stdClass>
+     */
+    private function relatedArticles(Article $article): array
+    {
+        $relatedArticleIds = collect(Arr::wrap($article->related_article_ids))
+            ->map(fn (mixed $articleId): int => (int) $articleId)
+            ->filter(fn (int $articleId): bool => $articleId > 0 && $articleId !== $article->id)
             ->unique()
-            ->map(fn (string $name): string => Str::headline($name))
+            ->values();
+
+        if ($relatedArticleIds->isEmpty()) {
+            return [];
+        }
+
+        $relatedArticles = Article::query()
+            ->published()
+            ->whereIn('id', $relatedArticleIds)
+            ->get()
+            ->keyBy('id');
+
+        return $relatedArticleIds
+            ->map(function (int $articleId) use ($relatedArticles): ?stdClass {
+                $relatedArticle = $relatedArticles->get($articleId);
+
+                if (! $relatedArticle) {
+                    return null;
+                }
+
+                return (object) [
+                    'title' => $relatedArticle->title,
+                    'url' => $relatedArticle->publicUrl(),
+                    'excerpt' => Str::limit(strip_tags($relatedArticle->excerpt ?: $relatedArticle->body), 110),
+                    'published_at' => $relatedArticle->published_at ?? $relatedArticle->updated_at,
+                ];
+            })
+            ->filter()
             ->values()
             ->all();
     }
 
-    private function renderBody(Collection $textBlocks): string
+    /**
+     * Build home page content from new field_values schema.
+     *
+     * @return array<string, string>
+     */
+    private function buildHomeContent(): array
     {
-        return $textBlocks
-            ->map(function ($block): string {
-                $value = $block->textContent?->value ?? '';
-                $format = $block->textContent?->format ?? 'plain';
+        $homePage = Page::query()
+            ->where('slug', 'home')
+            ->with([
+                'pageSections' => fn ($query) => $query->where('is_visible', true),
+                'pageSections.fields.value',
+            ])
+            ->first();
 
-                return match ($format) {
-                    'html' => $value,
-                    'markdown' => Str::markdown($value),
-                    default => '<p>'.e($value).'</p>',
-                };
-            })
-            ->implode("\n");
-    }
+        if (! $homePage) {
+            return [];
+        }
 
-    private function visibleSections(Page $page): Collection
-    {
-        return $page->sections->where('is_visible', true)->values();
+        $content = [];
+
+        $content['hero_slides'] = [];
+        $content['testimonials'] = [];
+
+        foreach ($homePage->pageSections as $pageSection) {
+            foreach ($pageSection->fields as $field) {
+                $val = $field->isImage() ? ($field->value?->imageUrl() ?? null) : ($field->value?->value ?? null);
+
+                if ($val !== null && $val !== '') {
+                    $content[$field->field_key] = $val;
+                }
+
+                if ($pageSection->section_key === 'hero_slider' && preg_match('/^slide_[a-z0-9]+$/i', $field->field_key)) {
+                    if ($val) {
+                        $content['hero_slides'][] = $val;
+                    }
+                }
+
+                if ($pageSection->section_key === 'home_testimonials' && preg_match('/^(testi_[a-z0-9]+)_([a-z]+)$/i', $field->field_key, $matches)) {
+                    $prefix = $matches[1];
+                    $subKey = $matches[2];
+                    if ($val) {
+                        $content['testimonials'][$prefix][$subKey] = $val;
+                    }
+                }
+            }
+        }
+
+        return $content;
     }
 }

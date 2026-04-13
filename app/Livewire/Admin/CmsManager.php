@@ -2,12 +2,14 @@
 
 namespace App\Livewire\Admin;
 
-use App\Models\BlockType;
-use App\Models\ContentBlock;
+use App\Models\Article;
+use App\Models\FieldValue;
 use App\Models\MediaFile;
 use App\Models\Page;
-use App\Models\Section;
-use App\Models\SectionType;
+use App\Models\PageSection;
+use App\Models\SectionField;
+use App\Models\Tag;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -18,11 +20,14 @@ use Livewire\Attributes\Layout;
 use Livewire\Component;
 use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
 use Livewire\WithFileUploads;
+use Livewire\WithPagination;
 
 #[Layout('components.layouts.app')]
 class CmsManager extends Component
 {
-    use WithFileUploads;
+    use WithFileUploads, WithPagination;
+
+    public string $cmsTab = 'landing';
 
     public string $activePageSlug = 'home';
 
@@ -30,60 +35,122 @@ class CmsManager extends Component
 
     public ?int $pageId = null;
 
-    public ?int $sectionId = null;
+    public ?int $articleId = null;
 
-    public ?int $blockId = null;
+    /** @var string Tipe halaman: 'artikel', 'galeri', atau 'statis' */
+    public string $pageType = 'statis';
 
     public array $pageForm = [
         'title' => '',
         'slug' => '',
+        'editor_name' => '',
+        'tags' => '',
         'is_published' => true,
+        'published_at' => '',
     ];
 
-    public array $sectionForm = [
-        'page_id' => null,
-        'section_type_id' => null,
-        'sort_order' => 1,
-        'is_visible' => true,
+    public array $articleForm = [
+        'excerpt' => '',
+        'body' => '',
+        'body_format' => 'html',
+        'related_article_ids' => [],
     ];
 
-    public array $blockForm = [
-        'section_id' => null,
-        'block_type_id' => null,
-        'sort_order' => 1,
-        'value' => '',
-        'format' => 'plain',
-        'alt_text' => '',
-        'caption' => '',
-    ];
+    public array $selectedArticles = [];
 
-    /** @var TemporaryUploadedFile|null */
-    public $imageUpload;
+    /**
+     * Field values indexed by section_field_id.
+     *
+     * @var array<int, string>
+     */
+    public array $fieldValues = [];
 
-    public ?string $existingImageUrl = null;
+    /**
+     * Per-section last-saved timestamps, indexed by page_section_id.
+     *
+     * @var array<int, string|null>
+     */
+    public array $lastSavedAt = [];
 
-    public ?string $existingImageName = null;
+    /**
+     * Pending image uploads indexed by section_field_id.
+     *
+     * @var array<int, TemporaryUploadedFile|null>
+     */
+    public array $fieldImages = [];
 
     public function mount(): void
     {
-        $this->ensureCmsDefaultsExist();
+        $this->ensurePageDefaultsExist();
         $this->syncActivePage();
+        $this->syncCmsTab();
+
         if ($this->activePage) {
             $this->editPage($this->activePage->id);
         } else {
             $this->startCreatingPage();
         }
-        $this->prepareNewSection();
-        $this->prepareNewBlock();
+
+        $this->loadFieldValues();
     }
 
     #[Computed]
     public function pages(): Collection
     {
         return Page::query()
-            ->withCount('sections')
+            ->withCount('pageSections')
+            ->orderByDesc('published_at')
             ->orderBy('id')
             ->get();
+    }
+
+    #[Computed]
+    public function articleEntries()
+    {
+        return Article::query()
+            ->with('tags')
+            ->orderByRaw("case when status = 'published' then 0 else 1 end")
+            ->orderByDesc('published_at')
+            ->orderByDesc('updated_at')
+            ->paginate(10);
+    }
+
+    #[Computed]
+    public function totalArticlesCount()
+    {
+        return Article::count();
+    }
+
+    #[Computed]
+    public function publishedArticlesCount()
+    {
+        return Article::where('status', 'published')->count();
+    }
+
+    #[Computed]
+    public function draftArticlesCount()
+    {
+        return Article::where('status', 'draft')->count();
+    }
+
+    #[Computed]
+    public function totalArticlesViews()
+    {
+        return Article::sum('views');
+    }
+
+    #[Computed]
+    public function filteredPages(): Collection
+    {
+        return $this->pages->filter(function (Page $page): bool {
+            $pageType = $this->resolvePageType($page->slug);
+
+            return match ($this->cmsTab) {
+                'artikel' => $pageType === 'artikel',
+                'gallery' => $pageType === 'galeri',
+                default => $pageType === 'statis',
+            };
+        })->values();
     }
 
     #[Computed]
@@ -95,97 +162,146 @@ class CmsManager extends Component
     }
 
     #[Computed]
-    public function sectionTypes(): Collection
-    {
-        return SectionType::query()->orderBy('name')->get();
-    }
-
-    #[Computed]
-    public function blockTypes(): Collection
-    {
-        return BlockType::query()->orderBy('id')->get();
-    }
-
-    #[Computed]
-    public function sections(): Collection
+    public function activePageSections(): Collection
     {
         if (! $this->activePage) {
             return collect();
         }
 
-        return Section::query()
-            ->with([
-                'sectionType',
-                'contentBlocks.blockType',
-                'contentBlocks.textContent',
-                'contentBlocks.imageContent.mediaFile',
-            ])
+        return PageSection::query()
+            ->with(['fields.value.mediaFile'])
             ->where('page_id', $this->activePage->id)
             ->orderBy('sort_order')
             ->get();
     }
 
     #[Computed]
-    public function availableSectionsForBlock(): Collection
+    public function availableRecommendedArticles(): Collection
     {
-        return $this->sections->map(fn (Section $section): array => [
-            'id' => $section->id,
-            'label' => sprintf(
-                '%s #%d',
-                Str::headline($section->sectionType?->name ?? 'Section'),
-                $section->sort_order
-            ),
-        ]);
+        return Article::query()
+            ->when($this->articleId, fn ($query) => $query->where('id', '!=', $this->articleId))
+            ->orderByDesc('published_at')
+            ->orderByDesc('updated_at')
+            ->get(['id', 'title', 'published_at']);
     }
 
     public function updatedPageFormTitle(string $value): void
     {
         if ($this->pageId === null && blank($this->pageForm['slug'])) {
-            $this->pageForm['slug'] = Str::slug($value);
+            $this->pageForm['slug'] = $this->buildSlugWithPrefix(Str::slug($value));
         }
+    }
+
+    public function updatedPageType(): void
+    {
+        if ($this->pageId === null && filled($this->pageForm['slug'])) {
+            $bare = $this->stripSlugPrefix($this->pageForm['slug']);
+            $this->pageForm['slug'] = $this->buildSlugWithPrefix($bare);
+        }
+
+        if ($this->pageType !== 'artikel') {
+            $this->resetArticleForm();
+        }
+
+        $this->syncCmsTab();
     }
 
     public function updatedActivePageSlug(): void
     {
         $this->syncActivePage();
+        $this->syncCmsTab();
 
         if ($this->activePage) {
             $this->isCreatingPage = false;
             $this->pageId = $this->activePage->id;
             $this->fillPageForm($this->activePage);
+            $this->resetArticleForm();
         } else {
             $this->startCreatingPage();
         }
 
-        $this->prepareNewSection();
-        $this->prepareNewBlock();
+        $this->loadFieldValues();
         $this->resetErrorBag();
     }
 
-    public function updatedBlockFormSectionId(mixed $value): void
+    public function switchCmsTab(string $tab): void
     {
-        if (filled($value)) {
-            $this->blockForm['sort_order'] = $this->nextBlockSortOrder((int) $value);
+        if (! in_array($tab, ['landing', 'artikel', 'gallery'], true)) {
+            return;
         }
+
+        $this->cmsTab = $tab;
+
+        if ($this->isCreatingPage) {
+            $this->pageType = $this->pageTypeFromCmsTab($tab);
+
+            return;
+        }
+
+        if ($tab === 'artikel') {
+            $this->isCreatingPage = false;
+            $this->articleId = null;
+            $this->pageType = 'artikel';
+            $this->selectedArticles = [];
+
+            return;
+        }
+
+        if ($tab === 'gallery') {
+            $this->isCreatingPage = false;
+            $this->pageType = 'galeri';
+
+            return;
+        }
+
+        $this->syncActivePageForCurrentTab();
     }
 
     public function selectPage(string $slug): void
     {
         $this->isCreatingPage = false;
         $this->activePageSlug = $slug;
+        $page = Page::query()->where('slug', $slug)->first();
+
+        if ($page) {
+            $this->cmsTab = $this->cmsTabFromPageType($this->resolvePageType($page->slug));
+        }
+
+        $this->loadFieldValues();
+    }
+
+    public function selectArticle(int $articleId): void
+    {
+        $this->editArticle($articleId);
     }
 
     public function startCreatingPage(): void
     {
         $this->isCreatingPage = true;
         $this->pageId = null;
+        $this->articleId = null;
+        $this->pageType = $this->pageTypeFromCmsTab($this->cmsTab);
         $this->pageForm = [
             'title' => '',
             'slug' => '',
+            'editor_name' => '',
+            'tags' => '',
             'is_published' => true,
+            'published_at' => '',
         ];
-
+        $this->resetArticleForm();
         $this->resetErrorBag();
+    }
+
+    public function closeEditor(): void
+    {
+        $this->isCreatingPage = false;
+        $this->articleId = null;
+        $this->selectedArticles = [];
+
+        if ($this->cmsTab !== 'artikel') {
+            $this->syncActivePageForCurrentTab();
+        }
     }
 
     public function editPage(int $pageId): void
@@ -195,21 +311,46 @@ class CmsManager extends Component
         $this->isCreatingPage = false;
         $this->pageId = $page->id;
         $this->fillPageForm($page);
+        $this->cmsTab = $this->cmsTabFromPageType($this->pageType);
         $this->activePageSlug = $page->slug;
+        $this->resetArticleForm();
+        $this->resetErrorBag();
+    }
+
+    public function editArticle(int $articleId): void
+    {
+        $article = Article::query()->with('tags')->findOrFail($articleId);
+
+        $this->isCreatingPage = false;
+        $this->pageType = 'artikel';
+        $this->cmsTab = 'artikel';
+        $this->articleId = $article->id;
+        $this->pageId = null;
+        $this->fillArticleMetaForm($article);
+        $this->fillArticleContentForm($article);
         $this->resetErrorBag();
     }
 
     public function savePage(): void
     {
+        if ($this->pageType === 'artikel') {
+            $this->saveArticleMeta();
+
+            return;
+        }
+
+        $this->normalizePageForm();
+
         $validated = $this->validate($this->pageRules(), $this->pageMessages());
+        $pagePayload = $this->preparePagePayload($validated['pageForm']);
 
         if ($this->pageId) {
             $page = Page::query()->findOrFail($this->pageId);
-            $page->update($validated['pageForm']);
+            $page->update($pagePayload);
             $message = 'Halaman CMS berhasil diperbarui.';
         } else {
             $page = Page::query()->create([
-                ...$validated['pageForm'],
+                ...$pagePayload,
                 'created_by' => auth()->id(),
             ]);
             $message = 'Tab halaman CMS baru berhasil dibuat.';
@@ -218,209 +359,384 @@ class CmsManager extends Component
         $this->isCreatingPage = false;
         $this->pageId = $page->id;
         $this->activePageSlug = $page->slug;
+        $this->cmsTab = $this->cmsTabFromPageType($this->pageType);
+        $this->resetArticleForm();
 
-        unset($this->pages, $this->activePage, $this->sections, $this->availableSectionsForBlock);
+        unset($this->pages, $this->filteredPages, $this->activePage, $this->activePageSections, $this->availableRecommendedArticles);
+
+        $this->loadFieldValues();
+        $this->dispatch('toast', ['message' => $message, 'type' => 'success']);
+    }
+
+    public function saveFullArticle(): void
+    {
+        $this->saveArticleMeta();
+
+        // Ensure meta saving was successful and we have an article ID
+        if ($this->articleId && empty($this->getErrorBag()->all())) {
+            $this->saveArticleContent();
+        }
+    }
+
+    public function saveArticleContent(): void
+    {
+        if (! $this->articleId || $this->pageType !== 'artikel') {
+            $this->dispatch('toast', ['message' => 'Simpan halaman artikel terlebih dahulu.', 'type' => 'error']);
+
+            return;
+        }
+
+        $validated = $this->validate($this->articleRules(), $this->articleMessages());
+
+        // Extract excerpt from body: remove headings and get normal text
+        $bodyHtml = $validated['articleForm']['body'] ?? '';
+        $excerpt = $this->generateExcerptFromHtml($bodyHtml);
+
+        $article = Article::query()->findOrFail($this->articleId);
+        $article->update([
+            'excerpt' => $excerpt ?: null,
+            'body' => $bodyHtml,
+            'related_article_ids' => collect($validated['articleForm']['related_article_ids'] ?? [])
+                ->map(fn (mixed $articleId): int => (int) $articleId)
+                ->filter(fn (int $articleId): bool => $articleId > 0 && $articleId !== $article->id)
+                ->unique()
+                ->values()
+                ->all(),
+        ]);
+
+        unset($this->articleEntries, $this->availableRecommendedArticles);
+        $this->fillArticleContentForm($article->fresh());
+
+        $this->dispatch('toast', ['message' => 'Konten artikel berhasil diperbarui.', 'type' => 'success']);
+    }
+
+    private function generateExcerptFromHtml(string $html): string
+    {
+        if (empty(trim($html))) {
+            return '';
+        }
+
+        // Remove H1-H6 using regex easily
+        $htmlWithoutHeadings = preg_replace('/<h[1-6][^>]*>.*?<\/h[1-6]>/is', '', $html);
+        $plainText = strip_tags($htmlWithoutHeadings);
+        $plainText = trim(preg_replace('/\s+/', ' ', $plainText));
+
+        return Str::limit($plainText, 150, '');
+    }
+
+    public function addSliderImage(int $pageSectionId): void
+    {
+        $pageSection = PageSection::query()->findOrFail($pageSectionId);
+        $count = $pageSection->fields()->count() + 1;
+        $uniqueSlide = 'slide_'.uniqid();
+
+        SectionField::query()->create([
+            'page_section_id' => $pageSectionId,
+            'field_key' => $uniqueSlide,
+            'label' => 'Gambar Slide '.$count,
+            'type' => 'image',
+            'sort_order' => $count,
+            'description' => 'Gambar dinamis pada slider Hero.',
+        ]);
+
+        unset($this->activePageSections);
+        $this->loadFieldValues();
+        $this->dispatch('toast', ['message' => 'Slot slide baru berhasil ditambahkan.', 'type' => 'success']);
+    }
+
+    public function deleteField(int $fieldId): void
+    {
+        $field = SectionField::query()->findOrFail($fieldId);
+
+        if ($field->value?->mediaFile) {
+            Storage::disk('public')->delete($field->value->mediaFile->file_path);
+            $field->value->mediaFile->delete();
+        }
+
+        $field->delete();
+
+        unset($this->activePageSections);
+        $this->loadFieldValues();
+        $this->dispatch('toast', ['message' => 'Field berhasil dihapus.', 'type' => 'success']);
+    }
+
+    public function addTestimonial(int $pageSectionId): void
+    {
+        $pageSection = PageSection::query()->findOrFail($pageSectionId);
+        $id = uniqid('testi_');
+        $count = $pageSection->fields()->count() + 1;
+
+        $fields = [
+            ['key' => $id.'_quote', 'label' => 'Quote Testimoni Baru', 'type' => 'textarea'],
+            ['key' => $id.'_author', 'label' => 'Penulis Baru', 'type' => 'text'],
+            ['key' => $id.'_role', 'label' => 'Peran/Profesi Baru', 'type' => 'text'],
+            ['key' => $id.'_avatar', 'label' => 'Foto (Opsional)', 'type' => 'image'],
+        ];
+
+        foreach ($fields as $index => $fieldData) {
+            SectionField::query()->create([
+                'page_section_id' => $pageSectionId,
+                'field_key' => $fieldData['key'],
+                'label' => $fieldData['label'],
+                'type' => $fieldData['type'],
+                'sort_order' => $count + $index,
+            ]);
+        }
+
+        unset($this->activePageSections);
+        $this->loadFieldValues();
+        $this->dispatch('toast', ['message' => 'Slot testimoni baru berhasil ditambahkan.', 'type' => 'success']);
+    }
+
+    public function addFaqItem(int $pageSectionId): void
+    {
+        $pageSection = PageSection::query()->findOrFail($pageSectionId);
+        $id = uniqid('faq_');
+        $count = $pageSection->fields()->count() + 1;
+
+        $fields = [
+            ['key' => $id.'_category', 'label' => 'Kategori FAQ Baru', 'type' => 'text'],
+            ['key' => $id.'_question', 'label' => 'Pertanyaan FAQ Baru', 'type' => 'text'],
+            ['key' => $id.'_answer', 'label' => 'Jawaban FAQ Baru', 'type' => 'textarea'],
+        ];
+
+        foreach ($fields as $index => $fieldData) {
+            SectionField::query()->create([
+                'page_section_id' => $pageSectionId,
+                'field_key' => $fieldData['key'],
+                'label' => $fieldData['label'],
+                'type' => $fieldData['type'],
+                'sort_order' => $count + $index,
+            ]);
+        }
+
+        unset($this->activePageSections);
+        $this->loadFieldValues();
+        $this->dispatch('toast', ['message' => 'Item FAQ baru berhasil ditambahkan.', 'type' => 'success']);
+    }
+
+    public function deleteTestimonialGroup(string $prefix): void
+    {
+        $fields = SectionField::query()
+            ->where('field_key', 'like', $prefix.'%')
+            ->get();
+
+        foreach ($fields as $field) {
+            if ($field->value?->mediaFile) {
+                Storage::disk('public')->delete($field->value->mediaFile->file_path);
+                $field->value->mediaFile->delete();
+            }
+            $field->delete();
+        }
+
+        unset($this->activePageSections);
+        $this->loadFieldValues();
+        $this->dispatch('toast', ['message' => 'Grup testimoni berhasil dihapus.', 'type' => 'success']);
+    }
+
+    public function deleteFaqGroup(string $prefix): void
+    {
+        $fields = SectionField::query()
+            ->where('field_key', 'like', $prefix.'%')
+            ->get();
+
+        foreach ($fields as $field) {
+            if ($field->value?->mediaFile) {
+                Storage::disk('public')->delete($field->value->mediaFile->file_path);
+                $field->value->mediaFile->delete();
+            }
+
+            $field->delete();
+        }
+
+        unset($this->activePageSections);
+        $this->loadFieldValues();
+        $this->dispatch('toast', ['message' => 'Item FAQ berhasil dihapus.', 'type' => 'success']);
+    }
+
+    /**
+     * Save field values for a specific page section.
+     */
+    public function saveFieldValues(int $pageSectionId): void
+    {
+        $pageSection = PageSection::query()
+            ->with('fields')
+            ->findOrFail($pageSectionId);
+
+        foreach ($pageSection->fields as $field) {
+            $rawValue = $this->fieldValues[$field->id] ?? null;
+
+            if ($field->isImage()) {
+                $this->saveImageField($field, $pageSectionId);
+
+                continue;
+            }
+
+            FieldValue::query()->updateOrCreate(
+                ['section_field_id' => $field->id],
+                ['value' => $rawValue, 'media_file_id' => null]
+            );
+        }
+
+        $this->lastSavedAt[$pageSectionId] = now()->format('H:i:s');
+
+        unset($this->activePageSections);
+
+        $this->dispatch('toast', ['message' => "Section '{$pageSection->label}' berhasil disimpan.", 'type' => 'success']);
+    }
+
+    private function saveImageField(SectionField $field, int $pageSectionId): void
+    {
+        /** @var TemporaryUploadedFile|null $upload */
+        $upload = $this->fieldImages[$field->id] ?? null;
+
+        if (! $upload) {
+            return;
+        }
+
+        $existingFieldValue = FieldValue::query()
+            ->with('mediaFile')
+            ->where('section_field_id', $field->id)
+            ->first();
+
+        if ($existingFieldValue && $existingFieldValue->mediaFile) {
+            Storage::disk('public')->delete($existingFieldValue->mediaFile->file_path);
+            $existingFieldValue->mediaFile->delete();
+        }
+
+        $storedPath = $upload->store('cms/images', 'public');
+
+        $mediaFile = MediaFile::query()->create([
+            'file_name' => $upload->getClientOriginalName(),
+            'file_path' => $storedPath,
+            'mime_type' => $upload->getMimeType(),
+            'file_size' => $upload->getSize(),
+            'uploaded_by' => auth()->id(),
+            'uploaded_at' => now(),
+        ]);
+
+        FieldValue::query()->updateOrCreate(
+            ['section_field_id' => $field->id],
+            ['value' => null, 'media_file_id' => $mediaFile->id]
+        );
+
+        unset($this->fieldImages[$field->id]);
+    }
+
+    private function saveArticleMeta(): void
+    {
+        $validated = $this->validate($this->articleMetaRules(), $this->pageMessages());
+        $publishedAt = filled($validated['pageForm']['published_at'])
+            ? Carbon::createFromFormat('Y-m-d', $validated['pageForm']['published_at'])->startOfDay()
+            : ((bool) $validated['pageForm']['is_published'] ? now() : null);
+
+        $payload = [
+            'title' => trim($validated['pageForm']['title']),
+            'slug' => $this->generateUniqueArticleSlug(trim($validated['pageForm']['title'])),
+            'author_name' => trim((string) ($validated['pageForm']['editor_name'] ?? '')) ?: null,
+            'status' => (bool) $validated['pageForm']['is_published'] ? 'published' : 'draft',
+            'published_at' => $publishedAt,
+        ];
+
+        if ($this->articleId) {
+            $article = Article::query()->findOrFail($this->articleId);
+            $article->update($payload);
+            $message = 'Artikel berhasil diperbarui.';
+        } else {
+            $article = Article::query()->create([
+                ...$payload,
+                'created_by' => auth()->id(),
+                'excerpt' => $this->articleForm['excerpt'] ?: null,
+                'body' => $this->articleForm['body'] ?: null,
+                'related_article_ids' => [],
+            ]);
+            $message = 'Artikel baru berhasil dibuat.';
+        }
+
+        $this->syncArticleTags($article, (string) ($validated['pageForm']['tags'] ?? ''));
+        $this->articleId = $article->id;
+        $this->isCreatingPage = false;
+
+        unset($this->articleEntries, $this->availableRecommendedArticles);
+
+        $article->load('tags');
+        $this->fillArticleMetaForm($article);
+        $this->fillArticleContentForm($article);
 
         $this->dispatch('toast', ['message' => $message, 'type' => 'success']);
     }
 
     public function deletePage(int $pageId): void
     {
+        if ($this->pageType === 'artikel' && $this->articleId) {
+            $this->deleteArticle($this->articleId);
+
+            return;
+        }
+
         if (Page::query()->count() <= 1) {
             $this->dispatch('toast', ['message' => 'Minimal harus ada satu halaman CMS.', 'type' => 'error']);
 
             return;
         }
 
-        $page = Page::query()
-            ->with('sections.contentBlocks.imageContent.mediaFile')
-            ->findOrFail($pageId);
-
-        foreach ($page->sections as $section) {
-            foreach ($section->contentBlocks as $block) {
-                $this->deleteMediaForBlock($block);
-            }
-        }
-
+        $page = Page::query()->findOrFail($pageId);
         $page->delete();
 
-        unset($this->pages, $this->activePage, $this->sections, $this->availableSectionsForBlock);
+        unset($this->pages, $this->filteredPages, $this->activePage, $this->activePageSections, $this->availableRecommendedArticles);
 
         $this->syncActivePage();
         $activePageId = Page::query()->where('slug', $this->activePageSlug)->value('id');
+
         if ($activePageId) {
             $this->editPage($activePageId);
         } else {
             $this->startCreatingPage();
         }
-        $this->prepareNewSection();
-        $this->prepareNewBlock();
 
+        $this->loadFieldValues();
         $this->dispatch('toast', ['message' => 'Halaman CMS berhasil dihapus.', 'type' => 'success']);
     }
 
-    public function prepareNewSection(): void
+    private function deleteArticle(int $articleId): void
     {
-        $this->sectionId = null;
-        $this->sectionForm = [
-            'page_id' => $this->activePage?->id,
-            'section_type_id' => $this->sectionTypes->first()?->id,
-            'sort_order' => $this->nextSectionSortOrder(),
-            'is_visible' => true,
-        ];
+        Article::query()->findOrFail($articleId)->delete();
 
-        $this->resetErrorBag();
-    }
+        unset($this->articleEntries, $this->availableRecommendedArticles);
 
-    public function editSection(int $sectionId): void
-    {
-        $section = Section::query()->findOrFail($sectionId);
+        $nextArticle = Article::first();
 
-        $this->sectionId = $section->id;
-        $this->sectionForm = [
-            'page_id' => $section->page_id,
-            'section_type_id' => $section->section_type_id,
-            'sort_order' => $section->sort_order,
-            'is_visible' => $section->is_visible,
-        ];
-
-        $this->activePageSlug = $section->page->slug;
-        $this->resetErrorBag();
-    }
-
-    public function saveSection(): void
-    {
-        $validated = $this->validate($this->sectionRules(), $this->sectionMessages());
-
-        if ($this->sectionId) {
-            $section = Section::query()->findOrFail($this->sectionId);
-            $section->update($validated['sectionForm']);
-            $message = 'Section berhasil diperbarui.';
+        if ($nextArticle) {
+            $this->closeEditor();
         } else {
-            $section = Section::query()->create($validated['sectionForm']);
-            $message = 'Section baru berhasil ditambahkan.';
+            $this->startCreatingPage();
         }
 
-        $this->activePageSlug = $section->page->slug;
-        unset($this->sections, $this->pages, $this->activePage, $this->availableSectionsForBlock);
-        $this->prepareNewSection();
-        $this->prepareNewBlock($section->id);
-
-        $this->dispatch('toast', ['message' => $message, 'type' => 'success']);
+        $this->dispatch('toast', ['message' => 'Artikel berhasil dihapus.', 'type' => 'success']);
     }
 
-    public function deleteSection(int $sectionId): void
+    public function bulkDelete(): void
     {
-        $section = Section::query()->with('contentBlocks.imageContent.mediaFile')->findOrFail($sectionId);
-
-        foreach ($section->contentBlocks as $block) {
-            $this->deleteMediaForBlock($block);
+        if (empty($this->selectedArticles)) {
+            return;
         }
 
-        $section->delete();
-
-        unset($this->sections, $this->pages, $this->activePage, $this->availableSectionsForBlock);
-        $this->prepareNewSection();
-        $this->prepareNewBlock();
-
-        $this->dispatch('toast', ['message' => 'Section berhasil dihapus.', 'type' => 'success']);
+        Article::whereIn('id', $this->selectedArticles)->delete();
+        $this->selectedArticles = [];
+        unset($this->articleEntries, $this->totalArticlesCount, $this->publishedArticlesCount, $this->draftArticlesCount, $this->totalArticlesViews);
+        $this->dispatch('toast', ['message' => 'Artikel terpilih berhasil dihapus.', 'type' => 'success']);
     }
 
-    public function prepareNewBlock(?int $sectionId = null): void
+    public function bulkArchive(): void
     {
-        $defaultSectionId = $sectionId ?? $this->sections->first()?->id;
-        $defaultBlockTypeId = $this->blockTypes->first()?->id;
-
-        $this->blockId = null;
-        $this->blockForm = [
-            'section_id' => $defaultSectionId,
-            'block_type_id' => $defaultBlockTypeId,
-            'sort_order' => $defaultSectionId ? $this->nextBlockSortOrder((int) $defaultSectionId) : 1,
-            'value' => '',
-            'format' => 'plain',
-            'alt_text' => '',
-            'caption' => '',
-        ];
-        $this->imageUpload = null;
-        $this->existingImageUrl = null;
-        $this->existingImageName = null;
-        $this->resetErrorBag();
-    }
-
-    public function editBlock(int $blockId): void
-    {
-        $block = ContentBlock::query()
-            ->with(['section.page', 'textContent', 'imageContent.mediaFile'])
-            ->findOrFail($blockId);
-
-        $this->blockId = $block->id;
-        $this->activePageSlug = $block->section->page->slug;
-        $this->blockForm = [
-            'section_id' => $block->section_id,
-            'block_type_id' => $block->block_type_id,
-            'sort_order' => $block->sort_order,
-            'value' => $block->textContent?->value ?? '',
-            'format' => $block->textContent?->format ?? 'plain',
-            'alt_text' => $block->imageContent?->alt_text ?? '',
-            'caption' => $block->imageContent?->caption ?? '',
-        ];
-        $this->imageUpload = null;
-        $this->existingImageUrl = $block->imageContent?->mediaFile?->file_path
-            ? Storage::url($block->imageContent->mediaFile->file_path)
-            : null;
-        $this->existingImageName = $block->imageContent?->mediaFile?->file_name;
-        $this->resetErrorBag();
-    }
-
-    public function saveBlock(): void
-    {
-        $validated = $this->validate($this->blockRules(), $this->blockMessages());
-        $currentBlockTypeName = $this->resolveBlockTypeName((int) $validated['blockForm']['block_type_id']);
-
-        if ($this->blockId) {
-            $block = ContentBlock::query()
-                ->with(['textContent', 'imageContent.mediaFile'])
-                ->findOrFail($this->blockId);
-            $block->update([
-                'section_id' => $validated['blockForm']['section_id'],
-                'block_type_id' => $validated['blockForm']['block_type_id'],
-                'sort_order' => $validated['blockForm']['sort_order'],
-            ]);
-            $message = 'Block konten berhasil diperbarui.';
-        } else {
-            $block = ContentBlock::query()->create([
-                'section_id' => $validated['blockForm']['section_id'],
-                'block_type_id' => $validated['blockForm']['block_type_id'],
-                'sort_order' => $validated['blockForm']['sort_order'],
-            ]);
-            $message = 'Block konten baru berhasil ditambahkan.';
+        if (empty($this->selectedArticles)) {
+            return;
         }
 
-        if ($currentBlockTypeName === 'text') {
-            $this->syncTextBlock($block, $validated['blockForm']);
-        } else {
-            $this->syncImageBlock($block, $validated['blockForm']);
-        }
-
-        unset($this->sections, $this->availableSectionsForBlock);
-        $this->prepareNewBlock($block->section_id);
-
-        $this->dispatch('toast', ['message' => $message, 'type' => 'success']);
-    }
-
-    public function deleteBlock(int $blockId): void
-    {
-        $block = ContentBlock::query()
-            ->with(['textContent', 'imageContent.mediaFile'])
-            ->findOrFail($blockId);
-
-        $this->deleteMediaForBlock($block);
-        $block->delete();
-
-        unset($this->sections, $this->availableSectionsForBlock);
-        $this->prepareNewBlock();
-
-        $this->dispatch('toast', ['message' => 'Block konten berhasil dihapus.', 'type' => 'success']);
+        Article::whereIn('id', $this->selectedArticles)->update(['status' => 'draft']);
+        $this->selectedArticles = [];
+        unset($this->articleEntries, $this->totalArticlesCount, $this->publishedArticlesCount, $this->draftArticlesCount, $this->totalArticlesViews);
+        $this->dispatch('toast', ['message' => 'Artikel terpilih berhasil diarsipkan.', 'type' => 'success']);
     }
 
     public function render(): View
@@ -436,7 +752,10 @@ class CmsManager extends Component
         return [
             'pageForm.title' => ['required', 'string', 'max:255'],
             'pageForm.slug' => ['required', 'alpha_dash', 'max:255', Rule::unique('pages', 'slug')->ignore($this->pageId)],
+            'pageForm.editor_name' => ['nullable', 'string', 'max:255'],
+            'pageForm.tags' => ['nullable', 'string', 'max:500'],
             'pageForm.is_published' => ['boolean'],
+            'pageForm.published_at' => ['nullable', 'date'],
         ];
     }
 
@@ -450,75 +769,71 @@ class CmsManager extends Component
             'pageForm.slug.required' => 'Slug halaman wajib diisi.',
             'pageForm.slug.alpha_dash' => 'Slug hanya boleh berisi huruf kecil, angka, strip, atau underscore.',
             'pageForm.slug.unique' => 'Slug halaman sudah digunakan.',
+            'pageForm.published_at.date' => 'Tanggal publish harus berupa tanggal yang valid.',
         ];
     }
 
     /**
      * @return array<string, array<string, mixed>>
      */
-    protected function sectionRules(): array
+    protected function articleMetaRules(): array
     {
         return [
-            'sectionForm.page_id' => ['required', 'exists:pages,id'],
-            'sectionForm.section_type_id' => ['required', 'exists:section_types,id'],
-            'sectionForm.sort_order' => ['required', 'integer', 'min:1'],
-            'sectionForm.is_visible' => ['boolean'],
-        ];
-    }
-
-    /**
-     * @return array<string, string>
-     */
-    protected function sectionMessages(): array
-    {
-        return [
-            'sectionForm.page_id.required' => 'Tab halaman harus dipilih.',
-            'sectionForm.section_type_id.required' => 'Tipe section harus dipilih.',
-            'sectionForm.sort_order.required' => 'Urutan section wajib diisi.',
+            'pageForm.title' => ['required', 'string', 'max:255'],
+            'pageForm.editor_name' => ['nullable', 'string', 'max:255'],
+            'pageForm.tags' => ['nullable', 'string', 'max:500'],
+            'pageForm.is_published' => ['boolean'],
+            'pageForm.published_at' => ['nullable', 'date'],
         ];
     }
 
     /**
      * @return array<string, array<string, mixed>>
      */
-    protected function blockRules(): array
+    protected function articleRules(): array
     {
-        $currentBlockTypeName = $this->resolveBlockTypeName();
-
-        $rules = [
-            'blockForm.section_id' => ['required', 'exists:sections,id'],
-            'blockForm.block_type_id' => ['required', 'exists:block_types,id'],
-            'blockForm.sort_order' => ['required', 'integer', 'min:1'],
-            'blockForm.value' => ['nullable', 'string'],
-            'blockForm.format' => ['required', 'string', 'max:255'],
-            'blockForm.alt_text' => ['nullable', 'string', 'max:255'],
-            'blockForm.caption' => ['nullable', 'string', 'max:255'],
-            'imageUpload' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
+        return [
+            'articleForm.excerpt' => ['nullable', 'string'],
+            'articleForm.body' => ['required', 'string'],
+            'articleForm.body_format' => ['required', 'string', Rule::in(['html'])],
+            'articleForm.related_article_ids' => ['array'],
+            'articleForm.related_article_ids.*' => ['integer', 'exists:articles,id'],
         ];
-
-        if ($currentBlockTypeName === 'text') {
-            $rules['blockForm.value'] = ['required', 'string'];
-        }
-
-        if ($currentBlockTypeName === 'image' && $this->blockId === null && ! $this->imageUpload) {
-            $rules['imageUpload'] = ['required', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'];
-        }
-
-        return $rules;
     }
 
     /**
      * @return array<string, string>
      */
-    protected function blockMessages(): array
+    protected function articleMessages(): array
     {
         return [
-            'blockForm.section_id.required' => 'Pilih section tujuan untuk block ini.',
-            'blockForm.block_type_id.required' => 'Pilih tipe block terlebih dahulu.',
-            'blockForm.sort_order.required' => 'Urutan block wajib diisi.',
-            'blockForm.value.required' => 'Konten teks wajib diisi untuk block teks.',
-            'imageUpload.required' => 'Gambar wajib diupload untuk block gambar baru.',
+            'articleForm.body.required' => 'Isi artikel wajib diisi.',
+            'articleForm.body_format.in' => 'Format artikel tidak valid.',
+            'articleForm.related_article_ids.*.exists' => 'Artikel pada pilihan Baca Juga tidak ditemukan.',
         ];
+    }
+
+    private function loadFieldValues(): void
+    {
+        $this->fieldValues = [];
+        $this->fieldImages = [];
+
+        if (! $this->activePage) {
+            return;
+        }
+
+        $sections = PageSection::query()
+            ->with(['fields.value'])
+            ->where('page_id', $this->activePage->id)
+            ->get();
+
+        foreach ($sections as $section) {
+            foreach ($section->fields as $field) {
+                if (! $field->isImage()) {
+                    $this->fieldValues[$field->id] = $field->value?->value ?? '';
+                }
+            }
+        }
     }
 
     private function fillPageForm(Page $page): void
@@ -526,103 +841,202 @@ class CmsManager extends Component
         $this->pageForm = [
             'title' => $page->title,
             'slug' => $page->slug,
+            'editor_name' => $page->author_name ?? $page->editor_name ?? '',
+            'tags' => is_array($page->tags) ? implode(', ', $page->tags) : '',
             'is_published' => $page->is_published,
+            'published_at' => $page->published_at?->format('Y-m-d') ?? '',
+        ];
+        $this->pageType = $this->resolvePageType($page->slug);
+    }
+
+    private function fillArticleMetaForm(Article $article): void
+    {
+        $this->pageForm = [
+            'title' => $article->title,
+            'slug' => $article->slug,
+            'editor_name' => $article->author_name ?? '',
+            'tags' => $article->tags->pluck('name')->implode(', '),
+            'is_published' => $article->status === 'published',
+            'published_at' => $article->published_at?->format('Y-m-d') ?? '',
         ];
     }
 
-    private function nextSectionSortOrder(): int
+    private function fillArticleContentForm(Article $article): void
     {
-        if (! $this->activePage) {
-            return 1;
-        }
-
-        return (int) $this->activePage->sections()->max('sort_order') + 1;
+        $this->articleForm = [
+            'excerpt' => $article->excerpt ?? '',
+            'body' => $article->body ?? '',
+            'body_format' => 'html',
+            'related_article_ids' => collect($article->related_article_ids ?? [])
+                ->map(fn (mixed $articleId): int => (int) $articleId)
+                ->filter(fn (int $articleId): bool => $articleId > 0 && $articleId !== $article->id)
+                ->values()
+                ->all(),
+        ];
     }
 
-    private function nextBlockSortOrder(int $sectionId): int
+    private function resetArticleForm(): void
     {
-        return (int) ContentBlock::query()
-            ->where('section_id', $sectionId)
-            ->max('sort_order') + 1;
+        $this->articleForm = [
+            'excerpt' => '',
+            'body' => '',
+            'body_format' => 'html',
+            'related_article_ids' => [],
+        ];
     }
 
-    public function selectedBlockTypeName(): ?string
+    private function resolvePageType(string $slug): string
     {
-        return $this->resolveBlockTypeName();
+        if (in_array($slug, Page::ARTICLE_SLUGS, true)) {
+            return 'artikel';
+        }
+
+        foreach (Page::ARTICLE_PREFIXES as $prefix) {
+            if (str_starts_with($slug, $prefix)) {
+                return 'artikel';
+            }
+        }
+
+        if (in_array($slug, Page::GALLERY_SLUGS, true)) {
+            return 'galeri';
+        }
+
+        foreach (Page::GALLERY_PREFIXES as $prefix) {
+            if (str_starts_with($slug, $prefix)) {
+                return 'galeri';
+            }
+        }
+
+        return 'statis';
     }
 
-    private function resolveBlockTypeName(?int $blockTypeId = null): ?string
+    private function buildSlugWithPrefix(string $bare): string
     {
-        $resolvedBlockTypeId = $blockTypeId ?? (filled($this->blockForm['block_type_id']) ? (int) $this->blockForm['block_type_id'] : null);
+        $normalizedBare = Str::slug($bare);
 
-        if (! $resolvedBlockTypeId) {
-            return null;
+        if ($normalizedBare === '') {
+            return '';
         }
 
-        return $this->blockTypes
-            ->firstWhere('id', $resolvedBlockTypeId)
-            ?->name;
+        return match ($this->pageType) {
+            'artikel' => 'artikel-'.$normalizedBare,
+            'galeri' => 'galeri-'.$normalizedBare,
+            default => $normalizedBare,
+        };
     }
 
-    private function syncTextBlock(ContentBlock $block, array $blockForm): void
+    private function stripSlugPrefix(string $slug): string
     {
-        $block->textContent()->updateOrCreate([], [
-            'value' => $blockForm['value'],
-            'format' => $blockForm['format'],
-        ]);
+        $allPrefixes = array_merge(Page::ARTICLE_PREFIXES, Page::GALLERY_PREFIXES);
 
-        $this->deleteMediaForBlock($block);
+        foreach ($allPrefixes as $prefix) {
+            if (str_starts_with($slug, $prefix)) {
+                return substr($slug, strlen($prefix));
+            }
+        }
+
+        return $slug;
     }
 
-    private function syncImageBlock(ContentBlock $block, array $blockForm): void
+    private function normalizePageForm(): void
     {
-        $mediaFile = $block->imageContent?->mediaFile;
+        $title = trim($this->pageForm['title']);
+        $rawSlug = trim($this->pageForm['slug']);
+        $normalizedRawSlug = Str::slug($rawSlug);
+        $baseSlug = $this->stripSlugPrefix($normalizedRawSlug);
+        $fallbackSlug = Str::slug($title);
 
-        if ($this->imageUpload) {
-            $this->deleteMediaForBlock($block);
-
-            $storedPath = $this->imageUpload->store('cms/images', 'public');
-            $mediaFile = MediaFile::query()->create([
-                'file_name' => $this->imageUpload->getClientOriginalName(),
-                'file_path' => $storedPath,
-                'mime_type' => $this->imageUpload->getMimeType(),
-                'file_size' => $this->imageUpload->getSize(),
-                'uploaded_by' => auth()->id(),
-                'uploaded_at' => now(),
-            ]);
+        if ($this->pageId !== null && in_array($normalizedRawSlug, [...Page::ARTICLE_SLUGS, ...Page::GALLERY_SLUGS], true)) {
+            $this->pageForm['slug'] = $normalizedRawSlug;
+        } elseif ($this->pageType === 'artikel' || $this->pageType === 'galeri') {
+            $this->pageForm['slug'] = $this->buildSlugWithPrefix($baseSlug !== '' ? $baseSlug : $fallbackSlug);
+        } else {
+            $this->pageForm['slug'] = $baseSlug !== '' ? Str::slug($baseSlug) : $fallbackSlug;
         }
 
-        if (! $mediaFile) {
-            return;
-        }
-
-        $block->textContent()?->delete();
-        $block->imageContent()->updateOrCreate([], [
-            'media_file_id' => $mediaFile->id,
-            'alt_text' => $blockForm['alt_text'] ?: null,
-            'caption' => $blockForm['caption'] ?: null,
-        ]);
+        $this->pageForm['title'] = $title;
+        $this->pageForm['editor_name'] = trim((string) ($this->pageForm['editor_name'] ?? ''));
+        $this->pageForm['tags'] = trim((string) ($this->pageForm['tags'] ?? ''));
+        $this->pageForm['published_at'] = trim((string) ($this->pageForm['published_at'] ?? ''));
     }
 
-    private function deleteMediaForBlock(ContentBlock $block): void
+    /**
+     * @param  array<string, mixed>  $pageForm
+     * @return array<string, mixed>
+     */
+    private function preparePagePayload(array $pageForm): array
     {
-        $block->loadMissing('imageContent.mediaFile');
+        $payload = [
+            'title' => $pageForm['title'],
+            'slug' => $pageForm['slug'],
+            'is_published' => (bool) $pageForm['is_published'],
+        ];
 
-        $imageContent = $block->imageContent;
-
-        if (! $imageContent) {
-            return;
+        if ($this->pageType === 'artikel') {
+            $payload['author_name'] = $pageForm['editor_name'] ?: null;
+            $payload['editor_name'] = $pageForm['editor_name'] ?: null;
+            $payload['tags'] = collect(explode(',', (string) $pageForm['tags']))
+                ->map(fn (string $tag): string => trim($tag))
+                ->filter()
+                ->unique()
+                ->values()
+                ->all();
+            $payload['related_article_ids'] = [];
+            $payload['published_at'] = $pageForm['published_at']
+                ? Carbon::createFromFormat('Y-m-d', $pageForm['published_at'])->startOfDay()
+                : ($payload['is_published'] ? now() : null);
+        } else {
+            $payload['author_name'] = null;
+            $payload['editor_name'] = null;
+            $payload['tags'] = null;
+            $payload['related_article_ids'] = null;
+            $payload['published_at'] = null;
         }
 
-        $mediaFile = $imageContent->mediaFile;
-        $filePath = $mediaFile?->file_path;
+        return $payload;
+    }
 
-        $imageContent->delete();
-        $mediaFile?->delete();
+    private function syncArticleTags(Article $article, string $rawTags): void
+    {
+        $tagIds = collect(explode(',', $rawTags))
+            ->map(fn (string $tag): string => trim($tag))
+            ->filter()
+            ->unique()
+            ->map(function (string $tagName): int {
+                $tag = Tag::query()->firstOrCreate(
+                    ['slug' => Str::slug($tagName)],
+                    ['name' => $tagName],
+                );
 
-        if ($filePath) {
-            Storage::disk('public')->delete($filePath);
+                if ($tag->name !== $tagName) {
+                    $tag->update(['name' => $tagName]);
+                }
+
+                return $tag->id;
+            })
+            ->values()
+            ->all();
+
+        $article->tags()->sync($tagIds);
+    }
+
+    private function generateUniqueArticleSlug(string $title): string
+    {
+        $baseSlug = Str::slug($title) ?: 'artikel';
+        $slug = $baseSlug;
+        $suffix = 2;
+
+        while (
+            Article::query()
+                ->where('slug', $slug)
+                ->when($this->articleId, fn ($query) => $query->where('id', '!=', $this->articleId))
+                ->exists()
+        ) {
+            $slug = $baseSlug.'-'.$suffix;
+            $suffix++;
         }
+
+        return $slug;
     }
 
     private function syncActivePage(): void
@@ -633,45 +1047,76 @@ class CmsManager extends Component
         $this->activePageSlug = $page?->slug ?? '';
     }
 
-    private function ensureCmsDefaultsExist(): void
+    private function syncCmsTab(): void
     {
-        $sectionTypeDefaults = [
-            ['name' => 'hero', 'description' => 'Section pembuka dengan judul utama dan visual besar.'],
-            ['name' => 'content', 'description' => 'Section isi utama untuk paragraf atau informasi umum.'],
-            ['name' => 'gallery', 'description' => 'Section dengan fokus gambar atau media visual.'],
-            ['name' => 'schedule', 'description' => 'Section berisi agenda, jadwal, atau timeline kegiatan.'],
-        ];
+        if ($this->isCreatingPage) {
+            $this->cmsTab = $this->cmsTabFromPageType($this->pageType);
 
-        foreach ($sectionTypeDefaults as $sectionTypeDefault) {
-            SectionType::query()->firstOrCreate(
-                ['name' => $sectionTypeDefault['name']],
-                ['description' => $sectionTypeDefault['description']],
-            );
+            return;
         }
 
-        $blockTypeDefaults = [
-            ['name' => 'text', 'schema_name' => 'text_content'],
-            ['name' => 'image', 'schema_name' => 'image_content'],
-        ];
-
-        foreach ($blockTypeDefaults as $blockTypeDefault) {
-            BlockType::query()->firstOrCreate(
-                ['name' => $blockTypeDefault['name']],
-                ['schema_name' => $blockTypeDefault['schema_name']],
-            );
+        if (! $this->activePage) {
+            return;
         }
 
+        $this->cmsTab = $this->cmsTabFromPageType($this->resolvePageType($this->activePage->slug));
+    }
+
+    private function syncActivePageForCurrentTab(): void
+    {
+        $page = $this->filteredPages->first();
+
+        if ($page) {
+            $this->activePageSlug = $page->slug;
+            $this->editPage($page->id);
+            $this->loadFieldValues();
+
+            return;
+        }
+
+        $this->startCreatingPage();
+    }
+
+    private function pageTypeFromCmsTab(string $tab): string
+    {
+        return match ($tab) {
+            'artikel' => 'artikel',
+            'gallery' => 'galeri',
+            default => 'statis',
+        };
+    }
+
+    private function cmsTabFromPageType(string $pageType): string
+    {
+        return match ($pageType) {
+            'artikel' => 'artikel',
+            'galeri' => 'gallery',
+            default => 'landing',
+        };
+    }
+
+    private function ensurePageDefaultsExist(): void
+    {
         $pageDefaults = [
             ['slug' => 'home', 'title' => 'Home'],
             ['slug' => 'profil', 'title' => 'Profil'],
+            ['slug' => 'skema', 'title' => 'Skema Sertifikasi'],
+            ['slug' => 'alur-sertifikasi', 'title' => 'Alur Sertifikasi'],
+            ['slug' => 'tempat-uji', 'title' => 'Tempat Uji Kompetensi'],
+            ['slug' => 'jadwal', 'title' => 'Jadwal Uji Kompetensi'],
+            ['slug' => 'cek-sertifikat', 'title' => 'Validasi Sertifikat'],
+            ['slug' => 'media', 'title' => 'Media'],
+            ['slug' => 'instagram', 'title' => 'Instagram'],
+            ['slug' => 'youtube', 'title' => 'YouTube'],
+            ['slug' => 'facebook', 'title' => 'Facebook'],
+            ['slug' => 'artikel', 'title' => 'Hot News (Artikel)'],
+            ['slug' => 'faq', 'title' => 'FAQ (Q & A)'],
+            ['slug' => 'galeri', 'title' => 'Kegiatan (Galeri)'],
             ['slug' => 'kontak', 'title' => 'Kontak'],
-            ['slug' => 'cek-sertifikat', 'title' => 'Cek Sertifikat'],
-            ['slug' => 'skema', 'title' => 'Skema'],
-            ['slug' => 'jadwal', 'title' => 'Jadwal'],
         ];
 
         foreach ($pageDefaults as $pageDefault) {
-            $page = Page::query()->firstOrCreate(
+            Page::query()->firstOrCreate(
                 ['slug' => $pageDefault['slug']],
                 [
                     'title' => $pageDefault['title'],
@@ -679,80 +1124,6 @@ class CmsManager extends Component
                     'created_by' => auth()->id(),
                 ],
             );
-
-            if ($page->slug === 'home' && ! $page->sections()->exists()) {
-                $this->seedHomePageContent($page);
-            }
         }
-    }
-
-    private function seedHomePageContent(Page $page): void
-    {
-        $heroSection = $page->sections()->create([
-            'section_type_id' => SectionType::query()->where('name', 'hero')->value('id'),
-            'sort_order' => 1,
-            'is_visible' => true,
-        ]);
-
-        $this->createTextBlock($heroSection, 1, 'Welcome To UPA - LUK');
-        $this->createTextBlock($heroSection, 2, 'UPN "Veteran" Jakarta Competency Test Service Academic Support Unit melayani uji kompetensi mahasiswa dengan sertifikasi BNSP sesuai bidang kompetensinya.');
-
-        $certificateSection = $page->sections()->create([
-            'section_type_id' => SectionType::query()->where('name', 'content')->value('id'),
-            'sort_order' => 2,
-            'is_visible' => true,
-        ]);
-
-        $this->createTextBlock($certificateSection, 1, 'Cek Sertifikat');
-        $this->createTextBlock($certificateSection, 2, 'Verifikasi keaslian sertifikat kompetensi secara online untuk memastikan validitas sertifikat yang diterbitkan.');
-
-        $introSection = $page->sections()->create([
-            'section_type_id' => SectionType::query()->where('name', 'content')->value('id'),
-            'sort_order' => 3,
-            'is_visible' => true,
-        ]);
-
-        $this->createTextBlock($introSection, 1, 'Selamat Datang di UPA-LUK');
-        $this->createTextBlock($introSection, 2, 'Lembaga Sertifikasi Profesi UPN "Veteran" Jakarta melayani pelaksanaan uji kompetensi mahasiswa dengan lisensi resmi dari Badan Nasional Sertifikasi Profesi.');
-
-        $pipelineSection = $page->sections()->create([
-            'section_type_id' => SectionType::query()->where('name', 'content')->value('id'),
-            'sort_order' => 4,
-            'is_visible' => true,
-        ]);
-
-        $this->createTextBlock($pipelineSection, 1, 'Langkah Mudah Mendapatkan Sertifikat');
-        $this->createTextBlock($pipelineSection, 2, 'Proses sertifikasi dirancang cepat, transparan, dan terstruktur mulai dari daftar akun, verifikasi berkas, pembayaran, asesmen, hingga terbit sertifikat.');
-
-        $schemeSection = $page->sections()->create([
-            'section_type_id' => SectionType::query()->where('name', 'content')->value('id'),
-            'sort_order' => 5,
-            'is_visible' => true,
-        ]);
-
-        $this->createTextBlock($schemeSection, 1, 'Skema Sertifikasi Terbaru');
-        $this->createTextBlock($schemeSection, 2, 'Bagian ini menampilkan daftar skema sertifikasi terbaru yang tersedia untuk peserta.');
-
-        $testimonialSection = $page->sections()->create([
-            'section_type_id' => SectionType::query()->where('name', 'content')->value('id'),
-            'sort_order' => 6,
-            'is_visible' => true,
-        ]);
-
-        $this->createTextBlock($testimonialSection, 1, 'Apa Kata Mereka?');
-        $this->createTextBlock($testimonialSection, 2, 'Cerita alumni dan peserta mengenai manfaat sertifikasi kompetensi di UPA-LUK UPN Veteran Jakarta.');
-    }
-
-    private function createTextBlock(Section $section, int $sortOrder, string $value): void
-    {
-        $block = $section->contentBlocks()->create([
-            'block_type_id' => BlockType::query()->where('name', 'text')->value('id'),
-            'sort_order' => $sortOrder,
-        ]);
-
-        $block->textContent()->create([
-            'value' => $value,
-            'format' => 'plain',
-        ]);
     }
 }

@@ -29,9 +29,9 @@
                     @foreach($articles as $article)
                         <div class="group flex flex-col overflow-hidden rounded-[1.25rem] bg-white shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] transition-all hover:shadow-[0_4px_20px_-4px_rgba(0,0,0,0.1)] border border-gray-50">
                             <!-- Thumbnail 16:9 -->
-                            <a href="{{ route('article.show', $article->slug) }}" class="relative w-full aspect-video overflow-hidden bg-gray-200 block">
+                            <a href="{{ $article->url ?? route('article.show', $article->slug) }}" class="relative w-full aspect-video overflow-hidden bg-gray-200 block">
                                 @if($article->image_path)
-                                    <img src="{{ Storage::url($article->image_path) }}" alt="{{ $article->title }}" class="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105">
+                                    <img src="{{ $article->image_path }}" alt="{{ $article->title }}" class="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105">
                                 @else
                                     <img src="https://placehold.co/600x338/f1f5f9/64748b?text=News+Update" alt="News Placeholder" class="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105">
                                 @endif
@@ -43,7 +43,7 @@
                                     <div class="flex items-center justify-between gap-3 mb-4 text-xs font-semibold text-gray-500">
                                         <div class="flex items-center gap-1.5">
                                             <svg class="w-4 h-4 text-[#ea580c]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
-                                            {{ $article->published_at ? $article->published_at->format('d M Y') : $article->created_at->format('d M Y') }}
+                                            {{ \Carbon\Carbon::parse($article->published_at ?? $article->created_at)->format('d M Y') }}
                                         </div>
                                         <div class="flex items-center gap-1.5" title="Dilihat {{ $article->views_count }} kali">
                                             <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
@@ -51,7 +51,7 @@
                                         </div>
                                     </div>
                                     
-                                    @if($article->tags && is_array($article->tags) && count($article->tags) > 0)
+                                    @if(isset($article->tags) && is_array($article->tags) && count($article->tags) > 0)
                                         <div class="flex flex-wrap gap-2 mb-3">
                                             @foreach($article->tags as $tag)
                                                 <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 text-blue-700">{{ $tag }}</span>
@@ -59,7 +59,7 @@
                                         </div>
                                     @endif
 
-                                    <a href="{{ route('article.show', $article->slug) }}" class="block">
+                                    <a href="{{ $article->url ?? route('article.show', $article->slug) }}" class="block">
                                         <h3 class="text-xl font-bold text-gray-900 line-clamp-2 mb-3 leading-snug group-hover:text-[#ea580c] transition-colors">
                                             {{ $article->title }}
                                         </h3>
@@ -71,7 +71,7 @@
                                 </div>
                                 
                                 <div class="mt-auto pt-5 border-t border-gray-100 flex justify-start items-center">
-                                    <a href="{{ route('article.show', $article->slug) }}" class="text-sm font-bold text-[#ea580c] hover:text-[#c2410c] transition-colors flex items-center gap-1">
+                                    <a href="{{ $article->url ?? route('article.show', $article->slug) }}" class="text-sm font-bold text-[#ea580c] hover:text-[#c2410c] transition-colors flex items-center gap-1">
                                         Baca Selengkapnya
                                         <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
                                     </a>

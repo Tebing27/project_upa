@@ -2,24 +2,19 @@
 
 namespace Database\Seeders;
 
-use App\Models\BlockType;
-use App\Models\ContentBlock;
-use App\Models\ImageContent;
+use App\Models\Article;
 use App\Models\MediaFile;
 use App\Models\Page;
-use App\Models\Section;
-use App\Models\SectionType;
-use App\Models\TextContent;
+use App\Models\Tag;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 
 class CmsContentSeeder extends Seeder
 {
     public function run(): void
     {
-        $this->ensureCmsTypesExist();
-
         $adminId = User::query()->where('role', 'admin')->value('id')
             ?? User::query()->value('id')
             ?? User::query()->create([
@@ -32,43 +27,15 @@ class CmsContentSeeder extends Seeder
             ])->id;
 
         foreach ($this->articlePages() as $pageData) {
-            $this->seedPageWithTextBlocks(
-                pageData: $pageData,
-                sectionTypeName: 'content',
-                adminId: $adminId,
-            );
+            $this->seedArticle($pageData, $adminId);
         }
 
         foreach ($this->galleryPages() as $pageData) {
-            $this->seedPageWithTextBlocks(
-                pageData: $pageData,
-                sectionTypeName: 'gallery',
-                adminId: $adminId,
-            );
+            $this->seedGalleryPage($pageData, $adminId);
         }
     }
 
-    private function ensureCmsTypesExist(): void
-    {
-        SectionType::query()->firstOrCreate(
-            ['name' => 'content'],
-            ['description' => 'Section isi utama untuk paragraf atau informasi umum.'],
-        );
-        SectionType::query()->firstOrCreate(
-            ['name' => 'gallery'],
-            ['description' => 'Section dengan fokus gambar atau media visual.'],
-        );
-        BlockType::query()->firstOrCreate(
-            ['name' => 'text'],
-            ['schema_name' => 'text_content'],
-        );
-        BlockType::query()->firstOrCreate(
-            ['name' => 'image'],
-            ['schema_name' => 'image_content'],
-        );
-    }
-
-    private function seedPageWithTextBlocks(array $pageData, string $sectionTypeName, ?int $adminId): void
+    private function seedGalleryPage(array $pageData, ?int $adminId): void
     {
         $page = Page::query()->updateOrCreate(
             ['slug' => $pageData['slug']],
@@ -79,30 +46,10 @@ class CmsContentSeeder extends Seeder
             ],
         );
 
-        $section = Section::query()->updateOrCreate(
-            [
-                'page_id' => $page->id,
-                'sort_order' => 1,
-            ],
-            [
-                'section_type_id' => SectionType::query()->where('name', $sectionTypeName)->value('id'),
-                'is_visible' => true,
-            ],
-        );
-
-        foreach ($pageData['blocks'] as $index => $blockData) {
+        // Simpan gambar pertama sebagai MediaFile jika ada (tanpa relasi ke sections)
+        foreach ($pageData['blocks'] as $blockData) {
             if (($blockData['type'] ?? 'text') === 'image') {
-                $block = ContentBlock::query()->updateOrCreate(
-                    [
-                        'section_id' => $section->id,
-                        'sort_order' => $index + 1,
-                    ],
-                    [
-                        'block_type_id' => BlockType::query()->where('name', 'image')->value('id'),
-                    ],
-                );
-
-                $mediaFile = MediaFile::query()->updateOrCreate(
+                MediaFile::query()->updateOrCreate(
                     ['file_path' => $blockData['file_path']],
                     [
                         'file_name' => basename(parse_url($blockData['file_path'], PHP_URL_PATH) ?: $blockData['file_path']),
@@ -112,37 +59,44 @@ class CmsContentSeeder extends Seeder
                         'uploaded_at' => now(),
                     ],
                 );
-
-                ImageContent::query()->updateOrCreate(
-                    ['content_block_id' => $block->id],
-                    [
-                        'media_file_id' => $mediaFile->id,
-                        'alt_text' => $blockData['alt_text'] ?? $pageData['title'],
-                        'caption' => $blockData['caption'] ?? null,
-                    ],
-                );
-
-                continue;
             }
-
-            $block = ContentBlock::query()->updateOrCreate(
-                [
-                    'section_id' => $section->id,
-                    'sort_order' => $index + 1,
-                ],
-                [
-                    'block_type_id' => BlockType::query()->where('name', 'text')->value('id'),
-                ],
-            );
-
-            TextContent::query()->updateOrCreate(
-                ['content_block_id' => $block->id],
-                [
-                    'value' => $blockData['value'],
-                    'format' => $blockData['format'] ?? 'plain',
-                ],
-            );
         }
+    }
+
+    private function seedArticle(array $articleData, ?int $adminId): void
+    {
+        $article = Article::query()->updateOrCreate(
+            ['slug' => $articleData['slug']],
+            [
+                'title' => $articleData['title'],
+                'author_name' => $articleData['author_name'] ?? 'Tim CMS',
+                'excerpt' => $articleData['excerpt'] ?? null,
+                'body' => collect($articleData['blocks'])
+                    ->where('type', '!=', 'image')
+                    ->map(function (array $block): string {
+                        if (($block['format'] ?? 'plain') === 'html') {
+                            return $block['value'];
+                        }
+
+                        return '<p>'.$block['value'].'</p>';
+                    })
+                    ->implode(''),
+                'status' => 'published',
+                'published_at' => now(),
+                'created_by' => $adminId,
+            ],
+        );
+
+        $tagIds = collect($articleData['tags'] ?? [])
+            ->map(function (string $tagName): int {
+                return Tag::query()->firstOrCreate(
+                    ['slug' => Str::slug($tagName)],
+                    ['name' => $tagName],
+                )->id;
+            })
+            ->all();
+
+        $article->tags()->sync($tagIds);
     }
 
     private function articlePages(): array

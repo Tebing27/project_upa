@@ -120,6 +120,8 @@
             {{ $slot }}
         </main>
 
+        <x-toast-notifications />
+
         @livewireScripts
     </body>
 </html>

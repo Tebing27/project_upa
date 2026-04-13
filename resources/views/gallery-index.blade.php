@@ -19,7 +19,8 @@
           modalOpen: false, 
           modalImage: '', 
           modalTitle: '', 
-          modalDesc: '' 
+          modalDesc: '',
+          modalType: 'photo'
       }"
       @keydown.escape.window="modalOpen = false">
     
@@ -36,12 +37,16 @@
             @if(isset($galleries) && $galleries->count() > 0)
                 <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-12">
                     @foreach($galleries as $gallery)
-                    @php $imgUrl = $gallery->image_path ?: 'https://placehold.co/800x600/e2e8f0/475569?text=Galeri'; @endphp
+                    @php $imgUrl = $gallery->file_path ? Storage::url($gallery->file_path) : 'https://placehold.co/800x600/e2e8f0/475569?text=Galeri'; @endphp
                     
                     <div class="group relative overflow-hidden rounded-xl bg-gray-900 aspect-[4/3] cursor-pointer"
-                         @click="modalOpen = true; modalImage = '{{ $imgUrl }}'; modalTitle = '{{ addslashes($gallery->title) }}'; modalDesc = '{{ addslashes($gallery->description) }}';">
+                         @click="modalOpen = true; modalImage = '{{ $imgUrl }}'; modalTitle = '{{ addslashes($gallery->title) }}'; modalDesc = '{{ addslashes($gallery->description) }}'; modalType = '{{ $gallery->type }}';">
                         
-                        <img src="{{ $imgUrl }}" alt="{{ $gallery->title }}" class="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-110">
+                        @if($gallery->type === 'video')
+                            <video src="{{ $imgUrl }}" class="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-110" muted loop onmouseover="this.play()" onmouseout="this.pause()"></video>
+                        @else
+                            <img src="{{ $imgUrl }}" alt="{{ $gallery->title }}" class="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-110">
+                        @endif
 
                         <!-- Hover Overlay -->
                         <div class="absolute inset-0 flex flex-col justify-end bg-gradient-to-t from-black/80 via-black/40 to-transparent p-4 md:p-6 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
@@ -94,7 +99,12 @@
                 <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
             </button>
             
-            <img :src="modalImage" :alt="modalTitle" class="max-h-[75vh] w-auto max-w-full rounded-lg shadow-2xl bg-gray-900 mx-auto pointer-events-auto border border-gray-700">
+            <template x-if="modalType === 'photo'">
+                <img :src="modalImage" :alt="modalTitle" class="max-h-[75vh] w-auto max-w-full rounded-lg shadow-2xl bg-gray-900 mx-auto pointer-events-auto border border-gray-700">
+            </template>
+            <template x-if="modalType === 'video'">
+                <video :src="modalImage" class="max-h-[75vh] w-auto max-w-full rounded-lg shadow-2xl bg-gray-900 mx-auto pointer-events-auto border border-gray-700" controls autoplay></video>
+            </template>
             
             <!-- Modal Text -->
             <div class="bg-black/60 backdrop-blur-md rounded-b-lg w-full max-w-[var(--tw-max-w)] max-h-min border border-t-0 border-gray-800 p-6 pointer-events-auto mt-4 text-center">
