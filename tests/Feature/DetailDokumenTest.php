@@ -1,7 +1,9 @@
 <?php
 
 use App\Livewire\Admin\DetailDokumen;
+use App\Models\AppSetting;
 use App\Models\User;
+use Illuminate\Support\Facades\Storage;
 use Livewire\Livewire;
 
 beforeEach(function () {
@@ -14,6 +16,11 @@ beforeEach(function () {
 });
 
 it('sets status to dokumen_ok when all required documents are verified even without optional internship certificate', function () {
+    Storage::fake('public');
+    AppSetting::put('admin_signature_name', 'Admin Verifikator');
+    AppSetting::put('admin_signature_path', 'documents/signatures/admin-global.png');
+    Storage::disk('public')->put('documents/signatures/admin-global.png', 'signature');
+
     $registration = createRegistrationWithRelations(
         createMahasiswaUser(),
         $this->scheme,
@@ -49,10 +56,17 @@ it('sets status to dokumen_ok when all required documents are verified even with
 
     $registration->refresh();
 
-    expect($registration->status)->toBe('dokumen_ok');
+    expect($registration->status)->toBe('dokumen_ok')
+        ->and($registration->admin_signatory_name)->toBe('Admin Verifikator')
+        ->and($registration->admin_signature_path)->toContain('documents/signatures/admin/registration_');
 });
 
 it('sets status to dokumen_ok when all documents including optional internship are verified', function () {
+    Storage::fake('public');
+    AppSetting::put('admin_signature_name', 'Admin Lengkap');
+    AppSetting::put('admin_signature_path', 'documents/signatures/admin-global.png');
+    Storage::disk('public')->put('documents/signatures/admin-global.png', 'signature');
+
     $registration = createRegistrationWithRelations(
         createMahasiswaUser(),
         $this->scheme,
@@ -126,6 +140,11 @@ it('sets status to dokumen_ditolak when any document is rejected', function () {
 });
 
 it('sets status to dokumen_ok after verifying only FR APL 01 and FR APL 02 in the condensed flow', function () {
+    Storage::fake('public');
+    AppSetting::put('admin_signature_name', 'Admin Condensed');
+    AppSetting::put('admin_signature_path', 'documents/signatures/admin-global.png');
+    Storage::disk('public')->put('documents/signatures/admin-global.png', 'signature');
+
     $registration = createRegistrationWithRelations(
         createMahasiswaUser(),
         $this->scheme,

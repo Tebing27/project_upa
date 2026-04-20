@@ -91,6 +91,35 @@ it('shows registrations with rejected document statuses in the rejected verifica
         ->assertSee('Mahasiswa Status Belum Sinkron');
 });
 
+it('can save and delete the global admin signature from document verification index', function () {
+    Storage::fake('public');
+
+    $admin = User::factory()->create(['role' => 'admin']);
+
+    Livewire::actingAs($admin)
+        ->test(VerifikasiDokumen::class)
+        ->set('adminSignatureName', 'Admin Global')
+        ->set('adminSignatureFile', UploadedFile::fake()->image('admin-signature.png'))
+        ->call('simpanTandaTanganAdmin')
+        ->assertSee('Admin Global');
+
+    $storedPath = AppSetting::adminSignaturePath();
+
+    expect(AppSetting::adminSignatureName())->toBe('Admin Global')
+        ->and($storedPath)->not->toBeNull();
+
+    Storage::disk('public')->assertExists($storedPath);
+
+    Livewire::actingAs($admin)
+        ->test(VerifikasiDokumen::class)
+        ->call('hapusTandaTanganAdmin');
+
+    expect(AppSetting::adminSignatureName())->toBeNull()
+        ->and(AppSetting::adminSignaturePath())->toBeNull();
+
+    Storage::disk('public')->assertMissing($storedPath);
+});
+
 it('redirects document-approved participants to the payment verification page without changing their status', function () {
     $admin = User::factory()->create(['role' => 'admin']);
     $scheme = Scheme::factory()->create(['name' => 'Junior Web Developer']);
@@ -112,8 +141,12 @@ it('redirects document-approved participants to the payment verification page wi
 });
 
 it('can continue to the payment verification page after a rejected document is later verified', function () {
+    Storage::fake('public');
+
     $admin = User::factory()->create(['role' => 'admin']);
     $scheme = Scheme::factory()->create(['name' => 'Junior Web Developer']);
+    AppSetting::put('admin_signature_name', 'Admin Final');
+    AppSetting::put('admin_signature_path', 'documents/signatures/admin-global.png');
     $participant = User::factory()->create();
     $registration = Registration::factory()->create([
         'user_id' => $participant->id,
@@ -198,10 +231,8 @@ it('shows nik instead of generated nim for general users across admin verificati
         ->test(DetailDokumen::class, ['registration' => $documentRegistration])
         ->assertSee('NIK / No. Pendaftaran')
         ->assertSee('3273056010900009')
-        ->assertSee('Provinsi Domisili')
-        ->assertSee('Kota Domisili')
-        ->assertSee('Kecamatan Domisili')
-        ->assertSee('Nama Perusahaan')
+        ->assertSee('Nama Institusi / Perusahaan')
+        ->assertSee('Telepon Kantor')
         ->assertSee('Email Perusahaan')
         ->assertDontSee('SKS / Semester')
         ->assertDontSee('NON-CKDRDMGC5S');
@@ -494,6 +525,124 @@ it('can upload certificate and exam result files for a scheduled participant', f
 
     Storage::disk('public')->assertExists($certificate->file_path);
     Storage::disk('public')->assertExists($certificate->result_file_path);
+});
+
+it('can mark a participant kompeten before certificate copy is uploaded', function () {
+    Storage::fake('public');
+
+    $admin = User::factory()->create(['role' => 'admin']);
+    $scheme = Scheme::factory()->create(['name' => 'Junior Web Developer']);
+    $participant = User::factory()->create();
+    $registration = Registration::factory()->create([
+        'user_id' => $participant->id,
+        'scheme_id' => $scheme->id,
+        'status' => 'terjadwal',
+        'exam_date' => Carbon::parse('2026-04-10 09:00:00'),
+        'exam_location' => 'Lab Sertifikasi Gedung A',
+        'assessor_name' => 'Budi Santoso',
+    ]);
+
+    $resultFile = UploadedFile::fake()->create('hasil-ujian.pdf', 200, 'application/pdf');
+
+    Livewire::actingAs($admin)
+        ->test(UploadHasilUji::class)
+        ->call('openUploadModal', $registration->id)
+        ->set('resultFile', $resultFile)
+        ->call('uploadParticipantFiles')
+        ->assertDispatched('close-modal')
+        ->assertDispatched('toast');
+
+    $registration->refresh();
+
+    expect($registration->status)->toBe('kompeten')
+        ->and($registration->exam_result_path)->not->toBeNull()
+        ->and(Certificate::query()->where('user_id', $participant->id)->where('scheme_id', $scheme->id)->exists())->toBeFalse();
+
+    Storage::disk('public')->assertExists($registration->exam_result_path);
+});
+
+it('can upload certificate copy later for a kompeten participant without reuploading the result file', function () {
+    Storage::fake('public');
+
+    $admin = User::factory()->create(['role' => 'admin']);
+    $scheme = Scheme::factory()->create(['name' => 'Junior Web Developer']);
+    $participant = createMahasiswaUser(mahasiswaProfile: ['nim' => '2210511881']);
+    $registration = Registration::factory()->create([
+        'user_id' => $participant->id,
+        'scheme_id' => $scheme->id,
+        'status' => 'kompeten',
+        'exam_result_path' => 'exam-results/kompeten.pdf',
+        'exam_date' => Carbon::parse('2026-04-10 09:00:00'),
+        'exam_location' => 'Lab Sertifikasi Gedung A',
+        'assessor_name' => 'Budi Santoso',
+    ]);
+
+    Storage::disk('public')->put('exam-results/kompeten.pdf', 'result');
+
+    $certificateFile = UploadedFile::fake()->create('sertifikat.pdf', 200, 'application/pdf');
+
+    Livewire::actingAs($admin)
+        ->test(UploadHasilUji::class)
+        ->call('openUploadModal', $registration->id)
+        ->set('certificateFile', $certificateFile)
+        ->set('expiredDate', '2029-04-10')
+        ->call('uploadParticipantFiles')
+        ->assertDispatched('close-modal')
+        ->assertDispatched('toast');
+
+    $registration->refresh();
+
+    $certificate = Certificate::query()
+        ->where('user_id', $participant->id)
+        ->where('scheme_id', $scheme->id)
+        ->latest('id')
+        ->first();
+
+    expect($registration->status)->toBe('sertifikat_terbit')
+        ->and($registration->exam_result_path)->toBeNull()
+        ->and($certificate)->not->toBeNull()
+        ->and($certificate->result_file_path)->toBe('exam-results/kompeten.pdf')
+        ->and($certificate->file_path)->not->toBeNull();
+
+    Storage::disk('public')->assertExists($certificate->result_file_path);
+    Storage::disk('public')->assertExists($certificate->file_path);
+});
+
+it('can save and delete competency letter settings from the upload hasil uji page', function () {
+    Storage::fake('public');
+
+    $admin = User::factory()->create(['role' => 'admin']);
+
+    Livewire::actingAs($admin)
+        ->test(UploadHasilUji::class)
+        ->set('competencyLetterSignatoryName', 'Admin Sertifikasi')
+        ->set('competencyLetterSignatureFile', UploadedFile::fake()->image('signature.png'))
+        ->set('competencyLetterStampFile', UploadedFile::fake()->image('stamp.png'))
+        ->call('saveCompetencyLetterSettings')
+        ->assertDispatched('toast')
+        ->assertSee('Admin Sertifikasi');
+
+    $signaturePath = AppSetting::competencyLetterSignaturePath();
+    $stampPath = AppSetting::competencyLetterStampPath();
+
+    expect(AppSetting::competencyLetterSignatoryName())->toBe('Admin Sertifikasi')
+        ->and($signaturePath)->not->toBeNull()
+        ->and($stampPath)->not->toBeNull();
+
+    Storage::disk('public')->assertExists($signaturePath);
+    Storage::disk('public')->assertExists($stampPath);
+
+    Livewire::actingAs($admin)
+        ->test(UploadHasilUji::class)
+        ->call('deleteCompetencyLetterSettings')
+        ->assertDispatched('toast');
+
+    expect(AppSetting::competencyLetterSignatoryName())->toBeNull()
+        ->and(AppSetting::competencyLetterSignaturePath())->toBeNull()
+        ->and(AppSetting::competencyLetterStampPath())->toBeNull();
+
+    Storage::disk('public')->assertMissing($signaturePath);
+    Storage::disk('public')->assertMissing($stampPath);
 });
 
 it('generates certificate numbers with nik and 12 random digits for general users', function () {

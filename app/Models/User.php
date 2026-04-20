@@ -164,13 +164,8 @@ class User extends Authenticatable implements MustVerifyEmail
             'tempat_lahir' => $this->profile->tempat_lahir,
             'tanggal_lahir' => $this->profile->tanggal_lahir,
             'alamat_rumah' => $this->profile->alamat_rumah,
-            'domisili_provinsi' => $this->profile->domisili_provinsi,
-            'domisili_kota' => $this->profile->domisili_kota,
-            'domisili_kecamatan' => $this->profile->domisili_kecamatan,
             'no_wa' => $this->profile->no_wa,
-            'pendidikan_terakhir' => $this->umumProfile->pendidikan_terakhir,
-            'nama_institusi' => $this->umumProfile->nama_institusi,
-            'pekerjaan' => $this->umumProfile->nama_pekerjaan,
+            'kualifikasi_pendidikan' => $this->umumProfile->kualifikasi_pendidikan,
         ])->every(static fn (mixed $value): bool => filled($value));
     }
 
@@ -253,21 +248,6 @@ class User extends Authenticatable implements MustVerifyEmail
         $this->legacyProfileAttributes['alamat_rumah'] = $value;
     }
 
-    public function setDomisiliProvinsiAttribute(?string $value): void
-    {
-        $this->legacyProfileAttributes['domisili_provinsi'] = $value;
-    }
-
-    public function setDomisiliKotaAttribute(?string $value): void
-    {
-        $this->legacyProfileAttributes['domisili_kota'] = $value;
-    }
-
-    public function setDomisiliKecamatanAttribute(?string $value): void
-    {
-        $this->legacyProfileAttributes['domisili_kecamatan'] = $value;
-    }
-
     public function setNoWaAttribute(?string $value): void
     {
         $this->legacyProfileAttributes['no_wa'] = $value;
@@ -275,17 +255,17 @@ class User extends Authenticatable implements MustVerifyEmail
 
     public function setPendidikanTerakhirAttribute(?string $value): void
     {
-        $this->legacyUmumProfileAttributes['pendidikan_terakhir'] = $value;
+        $this->legacyUmumProfileAttributes['kualifikasi_pendidikan'] = $value;
     }
 
-    public function setPekerjaanAttribute(?string $value): void
+    public function setKualifikasiPendidikanAttribute(?string $value): void
     {
-        $this->legacyUmumProfileAttributes['nama_pekerjaan'] = $value;
+        $this->legacyUmumProfileAttributes['kualifikasi_pendidikan'] = $value;
     }
 
     public function setNamaInstitusiAttribute(?string $value): void
     {
-        $this->legacyUmumProfileAttributes['nama_institusi'] = $value;
+        $this->legacyUmumProfileAttributes['nama_perusahaan'] = $value;
     }
 
     /**
@@ -369,33 +349,6 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->profile?->alamat_rumah;
     }
 
-    public function getDomisiliProvinsiAttribute(): ?string
-    {
-        if (! $this->relationLoaded('profile')) {
-            $this->load('profile');
-        }
-
-        return $this->profile?->domisili_provinsi;
-    }
-
-    public function getDomisiliKotaAttribute(): ?string
-    {
-        if (! $this->relationLoaded('profile')) {
-            $this->load('profile');
-        }
-
-        return $this->profile?->domisili_kota;
-    }
-
-    public function getDomisiliKecamatanAttribute(): ?string
-    {
-        if (! $this->relationLoaded('profile')) {
-            $this->load('profile');
-        }
-
-        return $this->profile?->domisili_kecamatan;
-    }
-
     public function getNoWaAttribute(): ?string
     {
         if (! $this->relationLoaded('profile')) {
@@ -411,16 +364,16 @@ class User extends Authenticatable implements MustVerifyEmail
             $this->load('umumProfile');
         }
 
-        return $this->umumProfile?->pendidikan_terakhir;
+        return $this->umumProfile?->kualifikasi_pendidikan;
     }
 
-    public function getPekerjaanAttribute(): ?string
+    public function getKualifikasiPendidikanAttribute(): ?string
     {
         if (! $this->relationLoaded('umumProfile')) {
             $this->load('umumProfile');
         }
 
-        return $this->umumProfile?->nama_pekerjaan;
+        return $this->umumProfile?->kualifikasi_pendidikan;
     }
 
     public function getNamaInstitusiAttribute(): ?string
@@ -429,7 +382,7 @@ class User extends Authenticatable implements MustVerifyEmail
             $this->load('umumProfile');
         }
 
-        return $this->umumProfile?->nama_institusi;
+        return $this->umumProfile?->nama_perusahaan;
     }
 
     public function getNamaPerusahaanAttribute(): ?string
@@ -475,6 +428,15 @@ class User extends Authenticatable implements MustVerifyEmail
         }
 
         return $this->umumProfile?->no_telp_perusahaan;
+    }
+
+    public function getTelpKantorAttribute(): ?string
+    {
+        if (! $this->relationLoaded('profile')) {
+            $this->load('profile');
+        }
+
+        return $this->profile?->telp_kantor;
     }
 
     public function getEmailPerusahaanAttribute(): ?string

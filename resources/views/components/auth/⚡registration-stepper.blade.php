@@ -44,7 +44,7 @@ new class extends Component {
     public $no_wa = '';
 
     #[Validate('required|string|max:255')]
-    public $pendidikan_terakhir = '';
+    public $kualifikasi_pendidikan = '';
 
     #[Validate('required|integer|min:0')]
     public $total_sks = '';
@@ -125,7 +125,7 @@ new class extends Component {
                 'jenis_kelamin' => 'required|in:L,P',
                 'alamat_rumah' => 'required|string',
                 'no_wa' => 'required|string|max:20',
-                'pendidikan_terakhir' => 'required|string|max:255',
+                'kualifikasi_pendidikan' => 'required|string|max:255',
                 'total_sks' => 'required|integer|min:0',
                 'status_semester' => 'required|string|max:255',
                 'fakultas' => 'required|string|max:255',
@@ -196,7 +196,7 @@ new class extends Component {
             'jenis_kelamin' => $this->jenis_kelamin,
             'alamat_rumah' => $this->alamat_rumah,
             'no_wa' => $this->no_wa,
-            'pendidikan_terakhir' => $this->pendidikan_terakhir,
+            'kualifikasi_pendidikan' => $this->kualifikasi_pendidikan,
             'total_sks' => $this->total_sks,
             'status_semester' => $this->status_semester,
             'fakultas' => $this->fakultas,
@@ -462,13 +462,13 @@ new class extends Component {
                                 </div>
 
                                 <div>
-                                    <label for="pendidikan_terakhir"
-                                        class="block text-sm font-semibold text-gray-700 dark:text-zinc-300 mb-2">Pendidikan
-                                        Terakhir</label>
-                                    <input type="text" wire:model="pendidikan_terakhir" id="pendidikan_terakhir"
+                                    <label for="kualifikasi_pendidikan"
+                                        class="block text-sm font-semibold text-gray-700 dark:text-zinc-300 mb-2">Kualifikasi
+                                        Pendidikan</label>
+                                    <input type="text" wire:model="kualifikasi_pendidikan" id="kualifikasi_pendidikan"
                                         required placeholder="SMK / SMA / D3"
                                         class="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-zinc-800 dark:bg-zinc-950 dark:text-white focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all outline-none">
-                                    @error('pendidikan_terakhir')
+                                    @error('kualifikasi_pendidikan')
                                         <p class="mt-2 text-xs font-medium text-red-500">{{ $message }}</p>
                                     @enderror
                                 </div>

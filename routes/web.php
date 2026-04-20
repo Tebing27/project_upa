@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\DownloadVerifiedApl01PdfController;
 use App\Http\Controllers\LandingPageController;
 use App\Livewire\Admin\CmsManager;
 use App\Livewire\Admin\DetailDokumen;
@@ -21,7 +23,6 @@ use App\Livewire\UserCertificatesPage;
 use App\Livewire\UserRegistrationStatus;
 use App\Livewire\UserSchemesPage;
 use Illuminate\Support\Facades\Route;
-use Illuminate\Support\Facades\Auth;
 
 Route::get('/', [LandingPageController::class, 'index'])->name('home');
 Route::get('/artikel', [LandingPageController::class, 'articlesIndex'])->name('article.index');
@@ -35,13 +36,10 @@ Route::get('skema', PublicSchemesPage::class)->name('skema.index');
 Route::get('skema/{scheme}', SchemeDetail::class)->name('skema.detail');
 
 Route::middleware(['auth', 'verified'])->group(function () {
-    Route::get('dashboard', function () {
-        return request()->user()?->can('admin')
-            ? view('admin-dashboard')
-            : view('dashboard');
-    })->name('dashboard');
+    Route::get('dashboard', DashboardController::class)->name('dashboard');
 
     Route::get('dashboard/status-pendaftaran/{registration?}', UserRegistrationStatus::class)->name('dashboard.status');
+    Route::get('dashboard/status-pendaftaran/{registration}/download-apl-01', DownloadVerifiedApl01PdfController::class)->name('dashboard.status.apl01.download');
     Route::get('dashboard/sertifikat-saya', UserCertificatesPage::class)->name('dashboard.certificates');
     Route::get('dashboard/daftar-skema', DaftarSkemaBaru::class)->name('dashboard.daftar-skema');
     Route::get('dashboard/skema', UserSchemesPage::class)->name('dashboard.skema');

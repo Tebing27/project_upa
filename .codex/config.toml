@@ -1,0 +1,15 @@
+[mcp_servers.laravel-boost]
+command = "php"
+args = ["artisan", "boost:mcp"]
+cwd = "C:\\Users\\Pongo\\Herd\\project_upa"
+
+[mcp_servers.herd]
+command = "php"
+args = ["C:/Users/Pongo/.config/herd/bin/herd-mcp.phar"]
+cwd = "C:\\Users\\Pongo\\Herd\\project_upa"
+
+[mcp_servers.herd.env]
+SITE_PATH = "C:\\Users\\Pongo\\Herd\\project_upa"
+
+[mcp_servers.herd.tools.get_all_php_versions]
+approval_mode = "approve"

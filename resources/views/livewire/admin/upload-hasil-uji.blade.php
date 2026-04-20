@@ -72,6 +72,88 @@
         </div>
     </div>
 
+    <div class="rounded-[1.25rem] border border-emerald-100 bg-white p-6 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)]">
+        <div class="flex flex-col gap-6 xl:flex-row xl:items-start xl:justify-between">
+            <div class="max-w-2xl">
+                <h2 class="text-lg font-bold text-gray-900">Surat Keterangan Kompeten</h2>
+                <p class="mt-1 text-sm text-gray-500">
+                    Nama penandatangan, tanda tangan, dan stempel ini dipakai untuk surat keterangan yang bisa diunduh peserta saat statusnya sudah kompeten tetapi sertifikat copy belum diunggah admin.
+                </p>
+            </div>
+
+            <div class="w-full max-w-3xl space-y-4">
+                @if ($competencyLetterSignaturePath || $competencyLetterStampPath || $competencyLetterSignatoryName)
+                    <div class="grid gap-4 rounded-2xl border border-emerald-100 bg-emerald-50/40 p-4 md:grid-cols-2">
+                        <div class="rounded-xl bg-white p-4">
+                            <p class="text-xs font-bold uppercase tracking-wider text-slate-500">Penandatangan</p>
+                            <p class="mt-2 text-sm font-semibold text-slate-900">{{ $competencyLetterSignatoryName ?: '-' }}</p>
+
+                            @if ($competencyLetterSignaturePath)
+                                <img src="{{ Storage::url($competencyLetterSignaturePath) }}" alt="Tanda tangan surat keterangan"
+                                    class="mt-4 h-28 w-full rounded-xl bg-slate-50 p-3 object-contain">
+                            @endif
+                        </div>
+
+                        <div class="rounded-xl bg-white p-4">
+                            <p class="text-xs font-bold uppercase tracking-wider text-slate-500">Stempel</p>
+
+                            @if ($competencyLetterStampPath)
+                                <img src="{{ Storage::url($competencyLetterStampPath) }}" alt="Stempel surat keterangan"
+                                    class="mt-4 h-28 w-full rounded-xl bg-slate-50 p-3 object-contain">
+                            @else
+                                <p class="mt-2 text-sm text-slate-500">Belum ada stempel.</p>
+                            @endif
+                        </div>
+                    </div>
+                @endif
+
+                <div class="grid gap-4 md:grid-cols-3">
+                    <div class="md:col-span-3">
+                        <label class="mb-2 block text-xs font-semibold uppercase tracking-wider text-slate-500">Nama Penandatangan</label>
+                        <input type="text" wire:model="competencyLetterSignatoryName"
+                            class="block w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700">
+                        @error('competencyLetterSignatoryName')
+                            <p class="mt-1.5 text-xs text-red-600">{{ $message }}</p>
+                        @enderror
+                    </div>
+
+                    <div>
+                        <label class="mb-2 block text-xs font-semibold uppercase tracking-wider text-slate-500">Tanda Tangan</label>
+                        <input type="file" wire:model="competencyLetterSignatureFile"
+                            class="block w-full text-xs text-slate-500 file:mr-2 file:rounded-md file:border-0 file:bg-slate-100 file:px-3 file:py-2 file:text-xs file:font-semibold file:text-slate-700 hover:file:bg-slate-200">
+                        @error('competencyLetterSignatureFile')
+                            <p class="mt-1.5 text-xs text-red-600">{{ $message }}</p>
+                        @enderror
+                    </div>
+
+                    <div>
+                        <label class="mb-2 block text-xs font-semibold uppercase tracking-wider text-slate-500">Stempel</label>
+                        <input type="file" wire:model="competencyLetterStampFile"
+                            class="block w-full text-xs text-slate-500 file:mr-2 file:rounded-md file:border-0 file:bg-slate-100 file:px-3 file:py-2 file:text-xs file:font-semibold file:text-slate-700 hover:file:bg-slate-200">
+                        @error('competencyLetterStampFile')
+                            <p class="mt-1.5 text-xs text-red-600">{{ $message }}</p>
+                        @enderror
+                    </div>
+
+                    <div class="flex items-end">
+                        <div class="flex w-full flex-wrap gap-3">
+                            <button wire:click="saveCompetencyLetterSettings" type="button"
+                                class="inline-flex flex-1 items-center justify-center rounded-xl bg-emerald-400 px-5 py-3 text-sm font-bold text-black hover:bg-emerald-500">
+                                Simpan
+                            </button>
+                            @if ($competencyLetterSignaturePath || $competencyLetterStampPath || $competencyLetterSignatoryName)
+                                <button wire:click="deleteCompetencyLetterSettings" type="button"
+                                    class="inline-flex items-center justify-center rounded-xl border border-red-200 bg-white px-5 py-3 text-sm font-bold text-red-600 hover:bg-red-50">
+                                    Hapus
+                                </button>
+                            @endif
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div class="rounded-[1.25rem] bg-white shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] overflow-hidden">
         <div class="overflow-x-auto">
             <table class="w-full text-left border-collapse">
@@ -125,9 +207,12 @@
                                     if ($registration->status === 'tidak_kompeten') {
                                         $statusClass = 'bg-red-50 text-red-700 border-red-100';
                                         $statusLabel = 'Tidak Lolos';
+                                    } elseif ($registration->status === 'kompeten') {
+                                        $statusClass = 'bg-blue-50 text-blue-700 border-blue-100';
+                                        $statusLabel = 'Kompeten';
                                     } elseif ($registration->active_certificate_id !== null) {
                                         $statusClass = 'bg-emerald-50 text-emerald-700 border-emerald-100';
-                                        $statusLabel = 'Kompeten';
+                                        $statusLabel = 'Sertifikat Terbit';
                                     }
                                 @endphp
                                 <span
@@ -170,7 +255,7 @@
                             </td>
                             <td class="px-6 py-5 text-right whitespace-nowrap">
                                 <div class="flex justify-end items-center gap-2">
-                                    @if (in_array($registration->status, ['sertifikat_terbit', 'tidak_kompeten']))
+                                    @if (in_array($registration->status, ['kompeten', 'sertifikat_terbit', 'tidak_kompeten']))
                                         <button wire:click="openUploadModal({{ $registration->id }})"
                                             class="text-xs font-semibold text-emerald-600 hover:text-emerald-700 transition-colors mr-3">
                                             Edit
@@ -243,7 +328,7 @@
                             <div class="mb-6 flex items-start justify-between">
                                 <div>
                                     <h3 class="text-xl font-bold text-gray-900">
-                                        {{ $selectedUploadRegistration?->active_certificate_id ? 'Perbarui Hasil Ujian' : 'Upload Hasil Ujian' }}
+                                        {{ $selectedUploadRegistration?->active_certificate_id ? 'Perbarui Hasil Ujian' : ($selectedUploadRegistration?->status === 'kompeten' ? 'Upload Sertifikat Copy' : 'Upload Hasil Ujian') }}
                                     </h3>
                                     <p class="mt-1 text-sm text-gray-500 font-medium">
                                         {{ $selectedUploadRegistration?->user?->name ?: '-' }}
@@ -278,12 +363,12 @@
                                         <div>
                                             <label
                                                 class="block text-xs font-semibold uppercase tracking-wider text-gray-500 mb-2.5">File
-                                                Sertifikat (PDF)</label>
+                                                Sertifikat Copy (PDF)</label>
                                             <div class="relative">
                                                 <input wire:model="certificateFile" type="file" accept=".pdf"
                                                     class="block w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-slate-50/50 text-xs font-semibold text-slate-700 outline-none transition-all hover:bg-white hover:border-slate-300 focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 focus:bg-white file:mr-3.5 file:rounded-lg file:border-0 file:bg-gray-900 file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-white" />
                                             </div>
-                                            @if ($selectedUploadRegistration?->active_certificate_id)
+                                            @if ($selectedUploadRegistration?->active_certificate_id || $selectedUploadRegistration?->status === 'kompeten')
                                                 <p class="mt-2 text-xs text-gray-400 italic">Kosongkan jika tidak
                                                     ada perubahan</p>
                                             @endif
@@ -313,7 +398,9 @@
                                     <input wire:model="resultFile" type="file" accept=".pdf"
                                         class="block w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-slate-50/50 text-xs font-semibold text-slate-700 outline-none transition-all hover:bg-white hover:border-slate-300 focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 focus:bg-white file:mr-3.5 file:rounded-lg file:border-0 file:bg-gray-900 file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-white" />
                                     @if (
-                                        ($examResult === 'kompeten' && $selectedUploadRegistration?->active_certificate_id) ||
+                                        ($examResult === 'kompeten' &&
+                                            ($selectedUploadRegistration?->active_certificate_id ||
+                                                $selectedUploadRegistration?->result_file_url)) ||
                                             ($examResult === 'belum_kompeten' && $selectedUploadRegistration?->exam_result_path))
                                         <p class="mt-2 text-xs text-gray-400 italic">Kosongkan jika tidak ada
                                             perubahan</p>

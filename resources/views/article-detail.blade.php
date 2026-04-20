@@ -123,14 +123,7 @@
 
             <!-- Header -->
             <header class="mb-8">
-                @if ($article->tags && is_array($article->tags) && count($article->tags) > 0)
-                    <div class="flex flex-wrap gap-2 mb-4">
-                        @foreach ($article->tags as $tag)
-                            <span
-                                class="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-blue-50 text-blue-700">{{ $tag }}</span>
-                        @endforeach
-                    </div>
-                @endif
+                <x-public.article-tags :tags="$article->tags" class="mb-4" />
                 <h1 class="text-3xl md:text-4xl lg:text-5xl font-extrabold text-gray-900 leading-tight mb-6">
                     {{ $article->title }}
                 </h1>

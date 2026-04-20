@@ -79,6 +79,18 @@ it('renders the page for authenticated users', function () {
         ->assertSeeLivewire(DaftarSkemaBaru::class);
 });
 
+it('composes the daftar skema page from blade fragments', function () {
+    $view = file_get_contents(resource_path('views/livewire/daftar-skema-baru.blade.php'));
+
+    expect($view)->toContain("@include('livewire.daftar-skema-baru._page-header')")
+        ->toContain("@include('livewire.daftar-skema-baru._progress-stepper')")
+        ->toContain("@include('livewire.daftar-skema-baru._step-1')")
+        ->toContain("@include('livewire.daftar-skema-baru._step-2-apl-01')")
+        ->toContain("@include('livewire.daftar-skema-baru._step-3-apl-02')")
+        ->toContain("@include('livewire.daftar-skema-baru._step-4-review')")
+        ->toContain("@include('livewire.daftar-skema-baru._step-5-success')");
+});
+
 it('prefills type and scheme from dashboard skema source without auto advancing', function () {
     $user = createGeneralUser();
     $faculty = Faculty::factory()->create(['name' => 'Fakultas Ekonomi']);
@@ -135,14 +147,16 @@ it('stays on tahap 1 when scheme query is present from another source', function
         ->assertSet('currentStep', 1);
 });
 
-it('skips biodata step for upnvj users and goes straight to upload documents', function () {
+it('shows APL 01 step for upnvj users', function () {
     Livewire::actingAs($this->user)
         ->test(DaftarSkemaBaru::class)
         ->set('registrationType', 'baru')
         ->set('schemeId', $this->scheme->id)
         ->call('nextStep')
-        ->assertSet('shouldShowProfileStep', false)
-        ->assertSet('currentStep', 3);
+        ->assertSet('shouldShowProfileStep', true)
+        ->assertSet('requiresProfileCompletion', false)
+        ->assertSet('currentStep', 2)
+        ->assertSet('apl01SubStep', 1);
 });
 
 it('shows an error when user has an in-progress registration', function () {
@@ -159,6 +173,7 @@ it('shows an error when user has an in-progress registration', function () {
 
 it('completes the full baru registration flow', function () {
     $docs = fakeDocuments();
+    $fakeSignature = 'data:image/png;base64,iVBORw0KGgo=';
 
     Livewire::actingAs($this->user)
         ->test(DaftarSkemaBaru::class)
@@ -168,18 +183,35 @@ it('completes the full baru registration flow', function () {
         ->set('schemeId', $this->scheme->id)
         ->call('nextStep')
         ->assertHasNoErrors()
-        ->assertSet('currentStep', 3)
-        // Step 2 visible: upload documents
-        ->set('frApl01', $docs['frApl01'])
-        ->set('frApl02', $docs['frApl02'])
+        ->assertSet('currentStep', 2)
+        ->assertSet('apl01SubStep', 1)
+        // Step 2.1 -> 2.2
+        ->call('nextStep')
+        ->assertSet('apl01SubStep', 2)
+        // Step 2.2 -> 2.3
+        ->set('assessmentPurpose', 'sertifikasi')
+        ->call('nextStep')
+        ->assertSet('apl01SubStep', 3)
+        // Step 2.3: docs -> confirm -> 2.4
         ->set('ktm', $docs['ktm'])
         ->set('khs', $docs['khs'])
         ->set('ktp', $docs['ktp'])
         ->set('passportPhoto', $docs['passportPhoto'])
+        ->call('confirmApl01')
+        ->assertHasNoErrors()
+        ->assertSet('apl01SubStep', 4)
+        // Step 2.4: signature -> advance to Step 3
+        ->set('applicantSignature', $fakeSignature)
+        ->call('nextStep')
+        ->assertHasNoErrors()
+        ->assertSet('currentStep', 3)
+        // Step 3 visible: APL 02
+        ->set('frApl01', $docs['frApl01'])
+        ->set('frApl02', $docs['frApl02'])
         ->call('nextStep')
         ->assertHasNoErrors()
         ->assertSet('currentStep', 4)
-        // Step 3 visible: review & submit
+        // Step 4 visible: review & submit
         ->call('submit')
         ->assertHasNoErrors()
         ->assertSet('currentStep', 5);
@@ -188,6 +220,7 @@ it('completes the full baru registration flow', function () {
         'user_id' => $this->user->id,
         'scheme_id' => $this->scheme->id,
         'type' => 'baru',
+        'assessment_purpose' => 'sertifikasi',
         'status' => 'menunggu_verifikasi',
         'payment_reference' => '98'.$this->user->nim,
     ]);
@@ -195,18 +228,25 @@ it('completes the full baru registration flow', function () {
 
 it('keeps the stepper on the last visible step after registration is submitted', function () {
     $docs = fakeDocuments();
+    $fakeSignature = 'data:image/png;base64,iVBORw0KGgo=';
 
     Livewire::actingAs($this->user)
         ->test(DaftarSkemaBaru::class)
         ->set('registrationType', 'baru')
         ->set('schemeId', $this->scheme->id)
         ->call('nextStep')
-        ->set('frApl01', $docs['frApl01'])
-        ->set('frApl02', $docs['frApl02'])
+        ->call('nextStep')
+        ->set('assessmentPurpose', 'sertifikasi')
+        ->call('nextStep')
         ->set('ktm', $docs['ktm'])
         ->set('khs', $docs['khs'])
         ->set('ktp', $docs['ktp'])
         ->set('passportPhoto', $docs['passportPhoto'])
+        ->call('confirmApl01')
+        ->set('applicantSignature', $fakeSignature)
+        ->call('nextStep')
+        ->set('frApl01', $docs['frApl01'])
+        ->set('frApl02', $docs['frApl02'])
         ->call('nextStep')
         ->call('submit')
         ->assertSet('currentStep', 5)
@@ -230,10 +270,6 @@ it('completes the full perpanjangan registration flow', function () {
         ->assertSet('currentStep', 3)
         ->set('frApl01', $docs['frApl01'])
         ->set('frApl02', $docs['frApl02'])
-        ->set('ktm', $docs['ktm'])
-        ->set('khs', $docs['khs'])
-        ->set('ktp', $docs['ktp'])
-        ->set('passportPhoto', $docs['passportPhoto'])
         ->call('nextStep')
         ->assertHasNoErrors()
         ->assertSet('currentStep', 4)
@@ -273,10 +309,6 @@ it('generates unique payment_reference when user has existing registrations', fu
         ->assertSet('currentStep', 3)
         ->set('frApl01', $docs['frApl01'])
         ->set('frApl02', $docs['frApl02'])
-        ->set('ktm', $docs['ktm'])
-        ->set('khs', $docs['khs'])
-        ->set('ktp', $docs['ktp'])
-        ->set('passportPhoto', $docs['passportPhoto'])
         ->call('nextStep')
         ->assertHasNoErrors()
         ->assertSet('currentStep', 4)
@@ -307,6 +339,7 @@ it('generates 16 digit payment_reference for general users from nik and current 
     );
 
     $docs = fakeDocuments();
+    $fakeSignature = 'data:image/png;base64,iVBORw0KGgo=';
 
     Livewire::actingAs($user)
         ->test(DaftarSkemaBaru::class)
@@ -315,13 +348,19 @@ it('generates 16 digit payment_reference for general users from nik and current 
         ->call('nextStep')
         ->assertSet('currentStep', 2)
         ->call('nextStep')
-        ->assertSet('currentStep', 3)
-        ->set('frApl01', $docs['frApl01'])
-        ->set('frApl02', $docs['frApl02'])
+        ->set('assessmentPurpose', 'sertifikasi')
+        ->call('nextStep')
         ->set('ktm', $docs['ktm'])
         ->set('khs', $docs['khs'])
         ->set('ktp', $docs['ktp'])
         ->set('passportPhoto', $docs['passportPhoto'])
+        ->call('confirmApl01')
+        ->assertSet('apl01SubStep', 4)
+        ->set('applicantSignature', $fakeSignature)
+        ->call('nextStep')
+        ->assertSet('currentStep', 3)
+        ->set('frApl01', $docs['frApl01'])
+        ->set('frApl02', $docs['frApl02'])
         ->call('nextStep')
         ->assertSet('currentStep', 4)
         ->call('submit')
@@ -331,6 +370,7 @@ it('generates 16 digit payment_reference for general users from nik and current 
     $this->assertDatabaseHas('registrations', [
         'user_id' => $user->id,
         'scheme_id' => $this->scheme->id,
+        'assessment_purpose' => 'sertifikasi',
         'payment_reference' => '9800000001101112',
     ]);
 
@@ -538,10 +578,15 @@ it('validates required documents on step 2', function () {
         ->set('registrationType', 'baru')
         ->set('schemeId', $this->scheme->id)
         ->call('nextStep')
-        ->assertSet('currentStep', 3)
+        ->assertSet('currentStep', 2)
         ->call('nextStep')
-        ->assertHasErrors(['frApl01', 'frApl02', 'ktm', 'khs', 'ktp', 'passportPhoto'])
-        ->assertSet('currentStep', 3);
+        ->assertSet('apl01SubStep', 2)
+        ->set('assessmentPurpose', 'sertifikasi')
+        ->call('nextStep')
+        ->assertSet('apl01SubStep', 3)
+        ->call('confirmApl01')
+        ->assertHasErrors(['ktm', 'khs', 'ktp', 'passportPhoto'])
+        ->assertSet('currentStep', 2);
 });
 
 it('can navigate back with previousStep', function () {
@@ -550,14 +595,15 @@ it('can navigate back with previousStep', function () {
         ->set('registrationType', 'baru')
         ->set('schemeId', $this->scheme->id)
         ->call('nextStep')
-        ->assertSet('currentStep', 3)
+        ->assertSet('currentStep', 2)
         ->call('previousStep')
         ->assertSet('currentStep', 1);
 });
 
-it('requires incomplete general users to fill biodata before uploading documents', function () {
+it('requires incomplete general users to fill biodata and documents on APL 01', function () {
     $user = createGeneralUser();
     $docs = fakeDocuments();
+    $fakeSignature = 'data:image/png;base64,iVBORw0KGgo=';
 
     Livewire::actingAs($user)
         ->test(DaftarSkemaBaru::class)
@@ -572,17 +618,28 @@ it('requires incomplete general users to fill biodata before uploading documents
         ->set('tempat_lahir', 'Jakarta')
         ->set('tanggal_lahir', '1998-04-10')
         ->set('alamat_rumah', 'Jl. Contoh No. 1')
-        ->set('domisili_provinsi', 'DKI Jakarta')
-        ->set('domisili_kota', 'Jakarta Selatan')
-        ->set('domisili_kecamatan', 'Setiabudi')
+        ->set('telp_rumah', '0211234567')
+        ->set('telp_kantor', '0217654321')
         ->set('no_wa', '081234567890')
-        ->set('pendidikan_terakhir', 'S1')
+        ->set('kualifikasi_pendidikan', 'S1')
         ->set('fakultas', 'Fakultas Ilmu Komputer')
-        ->set('nama_institusi', 'Universitas Contoh')
+        ->set('nama_perusahaan', 'Universitas Contoh')
         ->set('program_studi', 'Teknik Informatika')
-        ->set('pekerjaan', 'Karyawan Swasta')
         ->call('nextStep')
         ->assertHasNoErrors()
+        ->assertSet('apl01SubStep', 2)
+        ->set('assessmentPurpose', 'sertifikasi')
+        ->call('nextStep')
+        ->assertSet('apl01SubStep', 3)
+        ->set('ktm', $docs['ktm'])
+        ->set('khs', $docs['khs'])
+        ->set('ktp', $docs['ktp'])
+        ->set('passportPhoto', $docs['passportPhoto'])
+        ->call('confirmApl01')
+        ->assertHasNoErrors()
+        ->assertSet('apl01SubStep', 4)
+        ->set('applicantSignature', $fakeSignature)
+        ->call('nextStep')
         ->assertSet('currentStep', 3);
 
     expect($user->refresh()->hasCompletedProfile())->toBeFalse();
@@ -599,25 +656,30 @@ it('requires incomplete general users to fill biodata before uploading documents
         ->set('tempat_lahir', 'Jakarta')
         ->set('tanggal_lahir', '1998-04-10')
         ->set('alamat_rumah', 'Jl. Contoh No. 1')
-        ->set('domisili_provinsi', 'DKI Jakarta')
-        ->set('domisili_kota', 'Jakarta Selatan')
-        ->set('domisili_kecamatan', 'Setiabudi')
+        ->set('telp_rumah', '0211234567')
+        ->set('telp_kantor', '0217654321')
         ->set('no_wa', '081234567890')
-        ->set('pendidikan_terakhir', 'S1')
+        ->set('kualifikasi_pendidikan', 'S1')
         ->set('fakultas', 'Fakultas Ilmu Komputer')
-        ->set('nama_institusi', 'Universitas Contoh')
+        ->set('nama_perusahaan', 'Universitas Contoh')
         ->set('program_studi', 'Teknik Informatika')
-        ->set('pekerjaan', 'Karyawan Swasta')
         ->call('nextStep')
         ->assertHasNoErrors()
-        ->assertSet('currentStep', 3)
-        ->assertSet('shouldShowProfileStep', true)
-        ->set('frApl01', $docs['frApl01'])
-        ->set('frApl02', $docs['frApl02'])
+        ->set('assessmentPurpose', 'sertifikasi')
+        ->call('nextStep')
         ->set('ktm', $docs['ktm'])
         ->set('khs', $docs['khs'])
         ->set('ktp', $docs['ktp'])
         ->set('passportPhoto', $docs['passportPhoto'])
+        ->call('confirmApl01')
+        ->assertHasNoErrors()
+        ->assertSet('apl01SubStep', 4)
+        ->set('applicantSignature', $fakeSignature)
+        ->call('nextStep')
+        ->assertSet('currentStep', 3)
+        ->assertSet('shouldShowProfileStep', true)
+        ->set('frApl01', $docs['frApl01'])
+        ->set('frApl02', $docs['frApl02'])
         ->call('nextStep')
         ->assertSet('currentStep', 4)
         ->call('submit')
@@ -626,9 +688,80 @@ it('requires incomplete general users to fill biodata before uploading documents
     expect($user->refresh()->hasCompletedProfile())->toBeTrue();
 });
 
+it('shows all required biodata inputs for general users on apl 01 section 1', function () {
+    $user = createGeneralUser();
+
+    Livewire::actingAs($user)
+        ->test(DaftarSkemaBaru::class)
+        ->set('registrationType', 'baru')
+        ->set('schemeId', $this->scheme->id)
+        ->call('nextStep')
+        ->assertSet('currentStep', 2)
+        ->assertSet('apl01SubStep', 1)
+        ->assertDontSee('Instansi Pendidikan')
+        ->assertDontSee('Pekerjaan')
+        ->assertDontSee('Domisili')
+        ->assertSeeHtml('wire:model="telp_rumah"')
+        ->assertSeeHtml('wire:model="telp_kantor"')
+        ->assertSeeHtml('wire:model="nama_perusahaan"')
+        ->assertDontSeeHtml('wire:model="pekerjaan"');
+});
+
+it('shows applicant name and pending admin verification block on apl 01 section 4', function () {
+    $docs = fakeDocuments();
+
+    Livewire::actingAs($this->user)
+        ->test(DaftarSkemaBaru::class)
+        ->set('registrationType', 'baru')
+        ->set('schemeId', $this->scheme->id)
+        ->call('nextStep')
+        ->set('name', 'Budi Santoso')
+        ->call('nextStep')
+        ->set('assessmentPurpose', 'sertifikasi')
+        ->call('nextStep')
+        ->set('ktm', $docs['ktm'])
+        ->set('khs', $docs['khs'])
+        ->set('ktp', $docs['ktp'])
+        ->set('passportPhoto', $docs['passportPhoto'])
+        ->call('confirmApl01')
+        ->assertSet('apl01SubStep', 4)
+        ->assertSee('Budi Santoso')
+        ->assertSee('Menunggu verifikasi admin LSP');
+});
+
+it('shows the admin apl 02 template download action on step 3 when available', function () {
+    Storage::disk('public')->put('schemes/apl-02-templates/jwd-template.docx', 'template-docx');
+    $this->scheme->update([
+        'apl_02_template_path' => 'schemes/apl-02-templates/jwd-template.docx',
+    ]);
+
+    $docs = fakeDocuments();
+    $fakeSignature = 'data:image/png;base64,iVBORw0KGgo=';
+
+    Livewire::actingAs($this->user)
+        ->test(DaftarSkemaBaru::class)
+        ->set('registrationType', 'baru')
+        ->set('schemeId', $this->scheme->id)
+        ->call('nextStep')
+        ->call('nextStep')
+        ->set('assessmentPurpose', 'sertifikasi')
+        ->call('nextStep')
+        ->set('ktm', $docs['ktm'])
+        ->set('khs', $docs['khs'])
+        ->set('ktp', $docs['ktp'])
+        ->set('passportPhoto', $docs['passportPhoto'])
+        ->call('confirmApl01')
+        ->set('applicantSignature', $fakeSignature)
+        ->call('nextStep')
+        ->assertSet('currentStep', 3)
+        ->assertSee('Template APL 02 dari admin tersedia')
+        ->assertSee('Download Template APL 02');
+});
+
 it('shows entered biodata on the review step before general user submits the registration', function () {
     $user = createGeneralUser();
     $docs = fakeDocuments();
+    $fakeSignature = 'data:image/png;base64,iVBORw0KGgo=';
 
     Livewire::actingAs($user)
         ->test(DaftarSkemaBaru::class)
@@ -643,23 +776,27 @@ it('shows entered biodata on the review step before general user submits the reg
         ->set('tempat_lahir', 'Jakarta')
         ->set('tanggal_lahir', '1998-04-10')
         ->set('alamat_rumah', 'Jl. Contoh No. 1')
-        ->set('domisili_provinsi', 'DKI Jakarta')
-        ->set('domisili_kota', 'Jakarta Selatan')
-        ->set('domisili_kecamatan', 'Setiabudi')
+        ->set('telp_rumah', '0211234567')
+        ->set('telp_kantor', '0217654321')
         ->set('no_wa', '081234567890')
-        ->set('pendidikan_terakhir', 'S1')
+        ->set('kualifikasi_pendidikan', 'S1')
         ->set('fakultas', 'Fakultas Ilmu Komputer')
-        ->set('nama_institusi', 'Universitas Contoh')
+        ->set('nama_perusahaan', 'Universitas Contoh')
         ->set('program_studi', 'Teknik Informatika')
-        ->set('pekerjaan', 'Karyawan Swasta')
         ->call('nextStep')
-        ->assertSet('currentStep', 3)
-        ->set('frApl01', $docs['frApl01'])
-        ->set('frApl02', $docs['frApl02'])
+        ->set('assessmentPurpose', 'sertifikasi')
+        ->call('nextStep')
         ->set('ktm', $docs['ktm'])
         ->set('khs', $docs['khs'])
         ->set('ktp', $docs['ktp'])
         ->set('passportPhoto', $docs['passportPhoto'])
+        ->call('confirmApl01')
+        ->assertSet('apl01SubStep', 4)
+        ->set('applicantSignature', $fakeSignature)
+        ->call('nextStep')
+        ->assertSet('currentStep', 3)
+        ->set('frApl01', $docs['frApl01'])
+        ->set('frApl02', $docs['frApl02'])
         ->call('nextStep')
         ->assertSet('currentStep', 4)
         ->assertSee('Bing')
@@ -682,7 +819,7 @@ it('prefills filters for completed general users from biodata', function () {
         ->assertSet('requiresProfileCompletion', false)
         ->assertSet('faculty', (string) $this->scheme->faculty_id)
         ->assertSet('studyProgram', (string) $this->scheme->study_program_id)
-        ->assertSee('Lengkapi Biodata')
+        ->assertSee('APL 01')
         ->set('registrationType', 'baru')
         ->assertSee($this->scheme->name);
 });

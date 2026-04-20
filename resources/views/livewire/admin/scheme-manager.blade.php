@@ -52,6 +52,9 @@
                                                 class="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-gray-500">
                                                 Deskripsi</th>
                                             <th
+                                                class="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-gray-500 text-center w-40">
+                                                Template APL 02</th>
+                                            <th
                                                 class="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-gray-500 text-center w-32">
                                                 Aktif</th>
                                             <th
@@ -75,6 +78,24 @@
                                                 <td class="px-6 py-4">
                                                     <p class="text-xs text-gray-500 line-clamp-1">
                                                         {{ $scheme->description ?: '-' }}</p>
+                                                </td>
+                                                <td class="px-6 py-4 text-center">
+                                                    @if ($scheme->apl_02_template_path)
+                                                        <a href="{{ Storage::url($scheme->apl_02_template_path) }}" download
+                                                            class="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-700 hover:bg-emerald-100">
+                                                            <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24"
+                                                                stroke="currentColor">
+                                                                <path stroke-linecap="round" stroke-linejoin="round"
+                                                                    stroke-width="2" d="M12 3v12m0 0l-4-4m4 4l4-4M4 21h16" />
+                                                            </svg>
+                                                            Tersedia
+                                                        </a>
+                                                    @else
+                                                        <span
+                                                            class="inline-flex items-center rounded-full bg-slate-100 px-3 py-1.5 text-xs font-semibold text-slate-500">
+                                                            Belum ada
+                                                        </span>
+                                                    @endif
                                                 </td>
                                                 <td class="px-6 py-4 text-center">
                                                     <button type="button" wire:click="toggleActive({{ $scheme->id }})"

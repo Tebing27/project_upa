@@ -23,6 +23,7 @@
         x-data="{
             imagePreviewUrl: null,
             pdfPreviewUrl: null,
+            apl02PreviewUrl: null,
             setImagePreview(event) {
                 const [file] = event.target.files ?? [];
                 this.imagePreviewUrl = file ? URL.createObjectURL(file) : null;
@@ -30,6 +31,10 @@
             setPdfPreview(event) {
                 const [file] = event.target.files ?? [];
                 this.pdfPreviewUrl = file ? URL.createObjectURL(file) : null;
+            },
+            setApl02Preview(event) {
+                const [file] = event.target.files ?? [];
+                this.apl02PreviewUrl = file ? URL.createObjectURL(file) : null;
             },
         }">
         {{-- Tabs --}}
@@ -87,7 +92,7 @@
                     @enderror
                 </div>
 
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                <div class="grid grid-cols-1 gap-5 xl:grid-cols-3">
                     <div>
                         <label class="block text-xs font-semibold uppercase tracking-wider text-gray-500 mb-2">
                             Kode Skema
@@ -303,6 +308,45 @@
                                     </a>
                                 </div>
                                 <iframe src="{{ $existingDokumenUrl }}" class="mt-4 h-56 w-full rounded-xl border border-slate-200 bg-white"></iframe>
+                            </div>
+                        @endif
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold uppercase tracking-wider text-gray-500 mb-2">
+                            Template APL 02 (DOCX)
+                        </label>
+                        <input type="file" wire:model="apl_02_template" accept=".docx"
+                            x-on:change="setApl02Preview($event)"
+                            class="block w-full text-sm text-gray-500 file:mr-4 file:rounded-lg file:border-0 file:bg-gray-100 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-gray-700 hover:file:bg-gray-200">
+                        @error('apl_02_template')
+                            <p class="mt-2 text-xs font-medium text-red-600">{{ $message }}</p>
+                        @enderror
+                        @if ($apl_02_template)
+                            <div class="mt-4 rounded-2xl border border-emerald-100 bg-emerald-50/40 p-4">
+                                <div class="flex items-center justify-between gap-3">
+                                    <div>
+                                        <p class="text-xs font-bold uppercase tracking-wider text-emerald-700">Template APL 02 Baru</p>
+                                        <p class="mt-2 text-sm font-semibold text-slate-900">{{ $apl_02_template->getClientOriginalName() }}</p>
+                                        <p class="mt-1 text-xs text-slate-500">File DOCX ini akan tersedia untuk peserta pada step APL 02.</p>
+                                    </div>
+                                    <a x-show="apl02PreviewUrl" x-bind:href="apl02PreviewUrl" download
+                                        class="inline-flex items-center rounded-xl border border-emerald-200 bg-white px-4 py-2 text-sm font-semibold text-emerald-700 transition hover:bg-emerald-100">
+                                        Unduh File
+                                    </a>
+                                </div>
+                            </div>
+                        @elseif ($existingApl02TemplateUrl)
+                            <div class="mt-4 rounded-2xl border border-slate-200 bg-slate-50/60 p-4">
+                                <div class="flex items-center justify-between gap-3">
+                                    <div>
+                                        <p class="text-xs font-bold uppercase tracking-wider text-slate-600">Template APL 02 Saat Ini</p>
+                                        <p class="mt-2 text-sm font-semibold text-slate-900">{{ basename(parse_url($existingApl02TemplateUrl, PHP_URL_PATH)) }}</p>
+                                    </div>
+                                    <a href="{{ $existingApl02TemplateUrl }}" download
+                                        class="inline-flex items-center rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100">
+                                        Unduh File
+                                    </a>
+                                </div>
                             </div>
                         @endif
                     </div>

@@ -20,4 +20,36 @@ class AppSetting extends Model
     {
         return static::where('key', 'whatsapp_channel_link')->value('value');
     }
+
+    public static function adminSignatureName(): ?string
+    {
+        return static::query()->where('key', 'admin_signature_name')->value('value');
+    }
+
+    public static function adminSignaturePath(): ?string
+    {
+        return static::query()->where('key', 'admin_signature_path')->value('value');
+    }
+
+    public static function competencyLetterSignatoryName(): ?string
+    {
+        return static::query()->where('key', 'competency_letter_signatory_name')->value('value');
+    }
+
+    public static function competencyLetterSignaturePath(): ?string
+    {
+        return static::query()->where('key', 'competency_letter_signature_path')->value('value');
+    }
+
+    public static function competencyLetterStampPath(): ?string
+    {
+        return static::query()->where('key', 'competency_letter_stamp_path')->value('value');
+    }
+
+    public static function hasCompetencyLetterAssets(): bool
+    {
+        return filled(static::competencyLetterSignatoryName())
+            && filled(static::competencyLetterSignaturePath())
+            && filled(static::competencyLetterStampPath());
+    }
 }

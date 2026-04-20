@@ -31,7 +31,6 @@
         $statusStyles = [
             'verified' => 'border-[#a7f3d0]/60 bg-[#f0fdf4]',
             'pending' => 'border-amber-100 bg-[#fffbeb]',
-            'supporting' => 'border-slate-200 bg-slate-50/80',
             'rejected' => 'border-red-100 bg-[#fef2f2]',
             'missing' => 'border-slate-200 bg-white',
         ];
@@ -39,7 +38,6 @@
         $statusTextColors = [
             'verified' => 'text-[#059669]',
             'pending' => 'text-amber-600',
-            'supporting' => 'text-slate-500',
             'rejected' => 'text-red-600',
             'missing' => 'text-slate-500',
         ];
@@ -47,7 +45,6 @@
         $statusIconBgs = [
             'verified' => 'bg-[#d1fae5] text-[#059669]',
             'pending' => 'bg-amber-100/70 text-amber-600',
-            'supporting' => 'bg-slate-100 text-slate-500',
             'rejected' => 'bg-red-100/70 text-red-600',
             'missing' => 'bg-slate-100 text-slate-500',
         ];
@@ -55,7 +52,6 @@
         $statusLabels = [
             'verified' => 'Terverifikasi',
             'pending' => 'Menunggu Review',
-            'supporting' => 'Dokumen Pendukung',
             'rejected' => 'Ditolak',
             'missing' => 'Belum Upload',
         ];
@@ -77,11 +73,6 @@
             'emerald' => 'bg-emerald-100/80',
             'purple' => 'bg-purple-100/80',
         ];
-
-        $verifiedDocumentsCount = collect($documentCards)->where('status', 'verified')->count();
-        $reviewDocumentCount = collect($documentCards)
-            ->whereIn('status', ['verified', 'pending', 'rejected'])
-            ->count();
     @endphp
 
     <div class="max-w-7xl mx-auto space-y-6">
@@ -240,13 +231,11 @@
                         : ($registration->user->jenis_kelamin === 'P' ? 'Perempuan' : '-'),
                     'Nomor WhatsApp' => $registration->user->no_wa ?: '-',
                     'Alamat Rumah' => $registration->user->alamat_rumah ?: '-',
-                    'Provinsi Domisili' => $registration->user->domisili_provinsi ?: '-',
-                    'Kota Domisili' => $registration->user->domisili_kota ?: '-',
-                    'Kecamatan Domisili' => $registration->user->domisili_kecamatan ?: '-',
-                    'Pendidikan Terakhir' => $registration->user->pendidikan_terakhir ?: '-',
-                    'Nama Institusi' => $registration->user->nama_institusi ?: '-',
-                    'Pekerjaan' => $registration->user->pekerjaan ?: '-',
-                    'Nama Perusahaan' => $registration->user->nama_perusahaan ?: '-',
+                    'Telepon Rumah' => $registration->user->profile?->telp_rumah ?: '-',
+                    'Telepon Kantor' => $registration->user->profile?->telp_kantor ?: '-',
+                    'Tujuan Asesmen' => $registration->assessmentPurposeLabel(),
+                    'Kualifikasi Pendidikan' => $registration->user->kualifikasi_pendidikan ?: '-',
+                    'Nama Institusi / Perusahaan' => $registration->user->nama_perusahaan ?: '-',
                     'Jabatan' => $registration->user->jabatan ?: '-',
                     'Alamat Perusahaan' => $registration->user->alamat_perusahaan ?: '-',
                     'Kode Pos Perusahaan' => $registration->user->kode_pos_perusahaan ?: '-',
@@ -266,6 +255,7 @@
                         : ($registration->user->jenis_kelamin === 'P' ? 'Perempuan' : '-'),
                     'Nomor WhatsApp' => $registration->user->no_wa ?: '-',
                     'Alamat Rumah' => $registration->user->alamat_rumah ?: '-',
+                    'Tujuan Asesmen' => $registration->assessmentPurposeLabel(),
                     'Fakultas' => $registration->user->fakultas ?: '-',
                     'Program Studi' => $registration->user->program_studi ?: '-',
                     'Total SKS' => $registration->user->total_sks !== null ? (string) $registration->user->total_sks : '-',
@@ -285,6 +275,7 @@
                             {{ match ($activeTab) {
                                 'biodata' => 'Biodata Peserta',
                                 'dokumen' => 'Dokumen Pendaftaran',
+                                'tanda_tangan' => 'Tanda Tangan',
                                 'pembayaran' => 'Pembayaran',
                                 'jadwal' => 'Jadwal Ujian',
                                 default => 'Detail Peserta',
@@ -295,6 +286,8 @@
                                 Biodata tetap bisa dicek kapan saja. Perubahan hanya dibuka ketika ada dokumen yang ditolak admin.
                             @elseif ($activeTab === 'dokumen')
                                 Pantau hasil review dokumen, lihat catatan admin, dan upload ulang jika diperlukan.
+                            @elseif ($activeTab === 'tanda_tangan')
+                                Pantau tanda tangan pemohon dan finalisasi verifikasi admin pada tahap ini.
                             @elseif ($activeTab === 'pembayaran')
                                 Kelola instruksi pembayaran dan upload bukti pembayaran pada tahap ini.
                             @else
@@ -332,6 +325,13 @@
                         ])>
                             Dokumen
                         </button>
+                        <button type="button" wire:click="setActiveTab('tanda_tangan')" @class([
+                            'flex-1 rounded-xl px-4 py-2.5 text-sm font-semibold transition md:flex-none',
+                            'bg-white text-slate-800 shadow-sm' => $activeTab === 'tanda_tangan',
+                            'text-slate-500 hover:text-slate-700' => $activeTab !== 'tanda_tangan',
+                        ])>
+                            Tanda Tangan
+                        </button>
                         <button type="button" wire:click="setActiveTab('pembayaran')" @class([
                             'flex-1 rounded-xl px-4 py-2.5 text-sm font-semibold transition md:flex-none',
                             'bg-white text-slate-800 shadow-sm' => $activeTab === 'pembayaran',
@@ -352,7 +352,11 @@
 
                     @if ($activeTab === 'dokumen')
                         <span class="text-[13px] font-medium text-slate-400">
-                            {{ $registration->usesSimplifiedDocumentFlow() ? $reviewDocumentCount . ' dokumen review + ' . (count($documentCards) - $reviewDocumentCount) . ' dokumen pendukung' : count($documentCards) . ' dokumen' }}
+                            {{ count($documentCards) }} bukti kelengkapan pemohon
+                        </span>
+                    @elseif ($activeTab === 'tanda_tangan')
+                        <span class="text-[13px] font-medium text-slate-400">
+                            {{ $this->shouldDisplayAdminSignature() ? 'Tanda tangan admin tersedia' : 'Menunggu finalisasi admin' }}
                         </span>
                     @elseif ($activeTab === 'jadwal' && $registration->exam_date)
                         <span class="text-[13px] font-medium text-slate-400">
@@ -473,43 +477,13 @@
                                         <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
                                     @enderror
                                 </div>
-                                <div><label class="block text-sm font-semibold text-slate-700">Provinsi Domisili</label><input
-                                        type="text" wire:model="profile.domisili_provinsi"
+                                <div><label class="block text-sm font-semibold text-slate-700">Kualifikasi
+                                        Pendidikan</label><input type="text" wire:model="profile.kualifikasi_pendidikan"
                                         class="mt-2 block w-full rounded-xl border border-slate-200 px-4 py-3 text-sm">
-                                    @error('profile.domisili_provinsi')
+                                    @error('profile.kualifikasi_pendidikan')
                                         <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
                                     @enderror
                                 </div>
-                                <div><label class="block text-sm font-semibold text-slate-700">Kota Domisili</label><input
-                                        type="text" wire:model="profile.domisili_kota"
-                                        class="mt-2 block w-full rounded-xl border border-slate-200 px-4 py-3 text-sm">
-                                    @error('profile.domisili_kota')
-                                        <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
-                                    @enderror
-                                </div>
-                                <div><label class="block text-sm font-semibold text-slate-700">Kecamatan Domisili</label><input
-                                        type="text" wire:model="profile.domisili_kecamatan"
-                                        class="mt-2 block w-full rounded-xl border border-slate-200 px-4 py-3 text-sm">
-                                    @error('profile.domisili_kecamatan')
-                                        <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
-                                    @enderror
-                                </div>
-                                <div><label class="block text-sm font-semibold text-slate-700">Pendidikan
-                                        Terakhir</label><input type="text" wire:model="profile.pendidikan_terakhir"
-                                        class="mt-2 block w-full rounded-xl border border-slate-200 px-4 py-3 text-sm">
-                                    @error('profile.pendidikan_terakhir')
-                                        <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
-                                    @enderror
-                                </div>
-                                @if ($this->isGeneralUser())
-                                    <div><label class="block text-sm font-semibold text-slate-700">Nama Institusi</label><input
-                                        type="text" wire:model="profile.nama_institusi"
-                                        class="mt-2 block w-full rounded-xl border border-slate-200 px-4 py-3 text-sm">
-                                        @error('profile.nama_institusi')
-                                            <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
-                                        @enderror
-                                    </div>
-                                @endif
                                 @if (! $this->isGeneralUser())
                                     <div><label class="block text-sm font-semibold text-slate-700">Fakultas</label><input
                                         type="text" wire:model="profile.fakultas"
@@ -541,14 +515,21 @@
                                     </div>
                                 @endif
                                 @if ($this->isGeneralUser())
-                                    <div><label class="block text-sm font-semibold text-slate-700">Pekerjaan</label><input
-                                        type="text" wire:model="profile.pekerjaan"
+                                    <div><label class="block text-sm font-semibold text-slate-700">Telepon Rumah</label><input
+                                        type="text" wire:model="profile.telp_rumah"
                                         class="mt-2 block w-full rounded-xl border border-slate-200 px-4 py-3 text-sm">
-                                        @error('profile.pekerjaan')
+                                        @error('profile.telp_rumah')
                                             <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
                                         @enderror
                                     </div>
-                                    <div><label class="block text-sm font-semibold text-slate-700">Nama Perusahaan</label><input
+                                    <div><label class="block text-sm font-semibold text-slate-700">Telepon Kantor</label><input
+                                        type="text" wire:model="profile.telp_kantor"
+                                        class="mt-2 block w-full rounded-xl border border-slate-200 px-4 py-3 text-sm">
+                                        @error('profile.telp_kantor')
+                                            <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
+                                        @enderror
+                                    </div>
+                                    <div><label class="block text-sm font-semibold text-slate-700">Nama Institusi / Perusahaan</label><input
                                         type="text" wire:model="profile.nama_perusahaan"
                                         class="mt-2 block w-full rounded-xl border border-slate-200 px-4 py-3 text-sm">
                                         @error('profile.nama_perusahaan')
@@ -692,124 +673,159 @@
                         @if ($documentCards === [])
                             <p class="text-sm text-slate-500">Belum ada data dokumen.</p>
                         @else
-                            <div class="grid gap-4 sm:grid-cols-2">
-                                @foreach ($documentCards as $document)
-                                    <article
-                                        class="flex flex-col justify-between rounded-xl border p-4 transition-all {{ $statusStyles[$document['status']] ?? $statusStyles['missing'] }}">
-                                        <div class="flex items-center justify-between gap-3">
-                                            <div class="flex min-w-0 items-center gap-3">
-                                                <div
-                                                    class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg {{ $statusIconBgs[$document['status']] ?? $statusIconBgs['missing'] }}">
-                                                    <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24"
-                                                        stroke="currentColor">
-                                                        <path stroke-linecap="round" stroke-linejoin="round"
-                                                            stroke-width="1.8"
-                                                            d="M9 12h6m-6 4h6M9 8h6m2 12H7a2 2 0 01-2-2V6a2 2 0 012-2h7.586A2 2 0 0116 4.586L19.414 8A2 2 0 0120 9.414V18a2 2 0 01-2 2z" />
-                                                    </svg>
-                                                </div>
-                                                <div class="min-w-0">
-                                                    <h3 class="truncate text-[14px] font-semibold text-slate-800">
-                                                        {{ $document['label'] }}</h3>
-                                                    <div
-                                                        class="mt-0.5 flex items-center gap-1.5 {{ $statusTextColors[$document['status']] ?? $statusTextColors['missing'] }}">
-                                                        @if ($document['status'] === 'verified')
-                                                            <svg class="h-[13px] w-[13px]" viewBox="0 0 20 20"
-                                                                fill="currentColor">
-                                                                <path fill-rule="evenodd"
-                                                                    d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z"
-                                                                    clip-rule="evenodd" />
-                                                            </svg>
-                                                        @elseif($document['status'] === 'rejected')
-                                                            <svg class="h-[13px] w-[13px]" viewBox="0 0 20 20"
-                                                                fill="currentColor">
-                                                                <path fill-rule="evenodd"
-                                                                    d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.28 7.22a.75.75 0 00-1.06 1.06L8.94 10l-1.72 1.72a.75.75 0 101.06 1.06L10 11.06l1.72 1.72a.75.75 0 101.06-1.06L11.06 10l1.72-1.72a.75.75 0 00-1.06-1.06L10 8.94 8.28 7.22z"
-                                                                    clip-rule="evenodd" />
-                                                            </svg>
-                                                        @elseif($document['status'] === 'supporting')
-                                                            <svg class="h-[13px] w-[13px]" viewBox="0 0 20 20"
-                                                                fill="currentColor">
-                                                                <path
-                                                                    d="M10 3.75a.75.75 0 01.75.75v5h4.5a.75.75 0 010 1.5h-4.5v5a.75.75 0 01-1.5 0v-5h-4.5a.75.75 0 010-1.5h4.5v-5a.75.75 0 01.75-.75z" />
-                                                            </svg>
-                                                        @else
-                                                            <svg class="h-[13px] w-[13px]" viewBox="0 0 20 20"
-                                                                fill="currentColor">
-                                                                <path fill-rule="evenodd"
-                                                                    d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a.75.75 0 000 1.5h.253a.25.25 0 01.244.304l-.459 2.066A1.75 1.75 0 0010.747 15H11a.75.75 0 000-1.5h-.253a.25.25 0 01-.244-.304l.459-2.066A1.75 1.75 0 009.253 9H9z"
-                                                                    clip-rule="evenodd" />
-                                                            </svg>
+                            <div class="overflow-hidden rounded-[1.15rem] border border-slate-200">
+                                <table class="min-w-full divide-y divide-slate-200 text-sm">
+                                    <thead class="bg-slate-50">
+                                        <tr>
+                                            <th class="w-16 px-4 py-3 text-left font-semibold text-slate-600">No.</th>
+                                            <th class="px-4 py-3 text-left font-semibold text-slate-600">Bukti Persyaratan Dasar</th>
+                                            <th class="w-[22rem] px-4 py-3 text-left font-semibold text-slate-600">Upload / Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="divide-y divide-slate-200 bg-white">
+                                        @foreach ($documentCards as $document)
+                                            <tr class="{{ $statusStyles[$document['status']] ?? $statusStyles['missing'] }}">
+                                                <td class="px-4 py-4 align-top font-semibold text-slate-500">{{ $loop->iteration }}.</td>
+                                                <td class="px-4 py-4 align-top">
+                                                    <p class="text-[14px] font-semibold text-slate-800">{{ $document['label'] }}</p>
+                                                </td>
+                                                <td class="px-4 py-4 align-top">
+                                                    <div class="space-y-3">
+                                                        <div class="flex items-center gap-3">
+                                                            <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg {{ $statusIconBgs[$document['status']] ?? $statusIconBgs['missing'] }}">
+                                                                <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M9 12h6m-6 4h6M9 8h6m2 12H7a2 2 0 01-2-2V6a2 2 0 012-2h7.586A2 2 0 0116 4.586L19.414 8A2 2 0 0120 9.414V18a2 2 0 01-2 2z" />
+                                                                </svg>
+                                                            </div>
+                                                            <div class="flex items-center gap-1.5 {{ $statusTextColors[$document['status']] ?? $statusTextColors['missing'] }}">
+                                                                @if ($document['status'] === 'verified')
+                                                                    <svg class="h-[13px] w-[13px]" viewBox="0 0 20 20" fill="currentColor">
+                                                                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z" clip-rule="evenodd" />
+                                                                    </svg>
+                                                                @elseif($document['status'] === 'rejected')
+                                                                    <svg class="h-[13px] w-[13px]" viewBox="0 0 20 20" fill="currentColor">
+                                                                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.28 7.22a.75.75 0 00-1.06 1.06L8.94 10l-1.72 1.72a.75.75 0 101.06 1.06L10 11.06l1.72 1.72a.75.75 0 101.06-1.06L11.06 10l1.72-1.72a.75.75 0 00-1.06-1.06L10 8.94 8.28 7.22z" clip-rule="evenodd" />
+                                                                    </svg>
+                                                                @else
+                                                                    <svg class="h-[13px] w-[13px]" viewBox="0 0 20 20" fill="currentColor">
+                                                                        <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a.75.75 0 000 1.5h.253a.25.25 0 01.244.304l-.459 2.066A1.75 1.75 0 0010.747 15H11a.75.75 0 000-1.5h-.253a.25.25 0 01-.244-.304l.459-2.066A1.75 1.75 0 009.253 9H9z" clip-rule="evenodd" />
+                                                                    </svg>
+                                                                @endif
+                                                                <span class="text-[12px] font-medium">{{ $statusLabels[$document['status']] ?? 'Belum diketahui' }}</span>
+                                                            </div>
+                                                        </div>
+
+                                                        @if ($document['note'])
+                                                            <p class="text-[13px] text-slate-600">{{ $document['note'] }}</p>
                                                         @endif
-                                                        <span
-                                                            class="text-[12px] font-medium">{{ $statusLabels[$document['status']] ?? 'Belum diketahui' }}</span>
+
+                                                        @if ($document['has_file'] && $document['file_url'])
+                                                            <a href="{{ $document['file_url'] }}" target="_blank" class="inline-flex w-fit items-center rounded-full border border-[#a7f3d0]/60 bg-white px-3 py-1 text-[12px] font-medium text-[#059669] transition hover:bg-emerald-50">
+                                                                Lihat File
+                                                            </a>
+                                                        @else
+                                                            <span class="inline-flex w-fit items-center rounded-full border border-slate-200 bg-white px-3 py-1 text-[12px] font-medium text-slate-400">
+                                                                Belum Ada File
+                                                            </span>
+                                                        @endif
+
+                                                        @if ($document['can_upload_optional'])
+                                                            <form wire:submit="reuploadDocument('{{ $document['field'] }}')" class="border-t border-slate-200/60 pt-3">
+                                                                <label class="block text-xs font-semibold tracking-wider text-slate-500">
+                                                                    Jika sudah memiliki, Anda bisa upload!
+                                                                </label>
+                                                                <div class="mt-3 flex gap-2">
+                                                                    <input type="file" wire:model="reuploadFiles.{{ $document['field'] }}" class="block w-full text-xs text-slate-500 file:mr-2 file:rounded-md file:border-0 file:bg-slate-100 file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-slate-700 hover:file:bg-slate-200" />
+                                                                    <button type="submit" class="shrink-0 rounded-md bg-slate-800 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-slate-700">
+                                                                        Upload
+                                                                    </button>
+                                                                </div>
+                                                                @error('reuploadFiles.' . $document['field'])
+                                                                    <p class="mt-1.5 text-xs text-red-600">{{ $message }}</p>
+                                                                @enderror
+                                                            </form>
+                                                        @endif
+
+                                                        @if ($document['can_reupload'])
+                                                            <form wire:submit="reuploadDocument('{{ $document['field'] }}')" class="border-t border-slate-200/60 pt-3">
+                                                                <div class="flex gap-2">
+                                                                    <input type="file" wire:model="reuploadFiles.{{ $document['field'] }}" class="block w-full text-xs text-slate-500 file:mr-2 file:rounded-md file:border-0 file:bg-slate-100 file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-slate-700 hover:file:bg-slate-200" />
+                                                                    <button type="submit" class="shrink-0 rounded-md bg-slate-800 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-slate-700">
+                                                                        Upload
+                                                                    </button>
+                                                                </div>
+                                                                @error('reuploadFiles.' . $document['field'])
+                                                                    <p class="mt-1.5 text-xs text-red-600">{{ $message }}</p>
+                                                                @enderror
+                                                            </form>
+                                                        @endif
                                                     </div>
-                                                </div>
-                                            </div>
+                                                </td>
+                                            </tr>
+                                        @endforeach
+                                    </tbody>
+                                </table>
+                            </div>
+                        @endif
+                    </div>
+                @elseif ($activeTab === 'tanda_tangan')
+                    <div class="mt-6 space-y-5">
+                        @if ($this->shouldDisplayAdminSignature())
+                            <div class="rounded-[1.25rem] border border-emerald-100 bg-gradient-to-r from-emerald-50 via-white to-white p-5">
+                                <p class="text-[11px] font-bold uppercase tracking-wider text-emerald-700">Tanda Tangan Verifikator</p>
+                                <h3 class="mt-2 text-lg font-bold text-slate-800">{{ $registration->admin_signatory_name ?: '-' }}</h3>
+                                <p class="mt-1 text-sm text-slate-500">Semua dokumen telah diverifikasi admin.</p>
 
-                                            @if ($document['has_file'] && $document['file_url'])
-                                                <a href="{{ $document['file_url'] }}" target="_blank"
-                                                    class="shrink-0 rounded-full border border-[#a7f3d0]/60 bg-white px-3 py-1 text-[12px] font-medium text-[#059669] transition hover:bg-emerald-50">
-                                                    Lihat File
-                                                </a>
-                                            @else
-                                                <span
-                                                    class="shrink-0 rounded-full border border-slate-200 bg-white px-3 py-1 text-[12px] font-medium text-slate-400">
-                                                    Belum Ada File
-                                                </span>
-                                            @endif
-                                        </div>
+                                @if ($registration->admin_signature_path)
+                                    <div class="mt-5 overflow-hidden rounded-2xl border border-emerald-100 bg-white p-4">
+                                        <img src="{{ Storage::url($registration->admin_signature_path) }}" alt="Tanda tangan admin"
+                                            class="h-40 w-full object-contain">
+                                    </div>
+                                @endif
+                            </div>
+                        @else
+                            <div class="rounded-[1.25rem] border border-amber-100 bg-gradient-to-r from-amber-50 via-white to-white p-5">
+                                <p class="text-[11px] font-bold uppercase tracking-wider text-amber-700">Tanda Tangan Pemohon</p>
+                                <h3 class="mt-2 text-lg font-bold text-slate-800">{{ $registration->user->name ?: '-' }}</h3>
+                                <p class="mt-1 text-sm text-slate-500">
+                                    Tanda tangan admin akan tampil di tab ini setelah seluruh dokumen selesai diverifikasi.
+                                </p>
 
-                                        @if ($document['note'])
-                                            <p class="mt-3 text-[13px] text-slate-600">{{ $document['note'] }}</p>
-                                        @endif
+                                @if ($registration->applicant_signature_path)
+                                    <div class="mt-5 overflow-hidden rounded-2xl border border-amber-100 bg-white p-4">
+                                        <img src="{{ Storage::url($registration->applicant_signature_path) }}" alt="Tanda tangan pemohon"
+                                            class="h-40 w-full object-contain">
+                                    </div>
+                                @else
+                                    <div class="mt-5 rounded-2xl border border-dashed border-slate-200 bg-white p-5 text-sm text-slate-500">
+                                        Tanda tangan pemohon belum tersedia.
+                                    </div>
+                                @endif
+                            </div>
+                        @endif
 
-                                        @if ($document['status'] === 'supporting')
-                                            <p class="mt-3 text-[13px] text-slate-500">
-                                                Dokumen pendukung tetap ditampilkan, tetapi tidak menunggu review admin.
-                                            </p>
-                                        @endif
+                        @if ($registration->applicant_signature_path && $this->shouldDisplayAdminSignature())
+                            <div class="rounded-[1.25rem] border border-slate-200 bg-white p-5">
+                                <p class="text-[11px] font-bold uppercase tracking-wider text-slate-500">Arsip Tanda Tangan Pemohon</p>
+                                <div class="mt-4 overflow-hidden rounded-2xl border border-slate-100 bg-slate-50 p-4">
+                                    <img src="{{ Storage::url($registration->applicant_signature_path) }}" alt="Arsip tanda tangan pemohon"
+                                        class="h-32 w-full object-contain">
+                                </div>
+                            </div>
 
-                                        @if ($document['can_upload_optional'])
-                                            <form wire:submit="reuploadDocument('{{ $document['field'] }}')"
-                                                class="mt-4 border-t border-slate-200/60 pt-4">
-                                                <label
-                                                    class="block text-xs font-semibold tracking-wider text-slate-500">
-                                                    Jika sudah memiliki, Anda bisa upload!
-                                                </label>
-                                                <div class="mt-3 flex gap-2">
-                                                    <input type="file"
-                                                        wire:model="reuploadFiles.{{ $document['field'] }}"
-                                                        class="block w-full text-xs text-slate-500 file:mr-2 file:rounded-md file:border-0 file:bg-slate-100 file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-slate-700 hover:file:bg-slate-200" />
-                                                    <button type="submit"
-                                                        class="shrink-0 rounded-md bg-slate-800 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-slate-700">
-                                                        Upload
-                                                    </button>
-                                                </div>
-                                                @error('reuploadFiles.' . $document['field'])
-                                                    <p class="mt-1.5 text-xs text-red-600">{{ $message }}</p>
-                                                @enderror
-                                            </form>
-                                        @endif
+                            <div class="rounded-[1.25rem] border border-slate-200 bg-slate-50 p-5">
+                                <p class="text-[11px] font-bold uppercase tracking-wider text-slate-500">Unduh Dokumen</p>
+                                <h3 class="mt-2 text-lg font-bold text-slate-800">FR.APL.01 Final</h3>
+                                <p class="mt-1 text-sm text-slate-500">
+                                    File PDF ini tersedia setelah seluruh dokumen diverifikasi dan tanda tangan admin LSP ditempelkan ke pendaftaran Anda.
+                                </p>
 
-                                        @if ($document['can_reupload'])
-                                            <form wire:submit="reuploadDocument('{{ $document['field'] }}')"
-                                                class="mt-4 border-t border-slate-200/60 pt-4">
-                                                <div class="flex gap-2">
-                                                    <input type="file"
-                                                        wire:model="reuploadFiles.{{ $document['field'] }}"
-                                                        class="block w-full text-xs text-slate-500 file:mr-2 file:rounded-md file:border-0 file:bg-slate-100 file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-slate-700 hover:file:bg-slate-200" />
-                                                    <button type="submit"
-                                                        class="shrink-0 rounded-md bg-slate-800 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-slate-700">
-                                                        Upload
-                                                    </button>
-                                                </div>
-                                                @error('reuploadFiles.' . $document['field'])
-                                                    <p class="mt-1.5 text-xs text-red-600">{{ $message }}</p>
-                                                @enderror
-                                            </form>
-                                        @endif
-                                    </article>
-                                @endforeach
+                                <div class="mt-4">
+                                    <a href="{{ route('dashboard.status.apl01.download', $registration) }}"
+                                        class="inline-flex items-center rounded-xl bg-slate-900 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800">
+                                        Download PDF FR.APL.01
+                                    </a>
+                                </div>
                             </div>
                         @endif
                     </div>

@@ -126,9 +126,9 @@ class UserRegistrationStatus extends Component
             'tanggal_lahir' => $profileData['tanggal_lahir'] ?? null,
             'jenis_kelamin' => $profileData['jenis_kelamin'] ?? null,
             'alamat_rumah' => $profileData['alamat_rumah'] ?? null,
-            'domisili_provinsi' => $profileData['domisili_provinsi'] ?? null,
-            'domisili_kota' => $profileData['domisili_kota'] ?? null,
-            'domisili_kecamatan' => $profileData['domisili_kecamatan'] ?? null,
+            'kode_pos_rumah' => $profileData['kode_pos_rumah'] ?? null,
+            'telp_rumah' => $profileData['telp_rumah'] ?? null,
+            'telp_kantor' => $profileData['telp_kantor'] ?? null,
             'no_wa' => $profileData['no_wa'] ?? null,
             'fakultas' => $user->isUpnvjUser() ? ($profileData['fakultas'] ?? null) : ($user->profile?->fakultas ?? null),
             'program_studi' => $user->isUpnvjUser() ? ($profileData['program_studi'] ?? null) : ($user->profile?->program_studi ?? null),
@@ -142,9 +142,7 @@ class UserRegistrationStatus extends Component
 
         $user->umumProfile()->updateOrCreate([], [
             'no_ktp' => $user->isGeneralUser() ? ($profileData['no_ktp'] ?? null) : ($user->umumProfile?->no_ktp ?? null),
-            'pendidikan_terakhir' => $user->isGeneralUser() ? ($profileData['pendidikan_terakhir'] ?? null) : ($user->umumProfile?->pendidikan_terakhir ?? null),
-            'nama_institusi' => $user->isGeneralUser() ? ($profileData['nama_institusi'] ?? null) : ($user->umumProfile?->nama_institusi ?? null),
-            'nama_pekerjaan' => $user->isGeneralUser() ? ($profileData['pekerjaan'] ?? null) : ($user->umumProfile?->nama_pekerjaan ?? null),
+            'kualifikasi_pendidikan' => $user->isGeneralUser() ? ($profileData['kualifikasi_pendidikan'] ?? null) : ($user->umumProfile?->kualifikasi_pendidikan ?? null),
             'nama_perusahaan' => $user->isGeneralUser() ? ($profileData['nama_perusahaan'] ?? null) : ($user->umumProfile?->nama_perusahaan ?? null),
             'jabatan' => $user->isGeneralUser() ? ($profileData['jabatan'] ?? null) : ($user->umumProfile?->jabatan ?? null),
             'alamat_perusahaan' => $user->isGeneralUser() ? ($profileData['alamat_perusahaan'] ?? null) : ($user->umumProfile?->alamat_perusahaan ?? null),
@@ -238,7 +236,7 @@ class UserRegistrationStatus extends Component
 
     public function setActiveTab(string $tab): void
     {
-        if (! in_array($tab, ['biodata', 'dokumen', 'pembayaran', 'jadwal'], true)) {
+        if (! in_array($tab, ['biodata', 'dokumen', 'tanda_tangan', 'pembayaran', 'jadwal'], true)) {
             return;
         }
 
@@ -247,6 +245,15 @@ class UserRegistrationStatus extends Component
         }
 
         $this->activeTab = $tab;
+    }
+
+    public function shouldDisplayAdminSignature(): bool
+    {
+        if (! $this->registration) {
+            return false;
+        }
+
+        return $this->registration->isApl01PdfDownloadReady();
     }
 
     public function getStepProgress(?string $status): int
@@ -276,27 +283,16 @@ class UserRegistrationStatus extends Component
             return [];
         }
 
-        $documents = Registration::documentLabels();
-        $reviewableFields = $registration->reviewableDocumentFields();
-
-        // Build a keyed map of document type => doc record
+        $documents = Registration::apl01RequirementLabels();
         $docMap = $registration->documents->keyBy('document_type');
-
-        // Build a keyed map of document type => status record
         $statusMap = $registration->getRelation('documentStatuses')->keyBy('document_type');
 
-        $useCondensed = $statusMap->has('_meta_condensed_flow');
-
-        return collect($registration->visibleDocumentFields())
+        return collect($registration->apl01RequirementDocumentFields())
             ->mapWithKeys(fn (string $field): array => [$field => $documents[$field]])
-            ->map(function (string $label, string $field) use ($docMap, $statusMap, $reviewableFields, $useCondensed): array {
+            ->map(function (string $label, string $field) use ($docMap, $statusMap): array {
                 $docRecord = $docMap->get($field);
                 $statusRecord = $statusMap->get($field);
-
-                $isSupportingDocument = $useCondensed && ! in_array($field, $reviewableFields, true);
-                $status = $isSupportingDocument
-                    ? ($docRecord ? 'supporting' : 'missing')
-                    : ($statusRecord?->status ?? ($docRecord ? 'pending' : 'missing'));
+                $status = $statusRecord?->status ?? ($docRecord ? 'pending' : 'missing');
 
                 return [
                     'field' => $field,
@@ -304,7 +300,7 @@ class UserRegistrationStatus extends Component
                     'status' => $status,
                     'note' => $statusRecord?->catatan,
                     'has_file' => (bool) $docRecord,
-                    'can_reupload' => $status === 'rejected' && in_array($field, $reviewableFields, true),
+                    'can_reupload' => $status === 'rejected',
                     'can_upload_optional' => $field === 'internship_certificate_path' && $status === 'missing',
                     'file_url' => $docRecord?->file_path ? Storage::url($docRecord->file_path) : null,
                 ];
@@ -496,17 +492,15 @@ class UserRegistrationStatus extends Component
             'tanggal_lahir' => $user->profile?->tanggal_lahir ? Carbon::parse($user->profile->tanggal_lahir)->format('Y-m-d') : null,
             'jenis_kelamin' => $user->profile?->jenis_kelamin,
             'alamat_rumah' => $user->profile?->alamat_rumah,
-            'domisili_provinsi' => $user->profile?->domisili_provinsi,
-            'domisili_kota' => $user->profile?->domisili_kota,
-            'domisili_kecamatan' => $user->profile?->domisili_kecamatan,
             'no_wa' => $user->profile?->no_wa,
-            'pendidikan_terakhir' => $user->umumProfile?->pendidikan_terakhir,
-            'nama_institusi' => $user->umumProfile?->nama_institusi,
+            'kode_pos_rumah' => $user->profile?->kode_pos_rumah,
+            'telp_rumah' => $user->profile?->telp_rumah,
+            'telp_kantor' => $user->profile?->telp_kantor,
+            'kualifikasi_pendidikan' => $user->umumProfile?->kualifikasi_pendidikan,
             'total_sks' => $user->mahasiswaProfile?->total_sks,
             'status_semester' => $user->mahasiswaProfile?->status_semester,
             'fakultas' => $user->profile?->fakultas,
             'program_studi' => $user->profile?->program_studi,
-            'pekerjaan' => $user->umumProfile?->nama_pekerjaan,
             'nama_perusahaan' => $user->umumProfile?->nama_perusahaan,
             'jabatan' => $user->umumProfile?->jabatan,
             'alamat_perusahaan' => $user->umumProfile?->alamat_perusahaan,
