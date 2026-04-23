@@ -44,33 +44,7 @@
             @if (isset($galleries) && $galleries->count() > 0)
                 <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-12">
                     @foreach ($galleries as $gallery)
-                        @php $imgUrl = $gallery->file_path ? Storage::url($gallery->file_path) : 'https://placehold.co/800x600/e2e8f0/475569?text=Galeri'; @endphp
-
-                        <div class="group relative overflow-hidden rounded-xl bg-gray-900 aspect-[4/3] cursor-pointer"
-                            @click="modalOpen = true; modalImage = '{{ $imgUrl }}'; modalTitle = '{{ addslashes($gallery->title) }}'; modalDesc = '{{ addslashes($gallery->description) }}'; modalType = '{{ $gallery->type }}';">
-
-                            @if ($gallery->type === 'video')
-                                <video src="{{ $imgUrl }}"
-                                    class="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
-                                    muted loop onmouseover="this.play()" onmouseout="this.pause()"></video>
-                            @else
-                                <img src="{{ $imgUrl }}" alt="{{ $gallery->title }}"
-                                    class="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-110">
-                            @endif
-
-                            <!-- Hover Overlay -->
-                            <div
-                                class="absolute inset-0 flex flex-col justify-end bg-gradient-to-t from-black/80 via-black/40 to-transparent p-4 md:p-6 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
-                                <h3
-                                    class="mb-1 text-sm md:text-lg font-bold text-white leading-snug transform translate-y-4 transition-transform duration-300 group-hover:translate-y-0">
-                                    {{ $gallery->title }}</h3>
-                                @if ($gallery->description)
-                                    <p
-                                        class="text-xs md:text-sm text-gray-300 line-clamp-2 transform translate-y-4 transition-transform duration-300 opacity-0 group-hover:opacity-100 group-hover:translate-y-0 delay-75">
-                                        {{ $gallery->description }}</p>
-                                @endif
-                            </div>
-                        </div>
+                        <x-public.gallery-card :gallery="$gallery" interactive class="cursor-pointer" />
                     @endforeach
                 </div>
 

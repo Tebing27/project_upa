@@ -11,9 +11,8 @@ class UserProfile extends Model
 
     protected $fillable = [
         'user_id', 'fakultas', 'program_studi', 'tempat_lahir',
-        'tanggal_lahir', 'jenis_kelamin', 'domisili_provinsi',
-        'domisili_kota', 'domisili_kecamatan', 'domisili_kelurahan',
-        'alamat_rumah', 'no_wa',
+        'tanggal_lahir', 'jenis_kelamin', 'alamat_rumah',
+        'no_wa', 'kode_pos_rumah', 'telp_rumah', 'telp_kantor',
     ];
 
     protected $casts = [

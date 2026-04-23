@@ -47,14 +47,12 @@ test('general user can complete biodata from profile page', function () {
         ->set('tempat_lahir', 'Jakarta')
         ->set('tanggal_lahir', '1998-04-10')
         ->set('alamat_rumah', 'Jl. Contoh No. 1')
-        ->set('domisili_provinsi', 'DKI Jakarta')
-        ->set('domisili_kota', 'Jakarta Selatan')
-        ->set('domisili_kecamatan', 'Setiabudi')
+        ->set('telp_rumah', '0211234567')
+        ->set('telp_kantor', '0217654321')
         ->set('no_wa', '081234567890')
-        ->set('pendidikan_terakhir', 'S1')
-        ->set('nama_institusi', 'Universitas Contoh')
+        ->set('kualifikasi_pendidikan', 'S1')
+        ->set('nama_perusahaan', 'Universitas Contoh')
         ->set('program_studi', 'Teknik Informatika')
-        ->set('pekerjaan', 'Karyawan Swasta')
         ->call('updateProfileInformation')
         ->assertHasNoErrors();
 
@@ -62,8 +60,8 @@ test('general user can complete biodata from profile page', function () {
 
     expect($user->hasCompletedProfile())->toBeTrue()
         ->and($user->profile_completed_at)->not->toBeNull()
-        ->and($user->nama_institusi)->toBe('Universitas Contoh')
-        ->and($user->pekerjaan)->toBe('Karyawan Swasta');
+        ->and($user->nama_perusahaan)->toBe('Universitas Contoh')
+        ->and($user->profile?->telp_kantor)->toBe('0217654321');
 });
 
 test('email verification status is unchanged when email address is unchanged', function () {

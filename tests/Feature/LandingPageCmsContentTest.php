@@ -147,6 +147,18 @@ it('uses article id and seo slug on article detail routes', function () {
         ->toEndWith('/artikel/hot-news-artikel-'.$articlePage->id);
 });
 
+it('returns not found for malformed public article slugs', function () {
+    $this->get(route('article.show', ['slug' => 'artikel-tanpa-id']))
+        ->assertNotFound();
+});
+
+it('redirects back when the article index page query is invalid', function () {
+    $this->from(route('article.index'))
+        ->get(route('article.index', ['page' => 0]))
+        ->assertRedirect(route('article.index'))
+        ->assertSessionHasErrors('page');
+});
+
 it('lists gallery pages on the gallery index', function () {
     $galleryPage = Page::factory()->create([
         'title' => 'Galeri Dokumentasi CMS',
@@ -172,4 +184,11 @@ it('renders default artikel and galeri pages created from cms tabs', function ()
     $this->get(route('article.index'))
         ->assertOk()
         ->assertSee('Hot News Admin');
+});
+
+it('redirects back when the gallery index page query is invalid', function () {
+    $this->from(route('gallery.index'))
+        ->get(route('gallery.index', ['page' => 0]))
+        ->assertRedirect(route('gallery.index'))
+        ->assertSessionHasErrors('page');
 });

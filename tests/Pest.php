@@ -75,9 +75,6 @@ function createMahasiswaUser(array $user = [], array $profile = [], array $mahas
             'tempat_lahir' => 'Jakarta',
             'tanggal_lahir' => '2000-01-01',
             'jenis_kelamin' => 'L',
-            'domisili_provinsi' => 'DKI Jakarta',
-            'domisili_kota' => 'Jakarta Selatan',
-            'domisili_kecamatan' => 'Setiabudi',
             'alamat_rumah' => 'Jl. Contoh No. 1',
             'no_wa' => '081234567890',
         ], $profile)
@@ -111,11 +108,10 @@ function createGeneralUser(array $user = [], array $profile = [], array $umumPro
                 'tempat_lahir' => 'Jakarta',
                 'tanggal_lahir' => '1998-04-10',
                 'jenis_kelamin' => 'L',
-                'domisili_provinsi' => 'DKI Jakarta',
-                'domisili_kota' => 'Jakarta Selatan',
-                'domisili_kecamatan' => 'Setiabudi',
                 'alamat_rumah' => 'Jl. Contoh No. 1',
                 'no_wa' => '081234567890',
+                'telp_rumah' => '0211234567',
+                'telp_kantor' => '0217654321',
             ], $profile)
         );
 
@@ -123,9 +119,7 @@ function createGeneralUser(array $user = [], array $profile = [], array $umumPro
             ['user_id' => $user->id],
             array_merge([
                 'no_ktp' => '3174000000000001',
-                'pendidikan_terakhir' => 'S1',
-                'nama_institusi' => 'Universitas Contoh',
-                'nama_pekerjaan' => 'Karyawan Swasta',
+                'kualifikasi_pendidikan' => 'S1',
                 'nama_perusahaan' => 'Perusahaan Contoh',
                 'jabatan' => 'Staf',
                 'alamat_perusahaan' => 'Jl. Kantor No. 2',

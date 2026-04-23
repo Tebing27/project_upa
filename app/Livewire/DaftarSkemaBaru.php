@@ -7,11 +7,13 @@ use App\Models\Certificate;
 use App\Models\Faculty;
 use App\Models\Registration;
 use App\Models\RegistrationDocument;
+use App\Models\RegistrationDocumentStatus;
 use App\Models\Scheme;
 use App\Models\StudyProgram;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
 use Livewire\Attributes\Url;
 use Livewire\Component;
@@ -24,6 +26,10 @@ class DaftarSkemaBaru extends Component
     use WithFileUploads;
 
     public int $currentStep = 1;
+
+    public int $apl01SubStep = 1;
+
+    public string $assessmentPurpose = 'sertifikasi';
 
     #[Url(as: 'type')]
     public string $registrationType = '';
@@ -60,17 +66,9 @@ class DaftarSkemaBaru extends Component
 
     public ?string $alamat_rumah = null;
 
-    public ?string $domisili_provinsi = null;
-
-    public ?string $domisili_kota = null;
-
-    public ?string $domisili_kecamatan = null;
-
     public ?string $no_wa = null;
 
-    public ?string $pendidikan_terakhir = null;
-
-    public ?string $nama_institusi = null;
+    public ?string $kualifikasi_pendidikan = null;
 
     public ?int $total_sks = null;
 
@@ -79,8 +77,6 @@ class DaftarSkemaBaru extends Component
     public ?string $fakultas = null;
 
     public ?string $program_studi = null;
-
-    public ?string $pekerjaan = null;
 
     public ?string $nama_perusahaan = null;
 
@@ -93,6 +89,16 @@ class DaftarSkemaBaru extends Component
     public ?string $no_telp_perusahaan = null;
 
     public ?string $email_perusahaan = null;
+
+    public ?string $kebangsaan = null;
+
+    public ?string $kode_pos_rumah = null;
+
+    public ?string $telp_rumah = null;
+
+    public ?string $telp_kantor = null;
+
+    public ?string $fax_perusahaan = null;
 
     /** @var TemporaryUploadedFile|null */
     public $frApl01;
@@ -114,6 +120,9 @@ class DaftarSkemaBaru extends Component
 
     /** @var TemporaryUploadedFile|null */
     public $passportPhoto;
+
+    /** @var string|null Base64 data URL of the applicant digital signature */
+    public ?string $applicantSignature = null;
 
     public ?string $errorMessage = null;
 
@@ -186,23 +195,102 @@ class DaftarSkemaBaru extends Component
             if (! $this->guardRegistrationRules()) {
                 return;
             }
-            $this->currentStep = $this->shouldShowProfileStep ? 2 : 3;
+            // Step 1 done -> Go to Step 2 (APL 01 Bagian 1)
+            if ($this->useCondensedDocumentFlow) {
+                $this->currentStep = 3;
+            } else {
+                $this->currentStep = 2;
+                $this->apl01SubStep = 1;
+            }
 
             return;
         }
 
         if ($this->currentStep === 2) {
-            $this->validateProfileStep();
-            $this->currentStep = 3;
+            if ($this->apl01SubStep === 1) {
+                // Validate Bagian 1 (Biodata)
+                $validated = $this->validateProfileStep();
 
-            return;
+                if (empty($validated)) {
+                    return;
+                }
+
+                $this->apl01SubStep = 2;
+
+                return;
+            }
+
+            if ($this->apl01SubStep === 2) {
+                // Validate Bagian 2 (Data Sertifikasi)
+                $this->validate([
+                    'assessmentPurpose' => 'required|in:sertifikasi,paling_lambat_pkt,rpl,lainnya',
+                ]);
+                $this->apl01SubStep = 3;
+
+                return;
+            }
+
+            if ($this->apl01SubStep === 3) {
+                // Validate Bagian 3 (Documents)
+                if (! $this->useCondensedDocumentFlow) {
+                    $this->validate([
+                        'ktm' => 'required|file|mimes:pdf,jpg,jpeg,png|max:2048',
+                        'khs' => 'required|file|mimes:pdf|max:2048',
+                        'internshipCertificate' => 'nullable|file|mimes:pdf|max:2048',
+                        'ktp' => 'required|file|mimes:pdf,jpg,jpeg,png|max:2048',
+                        'passportPhoto' => 'required|file|mimes:jpg,jpeg,png|max:2048',
+                    ]);
+                }
+                $this->apl01SubStep = 4;
+
+                return;
+            }
+
+            if ($this->apl01SubStep === 4) {
+                // Validate Bagian 4 (Signature) then advance to APL 02
+                $this->validate([
+                    'applicantSignature' => 'required|string',
+                ]);
+                $this->currentStep = 3;
+
+                return;
+            }
         }
 
         if ($this->currentStep === 3) {
-            $this->validate($this->documentRules());
+            $this->validate([
+                'frApl01' => 'required|file|mimes:pdf|max:2048',
+                'frApl02' => 'required|file|mimes:pdf|max:2048',
+            ]);
 
             $this->currentStep = 4;
         }
+    }
+
+    public function confirmApl01(): void
+    {
+        // Re-validate Bagian 1 & 2 then move to Bagian 4 (Tanda Tangan)
+        $validated = $this->validateProfileStep();
+
+        if (empty($validated)) {
+            return;
+        }
+
+        $this->validate([
+            'assessmentPurpose' => 'required|in:sertifikasi,paling_lambat_pkt,rpl,lainnya',
+        ]);
+
+        if (! $this->useCondensedDocumentFlow) {
+            $this->validate([
+                'ktm' => 'required|file|mimes:pdf,jpg,jpeg,png|max:2048',
+                'khs' => 'required|file|mimes:pdf|max:2048',
+                'internshipCertificate' => 'nullable|file|mimes:pdf|max:2048',
+                'ktp' => 'required|file|mimes:pdf,jpg,jpeg,png|max:2048',
+                'passportPhoto' => 'required|file|mimes:jpg,jpeg,png|max:2048',
+            ]);
+        }
+
+        $this->apl01SubStep = 4; // Move to signature section (Bagian 4)
     }
 
     public function previousStep(): void
@@ -214,13 +302,21 @@ class DaftarSkemaBaru extends Component
         }
 
         if ($this->currentStep === 3) {
-            $this->currentStep = $this->shouldShowProfileStep ? 2 : 1;
+            $this->currentStep = 2;
+            $this->apl01SubStep = 4;
 
             return;
         }
 
         if ($this->currentStep === 2) {
+            if ($this->apl01SubStep > 1) {
+                $this->apl01SubStep--;
+
+                return;
+            }
             $this->currentStep = 1;
+
+            return;
         }
     }
 
@@ -236,14 +332,23 @@ class DaftarSkemaBaru extends Component
 
         $user = Auth::user();
 
-        if ($this->shouldShowProfileStep && $this->currentStep >= 2) {
-            $this->saveProfileStep();
-        }
+        // Always save profile since it's Step 2 now
+        $this->saveProfileStep();
 
         $schemeId = (int) $this->schemeId;
         $supportingDocumentPaths = $this->useCondensedDocumentFlow
             ? $this->getSupportingDocumentPathsFromHistory()
             : [];
+
+        // Store applicant signature from base64 data URL
+        $applicantSignaturePath = null;
+        if ($this->applicantSignature) {
+            $base64Data = preg_replace('/^data:image\/\w+;base64,/', '', $this->applicantSignature);
+            $imageData = base64_decode($base64Data);
+            $signaturePath = 'documents/signatures/applicant_'.uniqid().'.png';
+            Storage::disk('public')->put($signaturePath, $imageData);
+            $applicantSignaturePath = $signaturePath;
+        }
 
         $frApl01Path = $this->frApl01->store('documents/fr_apl_01', 'public');
         $frApl02Path = $this->frApl02->store('documents/fr_apl_02', 'public');
@@ -268,6 +373,7 @@ class DaftarSkemaBaru extends Component
         $registration = $user->registrations()->create([
             'scheme_id' => $schemeId,
             'type' => $this->registrationType,
+            'assessment_purpose' => $this->registrationType === 'baru' ? $this->assessmentPurpose : null,
             'payment_reference' => $paymentReference,
             'va_numer' => null,
             'status' => 'menunggu_verifikasi',
@@ -281,6 +387,7 @@ class DaftarSkemaBaru extends Component
             'internship_certificate_path' => $internshipPath,
             'ktp_path' => $ktpPath,
             'passport_photo_path' => $passportPhotoPath,
+            'applicant_signature_path' => $applicantSignaturePath,
         ];
 
         foreach ($documents as $type => $path) {
@@ -308,16 +415,25 @@ class DaftarSkemaBaru extends Component
      */
     public function stepLabels(): array
     {
-        $steps = [1 => 'Pilih Tipe & Skema'];
+        return [
+            1 => 'Pilih Skema',
+            2 => 'APL 01',
+            3 => 'APL 02',
+            4 => 'Review',
+        ];
+    }
 
-        if ($this->shouldShowProfileStep) {
-            $steps[2] = 'Lengkapi Biodata';
-        }
-
-        $steps[3] = 'Upload Dokumen';
-        $steps[4] = 'Review';
-
-        return $steps;
+    /**
+     * @return array<string, string>
+     */
+    public function apl01SectionLabels(): array
+    {
+        return [
+            1 => 'Data Pemohon',
+            2 => 'Data Sertifikasi',
+            3 => 'Bukti Kelengkapan',
+            4 => 'Tanda Tangan',
+        ];
     }
 
     /**
@@ -409,7 +525,70 @@ class DaftarSkemaBaru extends Component
             'steps' => $this->stepLabels(),
             'showFacultyFilters' => $this->registrationType === 'baru',
             'useCondensedDocumentFlow' => $this->useCondensedDocumentFlow,
+            'adminVerificationPreview' => $this->adminVerificationPreview(),
         ]);
+    }
+
+    /**
+     * @return array{state: string, name: ?string, date: ?string}
+     */
+    private function adminVerificationPreview(): array
+    {
+        if (! $this->submittedRegistration instanceof Registration) {
+            return [
+                'state' => 'pending',
+                'name' => null,
+                'date' => null,
+            ];
+        }
+
+        $registration = Registration::query()
+            ->find($this->submittedRegistration->getKey());
+
+        if (! $registration) {
+            return [
+                'state' => 'pending',
+                'name' => null,
+                'date' => null,
+            ];
+        }
+
+        $registration->load('documentStatuses.verifier');
+
+        if (in_array($registration->status, ['dokumen_ditolak', 'dokumen_kurang', 'rejected'], true)) {
+            return [
+                'state' => 'rejected',
+                'name' => null,
+                'date' => null,
+            ];
+        }
+
+        if (! in_array($registration->status, [
+            'dokumen_ok',
+            'pending_payment',
+            'paid',
+            'terjadwal',
+            'kompeten',
+            'tidak_kompeten',
+            'sertifikat_terbit',
+        ], true)) {
+            return [
+                'state' => 'pending',
+                'name' => null,
+                'date' => null,
+            ];
+        }
+
+        $latestVerifiedStatus = collect($registration->getRelation('documentStatuses'))
+            ->filter(fn ($status): bool => $status instanceof RegistrationDocumentStatus && $status->status === 'verified')
+            ->sortByDesc('verified_at')
+            ->first();
+
+        return [
+            'state' => 'verified',
+            'name' => $latestVerifiedStatus?->verifier?->nama,
+            'date' => $latestVerifiedStatus?->verified_at?->translatedFormat('d F Y'),
+        ];
     }
 
     private function fillProfileFromUser(): void
@@ -426,12 +605,8 @@ class DaftarSkemaBaru extends Component
             : null;
         $this->jenis_kelamin = $user->profile?->jenis_kelamin;
         $this->alamat_rumah = $user->profile?->alamat_rumah;
-        $this->domisili_provinsi = $user->profile?->domisili_provinsi;
-        $this->domisili_kota = $user->profile?->domisili_kota;
-        $this->domisili_kecamatan = $user->profile?->domisili_kecamatan;
         $this->no_wa = $user->profile?->no_wa;
-        $this->pendidikan_terakhir = $user->umumProfile?->pendidikan_terakhir;
-        $this->nama_institusi = $user->umumProfile?->nama_institusi;
+        $this->kualifikasi_pendidikan = $user->umumProfile?->kualifikasi_pendidikan;
         $this->total_sks = $user->mahasiswaProfile?->total_sks;
         $this->status_semester = $user->mahasiswaProfile?->status_semester;
         $this->fakultas = $user->profile?->fakultas;
@@ -441,13 +616,17 @@ class DaftarSkemaBaru extends Component
             $user->profile?->program_studi,
             $this->faculty,
         );
-        $this->pekerjaan = $user->umumProfile?->nama_pekerjaan;
         $this->nama_perusahaan = $user->umumProfile?->nama_perusahaan;
         $this->jabatan = $user->umumProfile?->jabatan;
         $this->alamat_perusahaan = $user->umumProfile?->alamat_perusahaan;
         $this->kode_pos_perusahaan = $user->umumProfile?->kode_pos_perusahaan;
         $this->no_telp_perusahaan = $user->umumProfile?->no_telp_perusahaan;
         $this->email_perusahaan = $user->umumProfile?->email_perusahaan;
+        $this->kebangsaan = $user->umumProfile?->kebangsaan;
+        $this->kode_pos_rumah = $user->profile?->kode_pos_rumah;
+        $this->telp_rumah = $user->profile?->telp_rumah;
+        $this->telp_kantor = $user->profile?->telp_kantor;
+        $this->fax_perusahaan = $user->umumProfile?->fax_perusahaan;
     }
 
     private function validateProfileStep(): array
@@ -460,15 +639,23 @@ class DaftarSkemaBaru extends Component
 
         foreach ([
             'no_ktp', 'tempat_lahir', 'tanggal_lahir', 'jenis_kelamin', 'alamat_rumah',
-            'domisili_provinsi', 'domisili_kota', 'domisili_kecamatan', 'no_wa',
-            'pendidikan_terakhir', 'nama_institusi', 'fakultas', 'program_studi', 'pekerjaan',
+            'no_wa', 'kualifikasi_pendidikan', 'fakultas', 'program_studi',
             'nama_perusahaan', 'jabatan', 'alamat_perusahaan', 'kode_pos_perusahaan',
-            'no_telp_perusahaan', 'email_perusahaan',
+            'no_telp_perusahaan', 'email_perusahaan', 'kebangsaan', 'kode_pos_rumah',
+            'telp_rumah', 'telp_kantor', 'fax_perusahaan',
         ] as $field) {
             $this->{$field} = filled($this->{$field}) ? trim((string) $this->{$field}) : null;
         }
 
-        return $this->validate($rules);
+        $validated = $this->validate($rules);
+
+        if (blank($this->telp_rumah) && blank($this->telp_kantor) && blank($this->no_wa) && blank($this->email)) {
+            $this->addError('no_wa', 'No. Telepon / E-mail harus diisi salah satu (Rumah, Kantor, HP, atau Email).');
+
+            return [];
+        }
+
+        return $validated;
     }
 
     private function saveProfileStep(): void
@@ -487,25 +674,25 @@ class DaftarSkemaBaru extends Component
             'tanggal_lahir' => $validated['tanggal_lahir'] ?? null,
             'jenis_kelamin' => $validated['jenis_kelamin'] ?? null,
             'alamat_rumah' => $validated['alamat_rumah'] ?? null,
-            'domisili_provinsi' => $validated['domisili_provinsi'] ?? null,
-            'domisili_kota' => $validated['domisili_kota'] ?? null,
-            'domisili_kecamatan' => $validated['domisili_kecamatan'] ?? null,
             'no_wa' => $validated['no_wa'] ?? null,
             'fakultas' => $validated['fakultas'] ?? null,
             'program_studi' => $validated['program_studi'] ?? null,
+            'kode_pos_rumah' => $validated['kode_pos_rumah'] ?? null,
+            'telp_rumah' => $validated['telp_rumah'] ?? null,
+            'telp_kantor' => $validated['telp_kantor'] ?? null,
         ]);
 
         $user->umumProfile()->updateOrCreate([], [
             'no_ktp' => $validated['no_ktp'] ?? null,
-            'pendidikan_terakhir' => $validated['pendidikan_terakhir'] ?? null,
-            'nama_institusi' => $validated['nama_institusi'] ?? null,
-            'nama_pekerjaan' => $validated['pekerjaan'] ?? null,
+            'kualifikasi_pendidikan' => $validated['kualifikasi_pendidikan'] ?? null,
             'nama_perusahaan' => $validated['nama_perusahaan'] ?? null,
             'jabatan' => $validated['jabatan'] ?? null,
             'alamat_perusahaan' => $validated['alamat_perusahaan'] ?? null,
             'kode_pos_perusahaan' => $validated['kode_pos_perusahaan'] ?? null,
             'no_telp_perusahaan' => $validated['no_telp_perusahaan'] ?? null,
             'email_perusahaan' => $validated['email_perusahaan'] ?? null,
+            'fax_perusahaan' => $validated['fax_perusahaan'] ?? null,
+            'kebangsaan' => $validated['kebangsaan'] ?? null,
         ]);
 
         $user->syncProfileCompletionStatus();
@@ -591,17 +778,7 @@ class DaftarSkemaBaru extends Component
             'frApl02' => 'required|file|mimes:pdf|max:2048',
         ];
 
-        if ($this->useCondensedDocumentFlow) {
-            return $rules;
-        }
-
-        return array_merge($rules, [
-            'ktm' => 'required|file|mimes:pdf,jpg,jpeg,png|max:2048',
-            'khs' => 'required|file|mimes:pdf|max:2048',
-            'internshipCertificate' => 'nullable|file|mimes:pdf|max:2048',
-            'ktp' => 'required|file|mimes:pdf,jpg,jpeg,png|max:2048',
-            'passportPhoto' => 'required|file|mimes:jpg,jpeg,png|max:2048',
-        ]);
+        return $rules;
     }
 
     private function syncFlowConfiguration(): void
@@ -609,7 +786,7 @@ class DaftarSkemaBaru extends Component
         $user = Auth::user();
 
         $this->useCondensedDocumentFlow = $user->hasIssuedCertificate();
-        $this->shouldShowProfileStep = $user->isGeneralUser() && ! $this->useCondensedDocumentFlow;
+        $this->shouldShowProfileStep = ! $this->useCondensedDocumentFlow;
         $this->requiresProfileCompletion = $this->shouldShowProfileStep && ! $user->hasCompletedProfile();
     }
 

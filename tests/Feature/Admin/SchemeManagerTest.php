@@ -234,9 +234,34 @@ it('shows selected upload previews on the scheme form before saving', function (
         ->test(SchemeForm::class)
         ->set('gambar', UploadedFile::fake()->image('preview.png'))
         ->set('dokumen_skema', UploadedFile::fake()->create('preview.pdf', 100, 'application/pdf'))
+        ->set('apl_02_template', UploadedFile::fake()->create('apl-02-template.docx', 100, 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'))
         ->assertSee('Preview Gambar Baru')
         ->assertSee('Buka Gambar')
         ->assertSee('Preview Dokumen Baru')
         ->assertSee('Buka PDF')
-        ->assertSee('preview.pdf');
+        ->assertSee('preview.pdf')
+        ->assertSee('Template APL 02 Baru')
+        ->assertSee('apl-02-template.docx');
+});
+
+it('can save the apl 02 template document on a scheme', function () {
+    Storage::fake('public');
+
+    $admin = User::factory()->create(['role' => 'admin']);
+    $faculty = Faculty::factory()->create(['name' => 'Fakultas Teknik']);
+
+    Livewire::actingAs($admin)
+        ->test(SchemeForm::class)
+        ->set('name', 'Skema Dengan Template APL 02')
+        ->set('faculty_id', $faculty->id)
+        ->set('apl_02_template', UploadedFile::fake()->create('apl-02-template.docx', 100, 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'))
+        ->call('save')
+        ->assertHasNoErrors();
+
+    $scheme = Scheme::query()->where('nama', 'Skema Dengan Template APL 02')->first();
+
+    expect($scheme)->not->toBeNull()
+        ->and($scheme->apl_02_template_path)->not->toBeNull();
+
+    Storage::disk('public')->assertExists($scheme->apl_02_template_path);
 });

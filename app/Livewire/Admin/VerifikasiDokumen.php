@@ -2,15 +2,19 @@
 
 namespace App\Livewire\Admin;
 
+use App\Models\AppSetting;
 use App\Models\Registration;
 use App\Models\Scheme;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
 use Livewire\Component;
+use Livewire\WithFileUploads;
 use Livewire\WithPagination;
 
 class VerifikasiDokumen extends Component
 {
+    use WithFileUploads;
     use WithPagination;
 
     public string $tab = 'perlu_review';
@@ -19,7 +23,16 @@ class VerifikasiDokumen extends Component
 
     public string $filterScheme = '';
 
+    public string $adminSignatureName = '';
+
+    public $adminSignatureFile;
+
     protected $queryString = ['tab', 'search', 'filterScheme'];
+
+    public function mount(): void
+    {
+        $this->adminSignatureName = AppSetting::adminSignatureName() ?? '';
+    }
 
     public function updatingSearch(): void
     {
@@ -60,6 +73,50 @@ class VerifikasiDokumen extends Component
         $this->redirectRoute('admin.payment', ['highlight' => $registrationId], navigate: true);
     }
 
+    public function simpanTandaTanganAdmin(): void
+    {
+        $rules = [
+            'adminSignatureName' => 'required|string|max:255',
+        ];
+
+        if (! AppSetting::adminSignaturePath()) {
+            $rules['adminSignatureFile'] = 'required|file|mimes:png,jpg,jpeg|max:2048';
+        } elseif ($this->adminSignatureFile) {
+            $rules['adminSignatureFile'] = 'file|mimes:png,jpg,jpeg|max:2048';
+        }
+
+        $this->validate($rules);
+
+        $storedPath = AppSetting::adminSignaturePath();
+
+        if ($this->adminSignatureFile) {
+            $storedPath = $this->adminSignatureFile->store('documents/signatures/admin', 'public');
+            AppSetting::put('admin_signature_path', $storedPath);
+        }
+
+        AppSetting::put('admin_signature_name', $this->adminSignatureName);
+        $this->reset('adminSignatureFile');
+    }
+
+    public function editTandaTanganAdmin(): void
+    {
+        $this->adminSignatureName = AppSetting::adminSignatureName() ?? '';
+    }
+
+    public function hapusTandaTanganAdmin(): void
+    {
+        $existingPath = AppSetting::adminSignaturePath();
+
+        if ($existingPath) {
+            Storage::disk('public')->delete($existingPath);
+        }
+
+        AppSetting::query()->whereIn('key', ['admin_signature_name', 'admin_signature_path'])->delete();
+
+        $this->adminSignatureName = '';
+        $this->reset('adminSignatureFile');
+    }
+
     public function render(): View
     {
         $query = Registration::with(['user.mahasiswaProfile', 'user.umumProfile', 'scheme'])
@@ -97,6 +154,8 @@ class VerifikasiDokumen extends Component
         return view('livewire.admin.verifikasi-dokumen', [
             'registrations' => $registrations,
             'schemes' => $schemes,
+            'adminSignaturePath' => AppSetting::adminSignaturePath(),
+            'adminSignatureName' => AppSetting::adminSignatureName(),
         ]);
     }
 }

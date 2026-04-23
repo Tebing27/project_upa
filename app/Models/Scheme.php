@@ -18,7 +18,7 @@ class Scheme extends Model
     protected $fillable = [
         'faculty_id', 'study_program_id', 'nama', 'kode_skema',
         'jenis_skema', 'harga', 'izin_nirkertas', 'ringkasan_skema',
-        'deskripsi', 'dokumen_skema_path', 'gambar_path',
+        'deskripsi', 'dokumen_skema_path', 'apl_02_template_path', 'gambar_path',
         'is_active', 'is_popular',
     ];
 

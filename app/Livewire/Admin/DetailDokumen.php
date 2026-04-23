@@ -2,8 +2,10 @@
 
 namespace App\Livewire\Admin;
 
+use App\Models\AppSetting;
 use App\Models\Registration;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
 use Livewire\Component;
 
@@ -35,6 +37,8 @@ class DetailDokumen extends Component
 
     public function verifikasiDokumen(string $docType): void
     {
+        $this->sinkronkanTandaTanganAdmin();
+
         $this->registration->documentStatuses()->updateOrCreate(
             ['document_type' => $docType],
             [
@@ -130,6 +134,35 @@ class DetailDokumen extends Component
         }
 
         $this->registration->save();
+        $this->registration->load('documents', 'documentStatuses');
+    }
+
+    private function sinkronkanTandaTanganAdmin(): void
+    {
+        $signatureName = AppSetting::adminSignatureName();
+        $signaturePath = AppSetting::adminSignaturePath();
+
+        if (! filled($signatureName) || ! filled($signaturePath)) {
+            return;
+        }
+
+        $registrationSignaturePath = $this->registration->admin_signature_path;
+
+        if (! $registrationSignaturePath && Storage::disk('public')->exists($signaturePath)) {
+            $extension = pathinfo($signaturePath, PATHINFO_EXTENSION) ?: 'png';
+            $registrationSignaturePath = 'documents/signatures/admin/registration_'.$this->registration->id.'.'.$extension;
+
+            Storage::disk('public')->copy($signaturePath, $registrationSignaturePath);
+        }
+
+        $this->registration->update([
+            'admin_signatory_name' => $signatureName,
+        ]);
+
+        $this->registration->documents()->updateOrCreate(
+            ['document_type' => 'admin_signature_path'],
+            ['file_path' => $registrationSignaturePath ?? $signaturePath]
+        );
     }
 
     public function render(): View

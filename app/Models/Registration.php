@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -22,7 +23,7 @@ class Registration extends Model
     protected array $legacyExamAttributes = [];
 
     protected $fillable = [
-        'user_id', 'scheme_id', 'type', 'status',
+        'user_id', 'scheme_id', 'type', 'assessment_purpose', 'admin_signatory_name', 'status',
         'payment_reference', 'va_numer', 'payment_proof_path',
         'payment_submitted_at', 'payment_verified_at',
     ];
@@ -70,11 +71,28 @@ class Registration extends Model
         return [
             'fr_apl_01_path' => 'FR APL 01',
             'fr_apl_02_path' => 'FR APL 02',
-            'ktm_path' => 'KTM',
-            'khs_path' => 'KHS',
-            'internship_certificate_path' => 'Sertifikat Magang',
-            'ktp_path' => 'KTP / Scan Foto',
-            'passport_photo_path' => 'Pas Foto 3x4',
+            ...static::apl01RequirementLabels(),
+        ];
+    }
+
+    public static function apl01RequirementLabels(): array
+    {
+        return [
+            'ktm_path' => 'Fotokopi Kartu Mahasiswa (KTM)',
+            'khs_path' => 'Fotokopi Hasil Studi Semester 1 s/d Terbaru / Transkrip',
+            'internship_certificate_path' => 'Fotokopi Sertifikat Magang (Opsional)',
+            'ktp_path' => 'Fotokopi KTP/KK',
+            'passport_photo_path' => 'Pasfoto berwarna 3x4 background merah',
+        ];
+    }
+
+    public static function assessmentPurposeLabels(): array
+    {
+        return [
+            'sertifikasi' => 'Sertifikasi',
+            'paling_lambat_pkt' => 'Pengakuan Kompetensi Terkini (PKT)',
+            'rpl' => 'Rekognisi Pembelajaran Lampau (RPL)',
+            'lainnya' => 'Lainnya',
         ];
     }
 
@@ -122,6 +140,16 @@ class Registration extends Model
     public function visibleDocumentFields(): array
     {
         return static::allDocumentFields();
+    }
+
+    public function apl01RequirementDocumentFields(): array
+    {
+        return array_keys(static::apl01RequirementLabels());
+    }
+
+    public function assessmentPurposeLabel(): string
+    {
+        return static::assessmentPurposeLabels()[$this->assessment_purpose] ?? '-';
     }
 
     public function progressStep(): int
@@ -348,6 +376,26 @@ class Registration extends Model
         $this->legacyDocuments['passport_photo_path'] = $value;
     }
 
+    public function getApplicantSignaturePathAttribute(): ?string
+    {
+        return $this->getDocumentPath('applicant_signature_path');
+    }
+
+    public function setApplicantSignaturePathAttribute(?string $value): void
+    {
+        $this->legacyDocuments['applicant_signature_path'] = $value;
+    }
+
+    public function getAdminSignaturePathAttribute(): ?string
+    {
+        return $this->getDocumentPath('admin_signature_path');
+    }
+
+    public function setAdminSignaturePathAttribute(?string $value): void
+    {
+        $this->legacyDocuments['admin_signature_path'] = $value;
+    }
+
     public function getScoreAttribute(): ?int
     {
         if (! $this->relationLoaded('exam')) {
@@ -365,6 +413,57 @@ class Registration extends Model
 
         return $this->getRelation('documentStatuses')
             ->contains(fn (RegistrationDocumentStatus $status): bool => $status->document_type === '_meta_condensed_flow');
+    }
+
+    public function hasAdminSignatureApproval(): bool
+    {
+        return filled($this->admin_signatory_name) && filled($this->admin_signature_path);
+    }
+
+    public function hasCompletedDocumentVerification(): bool
+    {
+        if (! $this->relationLoaded('documents') || ! $this->relationLoaded('documentStatuses')) {
+            $this->load('documents', 'documentStatuses');
+        }
+
+        $optionalDocs = $this->optionalDocumentFields();
+        $docMap = $this->documents->keyBy('document_type');
+
+        foreach ($this->reviewableDocumentFields() as $field) {
+            if (! $docMap->has($field)) {
+                if (! in_array($field, $optionalDocs, true)) {
+                    return false;
+                }
+
+                continue;
+            }
+
+            if (($this->document_statuses[$field]['status'] ?? 'pending') !== 'verified') {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    public function isApl01PdfDownloadReady(): bool
+    {
+        return $this->hasCompletedDocumentVerification() && $this->hasAdminSignatureApproval();
+    }
+
+    public function latestDocumentVerificationDate(): ?CarbonInterface
+    {
+        if (! $this->relationLoaded('documentStatuses')) {
+            $this->load('documentStatuses');
+        }
+
+        return $this->getRelation('documentStatuses')
+            ->where('status', 'verified')
+            ->whereIn('document_type', $this->reviewableDocumentFields())
+            ->pluck('verified_at')
+            ->filter()
+            ->sort()
+            ->last();
     }
 
     public function setDocumentStatusesAttribute(array $value): void

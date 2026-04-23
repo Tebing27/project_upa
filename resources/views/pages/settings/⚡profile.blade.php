@@ -20,23 +20,23 @@ new #[Title('Profile settings')] class extends Component {
     public ?string $tanggal_lahir = null;
     public ?string $jenis_kelamin = null;
     public ?string $alamat_rumah = null;
-    public ?string $domisili_provinsi = null;
-    public ?string $domisili_kota = null;
-    public ?string $domisili_kecamatan = null;
     public ?string $no_wa = null;
-    public ?string $pendidikan_terakhir = null;
-    public ?string $nama_institusi = null;
+    public ?string $kebangsaan = null;
+    public ?string $kode_pos_rumah = null;
+    public ?string $telp_rumah = null;
+    public ?string $telp_kantor = null;
+    public ?string $kualifikasi_pendidikan = null;
     public ?int $total_sks = null;
     public ?string $status_semester = null;
     public ?string $fakultas = null;
     public ?string $program_studi = null;
-    public ?string $pekerjaan = null;
     public ?string $nama_perusahaan = null;
     public ?string $jabatan = null;
     public ?string $alamat_perusahaan = null;
     public ?string $kode_pos_perusahaan = null;
     public ?string $no_telp_perusahaan = null;
     public ?string $email_perusahaan = null;
+    public ?string $fax_perusahaan = null;
 
     public function mount(): void
     {
@@ -50,23 +50,23 @@ new #[Title('Profile settings')] class extends Component {
         $this->tanggal_lahir = $user->tanggal_lahir ? Carbon::parse($user->tanggal_lahir)->format('Y-m-d') : null;
         $this->jenis_kelamin = $user->jenis_kelamin;
         $this->alamat_rumah = $user->alamat_rumah;
-        $this->domisili_provinsi = $user->domisili_provinsi;
-        $this->domisili_kota = $user->domisili_kota;
-        $this->domisili_kecamatan = $user->domisili_kecamatan;
         $this->no_wa = $user->no_wa;
-        $this->pendidikan_terakhir = $user->pendidikan_terakhir;
-        $this->nama_institusi = $user->nama_institusi;
+        $this->kebangsaan = $user->umumProfile?->kebangsaan;
+        $this->kode_pos_rumah = $user->profile?->kode_pos_rumah;
+        $this->telp_rumah = $user->profile?->telp_rumah;
+        $this->telp_kantor = $user->profile?->telp_kantor;
+        $this->kualifikasi_pendidikan = $user->kualifikasi_pendidikan;
         $this->total_sks = $user->total_sks;
         $this->status_semester = $user->status_semester;
         $this->fakultas = $user->fakultas;
         $this->program_studi = $user->program_studi;
-        $this->pekerjaan = $user->pekerjaan;
         $this->nama_perusahaan = $user->nama_perusahaan;
         $this->jabatan = $user->jabatan;
         $this->alamat_perusahaan = $user->alamat_perusahaan;
         $this->kode_pos_perusahaan = $user->kode_pos_perusahaan;
         $this->no_telp_perusahaan = $user->no_telp_perusahaan;
         $this->email_perusahaan = $user->email_perusahaan;
+        $this->fax_perusahaan = $user->umumProfile?->fax_perusahaan;
     }
 
     public function updateProfileInformation(): void
@@ -79,10 +79,10 @@ new #[Title('Profile settings')] class extends Component {
 
         foreach ([
             'nim', 'no_ktp', 'tempat_lahir', 'tanggal_lahir', 'jenis_kelamin', 'alamat_rumah',
-            'domisili_provinsi', 'domisili_kota', 'domisili_kecamatan', 'no_wa', 'pendidikan_terakhir',
-            'nama_institusi', 'status_semester', 'fakultas', 'program_studi', 'pekerjaan',
+            'no_wa', 'kebangsaan', 'kode_pos_rumah', 'telp_rumah', 'telp_kantor', 'kualifikasi_pendidikan',
+            'status_semester', 'fakultas', 'program_studi',
             'nama_perusahaan', 'jabatan', 'alamat_perusahaan', 'kode_pos_perusahaan',
-            'no_telp_perusahaan', 'email_perusahaan',
+            'no_telp_perusahaan', 'email_perusahaan', 'fax_perusahaan',
         ] as $field) {
             $this->{$field} = filled($this->{$field}) ? trim((string) $this->{$field}) : null;
         }
@@ -108,9 +108,9 @@ new #[Title('Profile settings')] class extends Component {
             'tanggal_lahir' => $validated['tanggal_lahir'] ?? null,
             'jenis_kelamin' => $validated['jenis_kelamin'] ?? null,
             'alamat_rumah' => $validated['alamat_rumah'] ?? null,
-            'domisili_provinsi' => $validated['domisili_provinsi'] ?? null,
-            'domisili_kota' => $validated['domisili_kota'] ?? null,
-            'domisili_kecamatan' => $validated['domisili_kecamatan'] ?? null,
+            'kode_pos_rumah' => $validated['kode_pos_rumah'] ?? null,
+            'telp_rumah' => $validated['telp_rumah'] ?? null,
+            'telp_kantor' => $validated['telp_kantor'] ?? null,
             'no_wa' => $validated['no_wa'] ?? null,
             'fakultas' => $validated['fakultas'] ?? null,
             'program_studi' => $validated['program_studi'] ?? null,
@@ -122,15 +122,15 @@ new #[Title('Profile settings')] class extends Component {
         ]);
         $user->umumProfile()->updateOrCreate([], [
             'no_ktp' => $validated['no_ktp'] ?? null,
-            'pendidikan_terakhir' => $validated['pendidikan_terakhir'] ?? null,
-            'nama_institusi' => $validated['nama_institusi'] ?? null,
-            'nama_pekerjaan' => $validated['pekerjaan'] ?? null,
+            'kebangsaan' => $validated['kebangsaan'] ?? null,
+            'kualifikasi_pendidikan' => $validated['kualifikasi_pendidikan'] ?? null,
             'nama_perusahaan' => $validated['nama_perusahaan'] ?? null,
             'jabatan' => $validated['jabatan'] ?? null,
             'alamat_perusahaan' => $validated['alamat_perusahaan'] ?? null,
             'kode_pos_perusahaan' => $validated['kode_pos_perusahaan'] ?? null,
             'no_telp_perusahaan' => $validated['no_telp_perusahaan'] ?? null,
             'email_perusahaan' => $validated['email_perusahaan'] ?? null,
+            'fax_perusahaan' => $validated['fax_perusahaan'] ?? null,
         ]);
         $user->refresh();
         $user->syncProfileCompletionStatus();
@@ -248,45 +248,21 @@ new #[Title('Profile settings')] class extends Component {
                         </div>
 
                         <div>
-                            <label for="domisili_provinsi" class="block text-sm font-medium text-zinc-900 dark:text-white">Provinsi*</label>
-                            <input id="domisili_provinsi" type="text" wire:model="domisili_provinsi" class="mt-2 block w-full rounded-xl border border-zinc-200 px-4 py-3 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white">
-                            @error('domisili_provinsi') <p class="mt-2 text-sm text-red-600">{{ $message }}</p> @enderror
-                        </div>
-
-                        <div>
-                            <label for="domisili_kota" class="block text-sm font-medium text-zinc-900 dark:text-white">Kota / Kabupaten*</label>
-                            <input id="domisili_kota" type="text" wire:model="domisili_kota" class="mt-2 block w-full rounded-xl border border-zinc-200 px-4 py-3 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white">
-                            @error('domisili_kota') <p class="mt-2 text-sm text-red-600">{{ $message }}</p> @enderror
-                        </div>
-
-                        <div class="md:col-span-2">
-                            <label for="domisili_kecamatan" class="block text-sm font-medium text-zinc-900 dark:text-white">Kecamatan*</label>
-                            <input id="domisili_kecamatan" type="text" wire:model="domisili_kecamatan" class="mt-2 block w-full rounded-xl border border-zinc-200 px-4 py-3 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white">
-                            @error('domisili_kecamatan') <p class="mt-2 text-sm text-red-600">{{ $message }}</p> @enderror
-                        </div>
-
-                        <div>
                             <label for="no_wa" class="block text-sm font-medium text-zinc-900 dark:text-white">No. Telp / No WhatsApp Aktif*</label>
                             <input id="no_wa" type="text" wire:model="no_wa" class="mt-2 block w-full rounded-xl border border-zinc-200 px-4 py-3 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white">
                             @error('no_wa') <p class="mt-2 text-sm text-red-600">{{ $message }}</p> @enderror
                         </div>
 
                         <div>
-                            <label for="pendidikan_terakhir" class="block text-sm font-medium text-zinc-900 dark:text-white">Pendidikan Terakhir*</label>
-                            <input id="pendidikan_terakhir" type="text" wire:model="pendidikan_terakhir" class="mt-2 block w-full rounded-xl border border-zinc-200 px-4 py-3 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white">
-                            @error('pendidikan_terakhir') <p class="mt-2 text-sm text-red-600">{{ $message }}</p> @enderror
+                            <label for="kualifikasi_pendidikan" class="block text-sm font-medium text-zinc-900 dark:text-white">Kualifikasi Pendidikan*</label>
+                            <input id="kualifikasi_pendidikan" type="text" wire:model="kualifikasi_pendidikan" class="mt-2 block w-full rounded-xl border border-zinc-200 px-4 py-3 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white">
+                            @error('kualifikasi_pendidikan') <p class="mt-2 text-sm text-red-600">{{ $message }}</p> @enderror
                         </div>
 
                         <div>
                             <label for="fakultas" class="block text-sm font-medium text-zinc-900 dark:text-white">Fakultas</label>
                             <input id="fakultas" type="text" wire:model="fakultas" class="mt-2 block w-full rounded-xl border border-zinc-200 px-4 py-3 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white">
                             @error('fakultas') <p class="mt-2 text-sm text-red-600">{{ $message }}</p> @enderror
-                        </div>
-
-                        <div>
-                            <label for="nama_institusi" class="block text-sm font-medium text-zinc-900 dark:text-white">Nama Sekolah / Perguruan Tinggi*</label>
-                            <input id="nama_institusi" type="text" wire:model="nama_institusi" class="mt-2 block w-full rounded-xl border border-zinc-200 px-4 py-3 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white">
-                            @error('nama_institusi') <p class="mt-2 text-sm text-red-600">{{ $message }}</p> @enderror
                         </div>
 
                         <div>
@@ -298,18 +274,24 @@ new #[Title('Profile settings')] class extends Component {
                 </div>
 
                 <div class="rounded-3xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
-                    <h3 class="text-xl font-bold text-zinc-900 dark:text-white">b. Data Pekerjaan Sekarang</h3>
+                    <h3 class="text-xl font-bold text-zinc-900 dark:text-white">b. Data Institusi / Perusahaan Sekarang</h3>
                     <div class="mt-6 grid grid-cols-1 gap-6 md:grid-cols-2">
                         <div class="md:col-span-2">
-                            <label for="pekerjaan" class="block text-sm font-medium text-zinc-900 dark:text-white">Pekerjaan*</label>
-                            <input id="pekerjaan" type="text" wire:model="pekerjaan" class="mt-2 block w-full rounded-xl border border-zinc-200 px-4 py-3 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white">
-                            @error('pekerjaan') <p class="mt-2 text-sm text-red-600">{{ $message }}</p> @enderror
-                        </div>
-
-                        <div class="md:col-span-2">
-                            <label for="nama_perusahaan" class="block text-sm font-medium text-zinc-900 dark:text-white">Nama Perusahaan</label>
+                            <label for="nama_perusahaan" class="block text-sm font-medium text-zinc-900 dark:text-white">Nama Institusi / Perusahaan</label>
                             <input id="nama_perusahaan" type="text" wire:model="nama_perusahaan" class="mt-2 block w-full rounded-xl border border-zinc-200 px-4 py-3 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white">
                             @error('nama_perusahaan') <p class="mt-2 text-sm text-red-600">{{ $message }}</p> @enderror
+                        </div>
+
+                        <div>
+                            <label for="telp_rumah" class="block text-sm font-medium text-zinc-900 dark:text-white">No. Telepon Rumah</label>
+                            <input id="telp_rumah" type="text" wire:model="telp_rumah" class="mt-2 block w-full rounded-xl border border-zinc-200 px-4 py-3 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white">
+                            @error('telp_rumah') <p class="mt-2 text-sm text-red-600">{{ $message }}</p> @enderror
+                        </div>
+
+                        <div>
+                            <label for="telp_kantor" class="block text-sm font-medium text-zinc-900 dark:text-white">No. Telepon Kantor</label>
+                            <input id="telp_kantor" type="text" wire:model="telp_kantor" class="mt-2 block w-full rounded-xl border border-zinc-200 px-4 py-3 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white">
+                            @error('telp_kantor') <p class="mt-2 text-sm text-red-600">{{ $message }}</p> @enderror
                         </div>
 
                         <div class="md:col-span-2">
@@ -351,7 +333,7 @@ new #[Title('Profile settings')] class extends Component {
                         <div><label for="no_wa" class="block text-sm font-medium">No. WhatsApp</label><input id="no_wa" type="text" wire:model="no_wa" class="mt-2 block w-full rounded-xl border border-zinc-200 px-4 py-3 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white">@error('no_wa') <p class="mt-2 text-sm text-red-600">{{ $message }}</p> @enderror</div>
                         <div><label for="fakultas" class="block text-sm font-medium">Fakultas</label><input id="fakultas" type="text" wire:model="fakultas" class="mt-2 block w-full rounded-xl border border-zinc-200 px-4 py-3 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white">@error('fakultas') <p class="mt-2 text-sm text-red-600">{{ $message }}</p> @enderror</div>
                         <div><label for="program_studi" class="block text-sm font-medium">Program Studi</label><input id="program_studi" type="text" wire:model="program_studi" class="mt-2 block w-full rounded-xl border border-zinc-200 px-4 py-3 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white">@error('program_studi') <p class="mt-2 text-sm text-red-600">{{ $message }}</p> @enderror</div>
-                        <div><label for="pendidikan_terakhir" class="block text-sm font-medium">Pendidikan Terakhir</label><input id="pendidikan_terakhir" type="text" wire:model="pendidikan_terakhir" class="mt-2 block w-full rounded-xl border border-zinc-200 px-4 py-3 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white">@error('pendidikan_terakhir') <p class="mt-2 text-sm text-red-600">{{ $message }}</p> @enderror</div>
+                        <div><label for="kualifikasi_pendidikan" class="block text-sm font-medium">Kualifikasi Pendidikan</label><input id="kualifikasi_pendidikan" type="text" wire:model="kualifikasi_pendidikan" class="mt-2 block w-full rounded-xl border border-zinc-200 px-4 py-3 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white">@error('kualifikasi_pendidikan') <p class="mt-2 text-sm text-red-600">{{ $message }}</p> @enderror</div>
                         <div><label for="total_sks" class="block text-sm font-medium">Total SKS</label><input id="total_sks" type="number" wire:model="total_sks" class="mt-2 block w-full rounded-xl border border-zinc-200 px-4 py-3 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white">@error('total_sks') <p class="mt-2 text-sm text-red-600">{{ $message }}</p> @enderror</div>
                         <div><label for="status_semester" class="block text-sm font-medium">Status Semester</label><input id="status_semester" type="text" wire:model="status_semester" class="mt-2 block w-full rounded-xl border border-zinc-200 px-4 py-3 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white">@error('status_semester') <p class="mt-2 text-sm text-red-600">{{ $message }}</p> @enderror</div>
                         <div><label for="no_ktp" class="block text-sm font-medium">No KTP</label><input id="no_ktp" type="text" wire:model="no_ktp" class="mt-2 block w-full rounded-xl border border-zinc-200 px-4 py-3 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white">@error('no_ktp') <p class="mt-2 text-sm text-red-600">{{ $message }}</p> @enderror</div>

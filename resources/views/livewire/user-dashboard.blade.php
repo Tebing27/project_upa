@@ -578,9 +578,9 @@
                         </div>
                         <div class="rounded-xl border border-gray-200 bg-white p-4">
                             <p class="text-[10px] font-bold uppercase tracking-wider text-gray-400">
-                                {{ $isGeneralUser ? 'Instansi Pendidikan' : 'Program Studi' }}</p>
+                                {{ $isGeneralUser ? 'Nama Institusi / Perusahaan' : 'Program Studi' }}</p>
                             <p class="mt-1.5 font-medium text-gray-900">
-                                {{ $isGeneralUser ? ($dashboardUser->nama_institusi ?: '-') : ($dashboardUser->program_studi ?: '-') }}
+                                {{ $isGeneralUser ? ($dashboardUser->nama_perusahaan ?: '-') : ($dashboardUser->program_studi ?: '-') }}
                             </p>
                         </div>
                         <div class="rounded-xl border border-gray-200 bg-white p-4">
@@ -592,9 +592,9 @@
                         </div>
                         <div class="rounded-xl border border-gray-200 bg-white p-4">
                             <p class="text-[10px] font-bold uppercase tracking-wider text-gray-400">
-                                {{ $isGeneralUser ? 'Pekerjaan' : 'Tanggal Daftar' }}</p>
+                                {{ $isGeneralUser ? 'Telepon Kantor' : 'Tanggal Daftar' }}</p>
                             <p class="mt-1.5 font-medium text-gray-900">
-                                {{ $isGeneralUser ? ($dashboardUser->pekerjaan ?: '-') : $registrationDate }}</p>
+                                {{ $isGeneralUser ? ($dashboardUser->profile?->telp_kantor ?: '-') : $registrationDate }}</p>
                         </div>
                         <div class="rounded-xl border border-gray-200 bg-white p-4">
                             <p class="text-[10px] font-bold uppercase tracking-wider text-gray-400">

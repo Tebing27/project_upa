@@ -41,6 +41,64 @@
         </div>
     </div>
 
+    <div class="rounded-[1.25rem] border border-emerald-100 bg-white p-6 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)]">
+        <div class="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
+            <div class="max-w-2xl">
+                <h2 class="text-lg font-bold text-gray-900">Tanda Tangan Admin Global</h2>
+                <p class="mt-1 text-sm text-gray-500">
+                    Nama dan tanda tangan ini disimpan satu kali di halaman index. Saat admin memverifikasi dokumen peserta, sistem otomatis menempelkan data ini ke pendaftaran peserta tersebut.
+                </p>
+            </div>
+
+            <div class="w-full max-w-xl space-y-4">
+                @if ($adminSignaturePath)
+                    <div class="overflow-hidden rounded-2xl border border-emerald-100 bg-emerald-50/40 p-4">
+                        <p class="text-sm font-semibold text-slate-800">{{ $adminSignatureName ?: '-' }}</p>
+                        <img src="{{ Storage::url($adminSignaturePath) }}" alt="Tanda tangan admin global"
+                            class="mt-3 h-28 w-full object-contain rounded-xl bg-white p-3">
+                    </div>
+                @endif
+
+                <div class="grid gap-4 md:grid-cols-[1fr_auto] md:items-end">
+                    <div>
+                        <label class="mb-2 block text-xs font-semibold uppercase tracking-wider text-slate-500">Nama Penandatangan</label>
+                        <input type="text" wire:model="adminSignatureName"
+                            class="block w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700">
+                        @error('adminSignatureName')
+                            <p class="mt-1.5 text-xs text-red-600">{{ $message }}</p>
+                        @enderror
+                    </div>
+                    <button wire:click="editTandaTanganAdmin"
+                        class="inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white px-5 py-3 text-sm font-bold text-slate-700 hover:bg-slate-50">
+                        Edit Nama
+                    </button>
+                </div>
+
+                <div>
+                    <label class="mb-2 block text-xs font-semibold uppercase tracking-wider text-slate-500">File Tanda Tangan</label>
+                    <input type="file" wire:model="adminSignatureFile"
+                        class="block w-full text-xs text-slate-500 file:mr-2 file:rounded-md file:border-0 file:bg-slate-100 file:px-3 file:py-2 file:text-xs file:font-semibold file:text-slate-700 hover:file:bg-slate-200">
+                    @error('adminSignatureFile')
+                        <p class="mt-1.5 text-xs text-red-600">{{ $message }}</p>
+                    @enderror
+                </div>
+
+                <div class="flex flex-wrap gap-3">
+                    <button wire:click="simpanTandaTanganAdmin"
+                        class="inline-flex items-center justify-center rounded-xl bg-emerald-400 px-5 py-3 text-sm font-bold text-black hover:bg-emerald-500">
+                        Simpan Tanda Tangan Admin
+                    </button>
+                    @if ($adminSignaturePath || $adminSignatureName)
+                        <button wire:click="hapusTandaTanganAdmin"
+                            class="inline-flex items-center justify-center rounded-xl border border-red-200 bg-white px-5 py-3 text-sm font-bold text-red-600 hover:bg-red-50">
+                            Delete Tanda Tangan Admin
+                        </button>
+                    @endif
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div class="space-y-4">
         @forelse($registrations as $reg)
             <div

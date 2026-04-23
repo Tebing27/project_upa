@@ -2,8 +2,12 @@
 
 namespace App\Livewire;
 
+use App\Models\AppSetting;
+use App\Models\Registration;
 use App\Models\Scheme;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Illuminate\View\View;
 use Livewire\Component;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -13,6 +17,31 @@ class UserCertificatesPage extends Component
     public string $filterStatus = '';
 
     public string $filterFaculty = '';
+
+    public function downloadCompetencyLetter(int $registrationId): StreamedResponse
+    {
+        $registration = auth()->user()->registrations()
+            ->with(['scheme', 'user.mahasiswaProfile', 'user.umumProfile', 'exam'])
+            ->where('status', 'kompeten')
+            ->findOrFail($registrationId);
+
+        abort_unless(AppSetting::hasCompetencyLetterAssets(), 404, 'Surat keterangan belum disiapkan admin.');
+
+        $html = view('documents.competency-letter', [
+            'registration' => $registration,
+            'signatoryName' => AppSetting::competencyLetterSignatoryName(),
+            'signatureImage' => $this->dataUrlFromPublicPath(AppSetting::competencyLetterSignaturePath()),
+            'stampImage' => $this->dataUrlFromPublicPath(AppSetting::competencyLetterStampPath()),
+        ])->render();
+
+        $fileName = 'surat-keterangan-kompeten-'.Str::slug($registration->scheme?->nama ?? 'sertifikasi').'.doc';
+
+        return response()->streamDownload(function () use ($html): void {
+            echo $html;
+        }, $fileName, [
+            'Content-Type' => 'application/msword',
+        ]);
+    }
 
     public function downloadCertificateAsPdf(int $certificateId): StreamedResponse
     {
@@ -75,10 +104,37 @@ class UserCertificatesPage extends Component
             $certificates = $certificates->filter(fn ($cert): bool => $cert->scheme?->faculty?->name === $this->filterFaculty);
         }
 
+        $pendingCompetencyRegistrations = $user->registrations()
+            ->with(['scheme', 'exam'])
+            ->where('status', 'kompeten')
+            ->latest()
+            ->get()
+            ->unique('scheme_id')
+            ->filter(function (Registration $registration) use ($allCertificates): bool {
+                return ! $allCertificates->contains(
+                    fn ($certificate): bool => $certificate->scheme_id === $registration->scheme_id && $certificate->is_active
+                );
+            })
+            ->values();
+
         return view('livewire.user-certificates-page', [
             'activeCertificate' => $allCertificates->first(fn ($cert): bool => $cert->is_active),
             'certificates' => $certificates->values(),
             'faculties' => $this->faculties,
+            'pendingCompetencyRegistrations' => $pendingCompetencyRegistrations,
+            'hasCompetencyLetterAssets' => AppSetting::hasCompetencyLetterAssets(),
         ]);
+    }
+
+    private function dataUrlFromPublicPath(?string $path): ?string
+    {
+        if (! $path || ! Storage::disk('public')->exists($path)) {
+            return null;
+        }
+
+        $contents = Storage::disk('public')->get($path);
+        $mimeType = Storage::disk('public')->mimeType($path) ?: 'image/png';
+
+        return 'data:'.$mimeType.';base64,'.base64_encode($contents);
     }
 }

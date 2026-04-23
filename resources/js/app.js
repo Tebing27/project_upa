@@ -1,4 +1,5 @@
 import Quill from 'quill';
+import SignaturePad from 'signature_pad';
 import 'quill/dist/quill.snow.css';
 
 const Font = Quill.import('formats/font');
@@ -13,3 +14,4 @@ if (typeof Table.register === 'function') {
 Quill.register('modules/table', Table, true);
 
 window.Quill = Quill;
+window.SignaturePad = SignaturePad;

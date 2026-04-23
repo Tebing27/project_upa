@@ -97,8 +97,8 @@ class DatabaseSeeder extends Seeder
         ]);
         $umum->umumProfile()->create([
             'no_ktp' => '3174000000000001',
-            'pendidikan_terakhir' => 'S1',
-            'nama_pekerjaan' => 'Software Engineer',
+            'kualifikasi_pendidikan' => 'S1',
+            'nama_perusahaan' => 'PT Contoh Indonesia',
         ]);
         $umum->profile()->create([
             'jenis_kelamin' => 'L',

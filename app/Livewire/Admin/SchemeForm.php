@@ -45,6 +45,9 @@ class SchemeForm extends Component
     /** @var TemporaryUploadedFile|null */
     public $dokumen_skema;
 
+    /** @var TemporaryUploadedFile|null */
+    public $apl_02_template;
+
     public string $newFacultyName = '';
 
     public string $newStudyProgramName = '';
@@ -52,6 +55,8 @@ class SchemeForm extends Component
     public ?string $existingGambarUrl = null;
 
     public ?string $existingDokumenUrl = null;
+
+    public ?string $existingApl02TemplateUrl = null;
 
     public string $activeTab = 'info';
 
@@ -87,6 +92,7 @@ class SchemeForm extends Component
             $this->description = $scheme->deskripsi ?? '';
             $this->existingGambarUrl = $scheme->gambar_path ? Storage::url($scheme->gambar_path) : null;
             $this->existingDokumenUrl = $scheme->dokumen_skema_path ? Storage::url($scheme->dokumen_skema_path) : null;
+            $this->existingApl02TemplateUrl = $scheme->apl_02_template_path ? Storage::url($scheme->apl_02_template_path) : null;
             $this->unitKompetensis = $scheme->unitKompetensis->map(fn ($uk) => [
                 'kode_unit' => $uk->kode_unit,
                 'nama_unit' => $uk->nama_unit,
@@ -184,6 +190,7 @@ class SchemeForm extends Component
             'description' => 'nullable|string',
             'gambar' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
             'dokumen_skema' => 'nullable|file|mimes:pdf|max:4096',
+            'apl_02_template' => 'nullable|file|mimes:docx|max:4096',
             'unitKompetensis.*.kode_unit' => 'required|string|max:255',
             'unitKompetensis.*.nama_unit' => 'required|string|max:255',
             'unitKompetensis.*.nama_unit_en' => 'nullable|string|max:255',
@@ -246,6 +253,7 @@ class SchemeForm extends Component
 
         $gambarPath = null;
         $dokumenPath = null;
+        $apl02TemplatePath = null;
 
         if ($this->gambar) {
             $gambarPath = $this->gambar->store('schemes/images', 'public');
@@ -253,6 +261,10 @@ class SchemeForm extends Component
 
         if ($this->dokumen_skema) {
             $dokumenPath = $this->dokumen_skema->store('schemes/documents', 'public');
+        }
+
+        if ($this->apl_02_template) {
+            $apl02TemplatePath = $this->apl_02_template->store('schemes/apl-02-templates', 'public');
         }
 
         $data = [
@@ -273,6 +285,10 @@ class SchemeForm extends Component
 
         if ($dokumenPath) {
             $data['dokumen_skema_path'] = $dokumenPath;
+        }
+
+        if ($apl02TemplatePath) {
+            $data['apl_02_template_path'] = $apl02TemplatePath;
         }
 
         if ($this->schemeId) {
