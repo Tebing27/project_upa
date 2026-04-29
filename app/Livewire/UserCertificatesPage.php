@@ -25,6 +25,18 @@ class UserCertificatesPage extends Component
             ->where('status', 'kompeten')
             ->findOrFail($registrationId);
 
+        if ($registration->exam?->exam_result_path) {
+            $filePath = $registration->exam->exam_result_path;
+
+            abort_unless(Storage::disk('public')->exists($filePath), 404, 'File surat keterangan tidak ditemukan.');
+
+            return response()->streamDownload(function () use ($filePath): void {
+                echo Storage::disk('public')->get($filePath);
+            }, 'surat-keterangan-kompeten-'.Str::slug($registration->scheme?->nama ?? 'sertifikasi').'.pdf', [
+                'Content-Type' => 'application/pdf',
+            ]);
+        }
+
         abort_unless(AppSetting::hasCompetencyLetterAssets(), 404, 'Surat keterangan belum disiapkan admin.');
 
         $html = view('documents.competency-letter', [

@@ -10,7 +10,7 @@ test('profile page is displayed', function () {
 });
 
 test('profile information can be updated', function () {
-    $user = User::factory()->create();
+    $user = createMahasiswaUser();
 
     $this->actingAs($user);
 
@@ -47,12 +47,13 @@ test('general user can complete biodata from profile page', function () {
         ->set('tempat_lahir', 'Jakarta')
         ->set('tanggal_lahir', '1998-04-10')
         ->set('alamat_rumah', 'Jl. Contoh No. 1')
+        ->set('kode_pos_rumah', '12950')
         ->set('telp_rumah', '0211234567')
         ->set('telp_kantor', '0217654321')
         ->set('no_wa', '081234567890')
         ->set('kualifikasi_pendidikan', 'S1')
         ->set('nama_perusahaan', 'Universitas Contoh')
-        ->set('program_studi', 'Teknik Informatika')
+        ->set('kode_pos_perusahaan', '12950')
         ->call('updateProfileInformation')
         ->assertHasNoErrors();
 
@@ -65,7 +66,7 @@ test('general user can complete biodata from profile page', function () {
 });
 
 test('email verification status is unchanged when email address is unchanged', function () {
-    $user = User::factory()->create();
+    $user = createMahasiswaUser();
 
     $this->actingAs($user);
 

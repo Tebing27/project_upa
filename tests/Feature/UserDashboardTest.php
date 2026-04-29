@@ -3,6 +3,7 @@
 use App\Models\AppSetting;
 use App\Models\User;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Storage;
 
 it('renders the user dashboard with the new summary cards', function () {
     $user = createMahasiswaUser();
@@ -49,7 +50,7 @@ it('displays the active certificate summary from the database', function () {
 });
 
 it('shows rejected document details in progress step two', function () {
-    $user = User::factory()->create();
+    $user = createMahasiswaUser();
     $scheme = createScheme(['nama' => 'Junior Web Developer']);
 
     createRegistrationWithRelations($user, $scheme, [
@@ -65,7 +66,8 @@ it('shows rejected document details in progress step two', function () {
         ->get('/dashboard')
         ->assertOk()
         ->assertSee('Lengkapi Dokumen')
-        ->assertSee('KHS ditolak')
+        ->assertSee('Fotokopi Hasil Studi')
+        ->assertSee('ditolak')
         ->assertSee('Dokumen buram dan tidak terbaca.')
         ->assertSee('Upload Ulang Dokumen')
         ->assertSee('Lihat status pendaftaran');
@@ -119,8 +121,10 @@ it('shows certificate and exam result download actions when files are available'
         ->assertOk()
         ->assertSee('Daftar Skema Baru')
         ->assertSee(route('dashboard.skema'), false)
+        ->assertSee(Storage::url('certificates/jwd.pdf'), false)
         ->assertSee('Unduh Sertifikat')
-        ->assertSee('Unduh Hasil Ujian');
+        ->assertSee('Unduh Surat Keterangan')
+        ->assertDontSee('Unduh Hasil Ujian');
 });
 
 it('shows Daftar Ulang button when status is tidak_kompeten', function () {
@@ -143,7 +147,7 @@ it('shows Daftar Ulang button when status is tidak_kompeten', function () {
         ->assertSee('Belum Kompeten')
         ->assertSee('Unduh Hasil Ujian')
         ->assertSee(e(route('dashboard.daftar-skema', [
-            'type' => 'perpanjangan',
+            'type' => 'baru',
             'scheme' => $scheme->id,
             'source' => 'dashboard-skema',
         ])), false)
@@ -166,23 +170,34 @@ it('shows review status when documents are being verified', function () {
         ->assertSee('Lihat Detail Status');
 });
 
-it('shows payment instructions and recent scheme history during payment stage', function () {
-    $user = User::factory()->create();
+it('shows payment instructions only for the current scheme during payment stage', function () {
+    $user = createMahasiswaUser();
     $scheme = createScheme(['nama' => 'Junior Web Developer']);
+    $oldScheme = createScheme(['nama' => 'Skema Lama']);
+
+    createRegistrationWithRelations($user, $oldScheme, [
+        'status' => 'sertifikat_terbit',
+        'created_at' => now()->subMonth(),
+        'updated_at' => now()->subMonth(),
+    ]);
 
     createRegistrationWithRelations($user, $scheme, [
         'status' => 'dokumen_ok',
         'payment_reference' => 'PAY-001',
+        'created_at' => now(),
+        'updated_at' => now(),
     ]);
 
     $this->actingAs($user)
         ->get('/dashboard')
         ->assertOk()
         ->assertSee('Tahap Pembayaran')
-        ->assertSee('Kode Instruksi Pembayaran')
+        ->assertSee('Kode Instruksi')
+        ->assertSee('Pembayaran')
         ->assertSee('PAY-001')
-        ->assertSee('Riwayat Skema')
-        ->assertSee('Junior Web Developer');
+        ->assertSee('Skema Saat Ini')
+        ->assertSee('Junior Web Developer')
+        ->assertDontSee('Skema Lama');
 });
 
 it('shows biodata completion call to action for incomplete general users', function () {
@@ -191,8 +206,68 @@ it('shows biodata completion call to action for incomplete general users', funct
     $this->actingAs($user)
         ->get('/dashboard')
         ->assertOk()
-        ->assertSee('Biodata Belum Lengkap')
-        ->assertSee('Lengkapi biodata di tahap kedua daftar skema')
+        ->assertSee('Biodata Belum')
+        ->assertSee('Lengkap')
+        ->assertSee('Lengkapi biodata di tahap kedua daftar')
+        ->assertSee('skema')
         ->assertSee('Lihat Skema')
         ->assertSee('Daftar Skema');
+});
+
+it('keeps the main registration details visible when biodata is incomplete', function () {
+    $user = createGeneralUser(
+        ['nama' => 'Umum Test'],
+        [
+            'no_wa' => '081234567890',
+            'kode_pos_rumah' => null,
+        ],
+        [
+            'no_ktp' => '232323',
+            'nama_perusahaan' => 'PT Contoh',
+            'kode_pos_perusahaan' => null,
+        ],
+    );
+
+    $scheme = createScheme(['nama' => 'Skema Sertifikasi Network Administrator']);
+
+    createRegistrationWithRelations($user, $scheme, [
+        'status' => 'sertifikat_terbit',
+    ]);
+
+    $this->actingAs($user)
+        ->get('/dashboard')
+        ->assertOk()
+        ->assertSee('Detail Pendaftaran')
+        ->assertSee('Umum Test')
+        ->assertSee('NIK')
+        ->assertSee('232323')
+        ->assertSee('Skema Sertifikasi Network Administrator')
+        ->assertSee('PT Contoh')
+        ->assertSee('081234567890')
+        ->assertDontSee('Biodata Belum')
+        ->assertDontSee('Lengkapi biodata di tahap kedua daftar');
+});
+
+it('shows jurusan instead of institution for mahasiswa registration details', function () {
+    $user = createMahasiswaUser(
+        profile: [
+            'no_wa' => '081234567890',
+        ],
+        mahasiswaProfile: [
+            'nim' => '2210511042',
+            'program_studi' => 'Informatika',
+        ],
+    );
+    $scheme = createScheme(['nama' => 'Junior Web Developer']);
+
+    createRegistrationWithRelations($user, $scheme, [
+        'status' => 'menunggu_verifikasi',
+    ]);
+
+    $this->actingAs($user)
+        ->get('/dashboard')
+        ->assertOk()
+        ->assertSee('Jurusan')
+        ->assertSee('Informatika')
+        ->assertDontSee('Nama Institusi /');
 });

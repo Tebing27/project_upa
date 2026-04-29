@@ -8,13 +8,12 @@ use App\Models\User;
 use Carbon\Carbon;
 use Livewire\Livewire;
 
-it('hides sertifikat_terbit registration when a perpanjangan registration exists for the same user and scheme', function () {
+it('keeps legacy renewal registrations as normal upload rows without hiding previous certificates', function () {
     $admin = User::factory()->create(['role' => 'admin']);
     $scheme = Scheme::factory()->create(['name' => 'Junior Web Developer']);
     $user = User::factory()->create(['name' => 'John Doe']);
 
-    // Original registration
-    $reg1 = Registration::factory()->create([
+    Registration::factory()->create([
         'user_id' => $user->id,
         'scheme_id' => $scheme->id,
         'type' => 'baru',
@@ -22,8 +21,7 @@ it('hides sertifikat_terbit registration when a perpanjangan registration exists
         'exam_date' => Carbon::parse('2023-01-01 10:00:00'),
     ]);
 
-    // Renewal registration
-    $reg2 = Registration::factory()->create([
+    Registration::factory()->create([
         'user_id' => $user->id,
         'scheme_id' => $scheme->id,
         'type' => 'perpanjangan',
@@ -38,12 +36,12 @@ it('hides sertifikat_terbit registration when a perpanjangan registration exists
     Livewire::actingAs($admin)
         ->test(UploadHasilUji::class)
         ->assertSee('John Doe')
-        ->assertSee('Perpanjangan') // Badge
-        ->assertSee('10 Apr 2026') // Date of perpanjangan
-        ->assertDontSee('01 Jan 2023'); // Date of old registration shouldn't be visible
+        ->assertSee('10 Apr 2026')
+        ->assertSee('01 Jan 2023')
+        ->assertDontSee('bg-blue-500');
 });
 
-it('shows Perpanjangan button for perpanjangan registrations instead of Upload Sekarang', function () {
+it('shows normal upload buttons for legacy renewal registrations', function () {
     $admin = User::factory()->create(['role' => 'admin']);
     $scheme = Scheme::factory()->create(['name' => 'Junior Web Developer']);
     $user1 = User::factory()->create(['name' => 'User Renewal']);
@@ -74,11 +72,10 @@ it('shows Perpanjangan button for perpanjangan registrations instead of Upload S
     Livewire::actingAs($admin)
         ->test(UploadHasilUji::class)
         ->assertSee('User Renewal')
-        ->assertSee('bg-blue-500')
-        ->assertSee('Perpanjangan')
         ->assertSee('User Baru')
         ->assertSee('bg-emerald-400')
-        ->assertSee('Upload Sekarang');
+        ->assertSee('Upload Sekarang')
+        ->assertDontSee('bg-blue-500');
 });
 
 it('prevents exam result uploads when a terjadwal registration has no complete schedule data', function () {

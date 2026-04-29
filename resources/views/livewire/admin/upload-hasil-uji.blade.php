@@ -2,7 +2,7 @@
     <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div>
             <h1 class="text-2xl font-bold tracking-tight text-gray-900">Upload Hasil Uji</h1>
-            <p class="mt-1 text-sm text-gray-500">Unggah sertifikat dan hasil ujian PDF peserta yang telah selesai ujian.
+            <p class="mt-1 text-sm text-gray-500">Unggah surat keterangan dan sertifikat copy peserta yang telah selesai ujian.
             </p>
         </div>
         <div class="flex flex-wrap items-center gap-2">
@@ -179,10 +179,6 @@
                                 <div class="flex items-center gap-2">
                                     <span class="text-sm font-semibold text-gray-900 leading-none">
                                         {{ $registration->user->name }}</span>
-                                    @if ($registration->type === 'perpanjangan')
-                                        <span
-                                            class="inline-flex items-center rounded-full bg-blue-50 px-2 py-0.5 text-xs font-bold text-blue-600 border border-blue-100">Perpanjangan</span>
-                                    @endif
                                 </div>
                                 <p class="mt-2 text-xs font-semibold text-gray-500 uppercase tracking-wide">
                                     {{ $registration->user->isGeneralUser() ? ($registration->user->no_ktp ?: '-') : ($registration->user->nim ?: '-') }} • {{ $registration->scheme?->name ?: '-' }}
@@ -242,7 +238,7 @@
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                                     d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                                             </svg>
-                                            Hasil Ujian PDF
+                                            Surat Keterangan PDF
                                         </a>
                                     @endif
 
@@ -265,23 +261,10 @@
                                             Hapus
                                         </button>
                                     @else
-                                        @if ($registration->type === 'perpanjangan')
-                                            <button wire:click="openUploadModal({{ $registration->id }})"
-                                                class="inline-flex items-center gap-1.5 rounded-xl bg-blue-500 px-5 py-2.5 text-sm font-semibold text-white hover:bg-blue-600 transition-colors shadow-sm">
-                                                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24"
-                                                    stroke="currentColor">
-                                                    <path stroke-linecap="round" stroke-linejoin="round"
-                                                        stroke-width="2"
-                                                        d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                                                </svg>
-                                                Perpanjangan
-                                            </button>
-                                        @else
-                                            <button wire:click="openUploadModal({{ $registration->id }})"
-                                                class="inline-flex items-center gap-2 rounded-xl bg-emerald-400 px-5 py-2.5 text-sm font-semibold text-black hover:bg-emerald-500 transition-colors shadow-sm">
-                                                Upload Sekarang
-                                            </button>
-                                        @endif
+                                        <button wire:click="openUploadModal({{ $registration->id }})"
+                                            class="inline-flex items-center gap-2 rounded-xl bg-emerald-400 px-5 py-2.5 text-sm font-semibold text-black hover:bg-emerald-500 transition-colors shadow-sm">
+                                            Upload Sekarang
+                                        </button>
                                     @endif
                                 </div>
                             </td>
@@ -328,7 +311,7 @@
                             <div class="mb-6 flex items-start justify-between">
                                 <div>
                                     <h3 class="text-xl font-bold text-gray-900">
-                                        {{ $selectedUploadRegistration?->active_certificate_id ? 'Perbarui Hasil Ujian' : ($selectedUploadRegistration?->status === 'kompeten' ? 'Upload Sertifikat Copy' : 'Upload Hasil Ujian') }}
+                                        {{ $selectedUploadRegistration?->active_certificate_id ? 'Perbarui Surat Keterangan / Sertifikat' : ($selectedUploadRegistration?->status === 'kompeten' ? 'Upload Sertifikat Copy' : 'Upload Surat Keterangan') }}
                                     </h3>
                                     <p class="mt-1 text-sm text-gray-500 font-medium">
                                         {{ $selectedUploadRegistration?->user?->name ?: '-' }}
@@ -347,7 +330,7 @@
                                 <div>
                                     <label
                                         class="block text-xs font-semibold uppercase tracking-wider text-gray-500 mb-2.5">Keputusan
-                                        Hasil Ujian</label>
+                                        Hasil Uji</label>
                                     <select wire:model.live="examResult"
                                         class="block w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50/50 text-sm font-semibold text-gray-900 outline-none transition-all hover:bg-white hover:border-slate-300 focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 focus:bg-white">
                                         <option value="kompeten">Lulus (Kompeten)</option>
@@ -394,7 +377,7 @@
                                 <div>
                                     <label
                                         class="block text-xs font-semibold uppercase tracking-wider text-gray-500 mb-2.5">File
-                                        Detail Hasil Ujian (PDF)</label>
+                                        Surat Keterangan (PDF)</label>
                                     <input wire:model="resultFile" type="file" accept=".pdf"
                                         class="block w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-slate-50/50 text-xs font-semibold text-slate-700 outline-none transition-all hover:bg-white hover:border-slate-300 focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 focus:bg-white file:mr-3.5 file:rounded-lg file:border-0 file:bg-gray-900 file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-white" />
                                     @if (
@@ -425,7 +408,7 @@
                                                 <span class="font-bold">Penting:</span> Peserta akan langsung dapat
                                                 melihat status
                                                 {{ $examResult === 'kompeten' ? 'Lulus' : 'Tidak Lolos' }} di dashboard
-                                                mereka setelah Anda menekan tombol Simpan.
+                                                mereka setelah Anda menekan tombol Simpan. Untuk peserta kompeten, surat keterangan wajib tersedia sebelum sertifikat copy diunggah.
                                             @endif
                                         </div>
                                     </div>
@@ -483,7 +466,7 @@
                             <div>
                                 <h3 class="text-xl font-bold text-gray-900">Hapus Hasil Upload</h3>
                                 <p class="mt-2 text-sm text-gray-500 leading-relaxed">
-                                    Berkas hasil ujian dan sertifikat untuk <span
+                                    Berkas surat keterangan dan sertifikat untuk <span
                                         class="font-bold text-gray-800">{{ $selectedDeleteRegistration?->user?->name ?: 'peserta ini' }}</span>
                                     akan dihapus permanen. Status peserta akan kembali menjadi terjadwal.
                                 </p>

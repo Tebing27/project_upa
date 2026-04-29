@@ -112,14 +112,16 @@ new #[Title('Profile settings')] class extends Component {
             'telp_rumah' => $validated['telp_rumah'] ?? null,
             'telp_kantor' => $validated['telp_kantor'] ?? null,
             'no_wa' => $validated['no_wa'] ?? null,
-            'fakultas' => $validated['fakultas'] ?? null,
-            'program_studi' => $validated['program_studi'] ?? null,
         ]);
-        $user->mahasiswaProfile()->updateOrCreate([], [
-            'nim' => $validated['nim'] ?? null,
-            'total_sks' => $validated['total_sks'] ?? null,
-            'status_semester' => $validated['status_semester'] ?? null,
-        ]);
+        if ($user->isUpnvjUser()) {
+            $user->mahasiswaProfile()->updateOrCreate([], [
+                'nim' => $validated['nim'] ?? null,
+                'total_sks' => $validated['total_sks'] ?? null,
+                'status_semester' => $validated['status_semester'] ?? null,
+                'fakultas' => $validated['fakultas'] ?? null,
+                'program_studi' => $validated['program_studi'] ?? null,
+            ]);
+        }
         $user->umumProfile()->updateOrCreate([], [
             'no_ktp' => $validated['no_ktp'] ?? null,
             'kebangsaan' => $validated['kebangsaan'] ?? null,
@@ -248,6 +250,12 @@ new #[Title('Profile settings')] class extends Component {
                         </div>
 
                         <div>
+                            <label for="kode_pos_rumah" class="block text-sm font-medium text-zinc-900 dark:text-white">Kode Pos*</label>
+                            <input id="kode_pos_rumah" type="text" wire:model="kode_pos_rumah" class="mt-2 block w-full rounded-xl border border-zinc-200 px-4 py-3 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white">
+                            @error('kode_pos_rumah') <p class="mt-2 text-sm text-red-600">{{ $message }}</p> @enderror
+                        </div>
+
+                        <div>
                             <label for="no_wa" class="block text-sm font-medium text-zinc-900 dark:text-white">No. Telp / No WhatsApp Aktif*</label>
                             <input id="no_wa" type="text" wire:model="no_wa" class="mt-2 block w-full rounded-xl border border-zinc-200 px-4 py-3 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white">
                             @error('no_wa') <p class="mt-2 text-sm text-red-600">{{ $message }}</p> @enderror
@@ -259,17 +267,6 @@ new #[Title('Profile settings')] class extends Component {
                             @error('kualifikasi_pendidikan') <p class="mt-2 text-sm text-red-600">{{ $message }}</p> @enderror
                         </div>
 
-                        <div>
-                            <label for="fakultas" class="block text-sm font-medium text-zinc-900 dark:text-white">Fakultas</label>
-                            <input id="fakultas" type="text" wire:model="fakultas" class="mt-2 block w-full rounded-xl border border-zinc-200 px-4 py-3 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white">
-                            @error('fakultas') <p class="mt-2 text-sm text-red-600">{{ $message }}</p> @enderror
-                        </div>
-
-                        <div>
-                            <label for="program_studi" class="block text-sm font-medium text-zinc-900 dark:text-white">Jurusan / Program Studi*</label>
-                            <input id="program_studi" type="text" wire:model="program_studi" class="mt-2 block w-full rounded-xl border border-zinc-200 px-4 py-3 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white">
-                            @error('program_studi') <p class="mt-2 text-sm text-red-600">{{ $message }}</p> @enderror
-                        </div>
                     </div>
                 </div>
 
@@ -277,7 +274,7 @@ new #[Title('Profile settings')] class extends Component {
                     <h3 class="text-xl font-bold text-zinc-900 dark:text-white">b. Data Institusi / Perusahaan Sekarang</h3>
                     <div class="mt-6 grid grid-cols-1 gap-6 md:grid-cols-2">
                         <div class="md:col-span-2">
-                            <label for="nama_perusahaan" class="block text-sm font-medium text-zinc-900 dark:text-white">Nama Institusi / Perusahaan</label>
+                            <label for="nama_perusahaan" class="block text-sm font-medium text-zinc-900 dark:text-white">Nama Institusi / Perusahaan*</label>
                             <input id="nama_perusahaan" type="text" wire:model="nama_perusahaan" class="mt-2 block w-full rounded-xl border border-zinc-200 px-4 py-3 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white">
                             @error('nama_perusahaan') <p class="mt-2 text-sm text-red-600">{{ $message }}</p> @enderror
                         </div>
@@ -307,7 +304,7 @@ new #[Title('Profile settings')] class extends Component {
                         </div>
 
                         <div>
-                            <label for="kode_pos_perusahaan" class="block text-sm font-medium text-zinc-900 dark:text-white">Kode POS Perusahaan</label>
+                            <label for="kode_pos_perusahaan" class="block text-sm font-medium text-zinc-900 dark:text-white">Kode POS Perusahaan*</label>
                             <input id="kode_pos_perusahaan" type="text" wire:model="kode_pos_perusahaan" class="mt-2 block w-full rounded-xl border border-zinc-200 px-4 py-3 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white">
                             @error('kode_pos_perusahaan') <p class="mt-2 text-sm text-red-600">{{ $message }}</p> @enderror
                         </div>
@@ -340,6 +337,9 @@ new #[Title('Profile settings')] class extends Component {
                         <div><label for="tempat_lahir" class="block text-sm font-medium">Tempat Lahir</label><input id="tempat_lahir" type="text" wire:model="tempat_lahir" class="mt-2 block w-full rounded-xl border border-zinc-200 px-4 py-3 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white">@error('tempat_lahir') <p class="mt-2 text-sm text-red-600">{{ $message }}</p> @enderror</div>
                         <div><label for="tanggal_lahir" class="block text-sm font-medium">Tanggal Lahir</label><input id="tanggal_lahir" type="date" wire:model="tanggal_lahir" class="mt-2 block w-full rounded-xl border border-zinc-200 px-4 py-3 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white">@error('tanggal_lahir') <p class="mt-2 text-sm text-red-600">{{ $message }}</p> @enderror</div>
                         <div><label for="jenis_kelamin" class="block text-sm font-medium">Jenis Kelamin</label><select id="jenis_kelamin" wire:model="jenis_kelamin" class="mt-2 block w-full rounded-xl border border-zinc-200 px-4 py-3 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white"><option value="">Pilih Jenis Kelamin</option><option value="L">Laki-laki</option><option value="P">Perempuan</option></select>@error('jenis_kelamin') <p class="mt-2 text-sm text-red-600">{{ $message }}</p> @enderror</div>
+                        <div><label for="kode_pos_rumah" class="block text-sm font-medium">Kode Pos*</label><input id="kode_pos_rumah" type="text" wire:model="kode_pos_rumah" class="mt-2 block w-full rounded-xl border border-zinc-200 px-4 py-3 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white">@error('kode_pos_rumah') <p class="mt-2 text-sm text-red-600">{{ $message }}</p> @enderror</div>
+                        <div><label for="nama_perusahaan" class="block text-sm font-medium">Nama Institusi / Perusahaan*</label><input id="nama_perusahaan" type="text" wire:model="nama_perusahaan" class="mt-2 block w-full rounded-xl border border-zinc-200 px-4 py-3 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white">@error('nama_perusahaan') <p class="mt-2 text-sm text-red-600">{{ $message }}</p> @enderror</div>
+                        <div><label for="kode_pos_perusahaan" class="block text-sm font-medium">Kode POS Perusahaan*</label><input id="kode_pos_perusahaan" type="text" wire:model="kode_pos_perusahaan" class="mt-2 block w-full rounded-xl border border-zinc-200 px-4 py-3 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white">@error('kode_pos_perusahaan') <p class="mt-2 text-sm text-red-600">{{ $message }}</p> @enderror</div>
                         <div class="md:col-span-2"><label for="alamat_rumah" class="block text-sm font-medium">Alamat Rumah</label><textarea id="alamat_rumah" wire:model="alamat_rumah" rows="3" class="mt-2 block w-full rounded-xl border border-zinc-200 px-4 py-3 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white"></textarea>@error('alamat_rumah') <p class="mt-2 text-sm text-red-600">{{ $message }}</p> @enderror</div>
                     </div>
                 </div>

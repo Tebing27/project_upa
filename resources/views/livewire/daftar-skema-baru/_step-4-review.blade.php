@@ -10,12 +10,11 @@
             <div><span class="font-semibold text-gray-900">{{ auth()->user()->isGeneralUser() ? 'NIK' : 'NIM' }}:</span>
                 <span class="text-gray-600">{{ auth()->user()->isGeneralUser() ? ($no_ktp ?: '-') : ($nim ?: '-') }}</span>
             </div>
-            <div><span class="font-semibold text-gray-900">Telepon Rumah:</span> <span class="text-gray-600">{{ $telp_rumah ?: '-' }}</span></div>
-            <div><span class="font-semibold text-gray-900">Telepon Kantor:</span> <span class="text-gray-600">{{ $telp_kantor ?: '-' }}</span></div>
+            <div><span class="font-semibold text-gray-900">No. WhatsApp:</span> <span class="text-gray-600">{{ $no_wa ?: ($telp_rumah ?: '-') }}</span></div>
             <div><span class="font-semibold text-gray-900">{{ auth()->user()->isGeneralUser() ? 'Nama Institusi / Perusahaan' : 'Program Studi' }}:</span>
                 <span class="text-gray-600">{{ auth()->user()->isGeneralUser() ? ($nama_perusahaan ?: '-') : ($program_studi ?: '-') }}</span>
             </div>
-            <div><span class="font-semibold text-gray-900">Tipe Pendaftaran:</span> <span class="text-gray-600">{{ $registrationType === 'baru' ? 'Skema Baru' : 'Perpanjangan' }}</span>
+            <div><span class="font-semibold text-gray-900">Tipe Pendaftaran:</span> <span class="text-gray-600">Skema Baru</span>
             </div>
             <div class="sm:col-span-2"><span class="font-semibold text-gray-900">Skema Sertifikasi:</span> <span
                     class="text-gray-600">{{ $selectedScheme?->name ?? '-' }}</span></div>
@@ -29,16 +28,16 @@
             data dan dokumen Anda. Jika lolos verifikasi, Anda akan masuk ke tahap pembayaran.</p>
     </div>
 
-    <div class="mt-12 flex justify-between">
+    <div class="mt-12 flex flex-col-reverse gap-4 sm:flex-row sm:justify-between">
         <button type="button" wire:click="previousStep"
-            class="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-6 py-3 text-sm font-semibold text-gray-700 shadow-sm transition-all hover:bg-gray-50">
+            class="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-gray-200 bg-white px-6 py-3 text-sm font-semibold text-gray-700 shadow-sm transition-all hover:bg-gray-50 sm:w-auto">
             <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
             </svg>
             Kembali
         </button>
         <button type="button" wire:click="submit" wire:loading.attr="disabled"
-            class="inline-flex items-center gap-2 rounded-xl bg-emerald-500 px-6 py-3 text-sm font-semibold text-white shadow-sm transition-all hover:bg-emerald-600 disabled:cursor-not-allowed disabled:opacity-50">
+            class="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-500 px-6 py-3 text-sm font-semibold text-white shadow-sm transition-all hover:bg-emerald-600 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto">
             Kirim Pendaftaran
         </button>
     </div>

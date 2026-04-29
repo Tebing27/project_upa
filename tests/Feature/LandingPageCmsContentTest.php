@@ -21,6 +21,67 @@ it('renders article content from cms tables on the landing page', function () {
         ->assertSee(route('article.index'), false);
 });
 
+it('renders the redesigned home hero and certificate checker', function () {
+    $this->get(route('home'))
+        ->assertOk()
+        ->assertSee('Lisensi Resmi BNSP')
+        ->assertSee('bg-[#17BC23]', false)
+        ->assertSee('cursor-grab', false)
+        ->assertSee('mousewheel', false)
+        ->assertSee('h-[100svh]', false)
+        ->assertSee('min-h-[40rem]', false)
+        ->assertSee('sm:text-5xl', false)
+        ->assertSee('lg:h-10', false)
+        ->assertSee('hero-upnvj.png', false)
+        ->assertSee('bg-gradient-to-b', false)
+        ->assertSee('object-[50%_32%]', false)
+        ->assertSee('from-slate-950/85', false)
+        ->assertSee('drop-shadow-[0_2px_8px_rgba(0,0,0,0.5)]', false)
+        ->assertSee('bg-white/[0.12]', false)
+        ->assertSee('lg:hidden', false)
+        ->assertSee('items-end', false)
+        ->assertSee('pb-40', false)
+        ->assertSee('swiper-custom-next')
+        ->assertSee('Periksa Sertifikat')
+        ->assertSee('Pendaftaran Dibuka')
+        ->assertSee('bg-[#17BC23]', false)
+        ->assertSee('Unit Penunjang Akademik-layanan Uji Kompetensi (UPA-LUK) UPN')
+        ->assertSee('pendaftaran Uji Kompetensi Batch 2 Tahun 2025')
+        ->assertSee('Periode Pendaftaran')
+        ->assertSee('Daftar')
+        ->assertSee('Lihat Skema')
+        ->assertSee('min-w-32', false)
+        ->assertSee('id="skema-section"', false)
+        ->assertSee('id="cek-form"', false)
+        ->assertSee("params.set('nama'", false)
+        ->assertSee("params.set('nomor'", false)
+        ->assertSee(route('cek-sertifikat'), false);
+});
+
+it('renders the responsive skema showcase on the landing page', function () {
+    $scheme = createScheme([
+        'nama' => 'Junior Web Developer',
+        'jenis_skema' => 'Okupasi',
+        'harga' => 500000,
+        'deskripsi' => 'Skema untuk menguji kompetensi pengembangan web.',
+        'is_active' => true,
+    ]);
+
+    $this->get(route('home'))
+        ->assertOk()
+        ->assertSee('Skema Sertifikasi')
+        ->assertSee('Pilih skema kompetensi sesuai bidang Anda')
+        ->assertSee('skema-scrollbar', false)
+        ->assertSee('snap-x', false)
+        ->assertSee('w-[86vw]', false)
+        ->assertSee('Lihat Semua')
+        ->assertSee('Junior Web Developer')
+        ->assertSee('Okupasi')
+        ->assertSee('Rp500.000')
+        ->assertSee(route('skema.index'), false)
+        ->assertSee(route('skema.detail', $scheme), false);
+});
+
 it('shows article detail content from cms pages', function () {
     $admin = User::factory()->create(['role' => 'admin', 'nama' => 'Admin CMS']);
     $articlePage = Article::factory()->create([

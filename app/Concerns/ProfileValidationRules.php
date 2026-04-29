@@ -14,32 +14,31 @@ trait ProfileValidationRules
      */
     protected function profileRules(?int $userId = null, string $userType = 'upnvj'): array
     {
-        $isGeneralUser = $userType === 'umum';
+        $usesGeneralBiodata = in_array($userType, ['umum', 'mahasiswa'], true);
 
         return [
             'nama' => $this->nameRules(),
             'email' => $this->emailRules($userId),
             'nim' => ['nullable', 'string', 'max:255'],
-            'no_ktp' => [$isGeneralUser ? 'required' : 'nullable', 'string', 'max:255'],
-            'tempat_lahir' => [$isGeneralUser ? 'required' : 'nullable', 'string', 'max:255'],
-            'tanggal_lahir' => [$isGeneralUser ? 'required' : 'nullable', 'date'],
-            'jenis_kelamin' => [$isGeneralUser ? 'required' : 'nullable', 'in:L,P'],
-            'alamat_rumah' => [$isGeneralUser ? 'required' : 'nullable', 'string'],
-            'no_wa' => [$isGeneralUser ? 'required' : 'nullable', 'string', 'max:20'],
+            'no_ktp' => [$usesGeneralBiodata ? 'required' : 'nullable', 'string', 'max:255'],
+            'tempat_lahir' => [$usesGeneralBiodata ? 'required' : 'nullable', 'string', 'max:255'],
+            'tanggal_lahir' => [$usesGeneralBiodata ? 'required' : 'nullable', 'date'],
+            'jenis_kelamin' => [$usesGeneralBiodata ? 'required' : 'nullable', 'in:L,P'],
+            'alamat_rumah' => [$usesGeneralBiodata ? 'required' : 'nullable', 'string'],
+            'no_wa' => [$usesGeneralBiodata ? 'required' : 'nullable', 'string', 'max:20'],
             'kebangsaan' => ['nullable', 'string', 'max:255'],
-            'alamat_rumah' => [$isGeneralUser ? 'required' : 'nullable', 'string'],
-            'kode_pos_rumah' => ['nullable', 'string', 'max:20'],
+            'kode_pos_rumah' => [$usesGeneralBiodata ? 'required' : 'nullable', 'string', 'max:20'],
             'telp_rumah' => ['nullable', 'string', 'max:20'],
             'telp_kantor' => ['nullable', 'string', 'max:20'],
-            'kualifikasi_pendidikan' => [$isGeneralUser ? 'required' : 'nullable', 'string', 'max:255'],
+            'kualifikasi_pendidikan' => [$usesGeneralBiodata ? 'required' : 'nullable', 'string', 'max:255'],
             'total_sks' => ['nullable', 'integer', 'min:0'],
             'status_semester' => ['nullable', 'string', 'max:255'],
             'fakultas' => ['nullable', 'string', 'max:255'],
             'program_studi' => ['nullable', 'string', 'max:255'],
-            'nama_perusahaan' => ['nullable', 'string', 'max:255'],
+            'nama_perusahaan' => [$usesGeneralBiodata ? 'required' : 'nullable', 'string', 'max:255'],
             'jabatan' => ['nullable', 'string', 'max:255'],
             'alamat_perusahaan' => ['nullable', 'string'],
-            'kode_pos_perusahaan' => ['nullable', 'string', 'max:20'],
+            'kode_pos_perusahaan' => [$usesGeneralBiodata ? 'required' : 'nullable', 'string', 'max:20'],
             'no_telp_perusahaan' => ['nullable', 'string', 'max:20'],
             'email_perusahaan' => ['nullable', 'email', 'max:255'],
             'fax_perusahaan' => ['nullable', 'string', 'max:20'],

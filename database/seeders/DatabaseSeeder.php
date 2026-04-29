@@ -78,10 +78,10 @@ class DatabaseSeeder extends Seeder
             'nim' => '123456789',
             'total_sks' => 144,
             'status_semester' => 'Aktif',
-        ]);
-        $mahasiswa->profile()->create([
             'fakultas' => 'Fakultas Ilmu Komputer',
             'program_studi' => 'Informatika',
+        ]);
+        $mahasiswa->profile()->create([
             'jenis_kelamin' => 'L',
             'no_wa' => '081234567890',
         ]);

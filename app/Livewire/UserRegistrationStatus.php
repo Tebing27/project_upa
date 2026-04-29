@@ -130,25 +130,27 @@ class UserRegistrationStatus extends Component
             'telp_rumah' => $profileData['telp_rumah'] ?? null,
             'telp_kantor' => $profileData['telp_kantor'] ?? null,
             'no_wa' => $profileData['no_wa'] ?? null,
-            'fakultas' => $user->isUpnvjUser() ? ($profileData['fakultas'] ?? null) : ($user->profile?->fakultas ?? null),
-            'program_studi' => $user->isUpnvjUser() ? ($profileData['program_studi'] ?? null) : ($user->profile?->program_studi ?? null),
         ]);
 
         $user->mahasiswaProfile()->updateOrCreate([], [
-            'nim' => $user->isUpnvjUser() ? ($profileData['nim'] ?? null) : ($user->mahasiswaProfile?->nim ?? null),
-            'total_sks' => $user->isUpnvjUser() ? ($profileData['total_sks'] ?? null) : ($user->mahasiswaProfile?->total_sks ?? null),
-            'status_semester' => $user->isUpnvjUser() ? ($profileData['status_semester'] ?? null) : ($user->mahasiswaProfile?->status_semester ?? null),
+            'nim' => $user->mahasiswaProfile?->nim,
+            'total_sks' => $user->mahasiswaProfile?->total_sks,
+            'status_semester' => $user->mahasiswaProfile?->status_semester,
+            'fakultas' => $user->mahasiswaProfile?->fakultas,
+            'program_studi' => $user->mahasiswaProfile?->program_studi,
         ]);
 
         $user->umumProfile()->updateOrCreate([], [
-            'no_ktp' => $user->isGeneralUser() ? ($profileData['no_ktp'] ?? null) : ($user->umumProfile?->no_ktp ?? null),
-            'kualifikasi_pendidikan' => $user->isGeneralUser() ? ($profileData['kualifikasi_pendidikan'] ?? null) : ($user->umumProfile?->kualifikasi_pendidikan ?? null),
-            'nama_perusahaan' => $user->isGeneralUser() ? ($profileData['nama_perusahaan'] ?? null) : ($user->umumProfile?->nama_perusahaan ?? null),
-            'jabatan' => $user->isGeneralUser() ? ($profileData['jabatan'] ?? null) : ($user->umumProfile?->jabatan ?? null),
-            'alamat_perusahaan' => $user->isGeneralUser() ? ($profileData['alamat_perusahaan'] ?? null) : ($user->umumProfile?->alamat_perusahaan ?? null),
-            'kode_pos_perusahaan' => $user->isGeneralUser() ? ($profileData['kode_pos_perusahaan'] ?? null) : ($user->umumProfile?->kode_pos_perusahaan ?? null),
-            'no_telp_perusahaan' => $user->isGeneralUser() ? ($profileData['no_telp_perusahaan'] ?? null) : ($user->umumProfile?->no_telp_perusahaan ?? null),
-            'email_perusahaan' => $user->isGeneralUser() ? ($profileData['email_perusahaan'] ?? null) : ($user->umumProfile?->email_perusahaan ?? null),
+            'no_ktp' => $profileData['no_ktp'] ?? null,
+            'kualifikasi_pendidikan' => $profileData['kualifikasi_pendidikan'] ?? null,
+            'nama_perusahaan' => $profileData['nama_perusahaan'] ?? null,
+            'jabatan' => $profileData['jabatan'] ?? null,
+            'alamat_perusahaan' => $profileData['alamat_perusahaan'] ?? null,
+            'kode_pos_perusahaan' => $profileData['kode_pos_perusahaan'] ?? null,
+            'no_telp_perusahaan' => $profileData['no_telp_perusahaan'] ?? null,
+            'email_perusahaan' => $profileData['email_perusahaan'] ?? null,
+            'fax_perusahaan' => $profileData['fax_perusahaan'] ?? null,
+            'kebangsaan' => $profileData['kebangsaan'] ?? null,
         ]);
 
         $user->syncProfileCompletionStatus();
@@ -212,7 +214,7 @@ class UserRegistrationStatus extends Component
         }
 
         $this->validate([
-            'paymentProof' => 'required|file|mimes:jpg,jpeg,png,pdf|max:4096',
+            'paymentProof' => 'required|file|mimes:jpg,jpeg,png,pdf|extensions:jpg,jpeg,png,pdf|max:2048',
         ]);
 
         $storedPath = $this->paymentProof->store('payments/proofs', 'public');
@@ -499,14 +501,16 @@ class UserRegistrationStatus extends Component
             'kualifikasi_pendidikan' => $user->umumProfile?->kualifikasi_pendidikan,
             'total_sks' => $user->mahasiswaProfile?->total_sks,
             'status_semester' => $user->mahasiswaProfile?->status_semester,
-            'fakultas' => $user->profile?->fakultas,
-            'program_studi' => $user->profile?->program_studi,
+            'fakultas' => $user->mahasiswaProfile?->fakultas,
+            'program_studi' => $user->mahasiswaProfile?->program_studi,
             'nama_perusahaan' => $user->umumProfile?->nama_perusahaan,
             'jabatan' => $user->umumProfile?->jabatan,
             'alamat_perusahaan' => $user->umumProfile?->alamat_perusahaan,
             'kode_pos_perusahaan' => $user->umumProfile?->kode_pos_perusahaan,
             'no_telp_perusahaan' => $user->umumProfile?->no_telp_perusahaan,
             'email_perusahaan' => $user->umumProfile?->email_perusahaan,
+            'fax_perusahaan' => $user->umumProfile?->fax_perusahaan,
+            'kebangsaan' => $user->umumProfile?->kebangsaan,
         ];
     }
 

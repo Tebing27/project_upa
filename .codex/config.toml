@@ -3,6 +3,9 @@ command = "php"
 args = ["artisan", "boost:mcp"]
 cwd = "C:\\Users\\Pongo\\Herd\\project_upa"
 
+[mcp_servers.laravel-boost.tools.search-docs]
+approval_mode = "approve"
+
 [mcp_servers.herd]
 command = "php"
 args = ["C:/Users/Pongo/.config/herd/bin/herd-mcp.phar"]

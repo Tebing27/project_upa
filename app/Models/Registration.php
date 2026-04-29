@@ -69,7 +69,6 @@ class Registration extends Model
     public static function documentLabels(): array
     {
         return [
-            'fr_apl_01_path' => 'FR APL 01',
             'fr_apl_02_path' => 'FR APL 02',
             ...static::apl01RequirementLabels(),
         ];
@@ -106,7 +105,6 @@ class Registration extends Model
         // For simplicity, returning the required ones.
         // Condensed flow logic can be implemented if needed.
         return [
-            'fr_apl_01_path',
             'fr_apl_02_path',
             'ktm_path',
             'khs_path',
@@ -126,7 +124,6 @@ class Registration extends Model
     {
         if ($this->usesSimplifiedDocumentFlow()) {
             return [
-                'fr_apl_01_path',
                 'fr_apl_02_path',
             ];
         }

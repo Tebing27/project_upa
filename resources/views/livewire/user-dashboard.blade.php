@@ -34,6 +34,7 @@
         $registrationDate = $latestRegistration?->created_at?->translatedFormat('d F Y') ?? '16 Maret 2026';
         $dashboardUser = auth()->user();
         $profileComplete = $dashboardUser->hasCompletedProfile();
+        $shouldShowProfileCompletionNotice = !$profileComplete && !$latestRegistration;
         $isGeneralUser = $dashboardUser->isGeneralUser();
         $canRegisterNewScheme = $latestRegistration?->status === 'sertifikat_terbit';
         $newSchemeAlertMessage =
@@ -41,7 +42,7 @@
     @endphp
 
     {{-- Top Cards Section --}}
-    <div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
+    <div class="grid grid-cols-1 gap-4 sm:gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3">
         {{-- Card 1: Sertifikat Aktif --}}
         <div class="rounded-[1.25rem] bg-white p-6 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)]">
             <div class="flex items-start justify-between">
@@ -95,33 +96,33 @@
     </div>
 
     {{-- Progress Pendaftaran Section --}}
-    <div class="rounded-[1.25rem] bg-white p-6 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] md:p-8">
-        <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+    <div class="rounded-[1.25rem] bg-white p-5 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] sm:p-6 md:p-8">
+        <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div>
                 <h2 class="text-[1.35rem] font-bold text-gray-900">Progress Pendaftaran</h2>
                 <p class="mt-1 text-sm text-gray-500">Pantau proses sertifikasi Anda dari pendaftaran hingga sertifikat
                     terbit.</p>
             </div>
 
-            <div class="flex items-center gap-3">
+            <div class="flex flex-col sm:flex-row sm:items-center gap-3 w-full md:w-auto mt-2 md:mt-0">
                 <div
-                    class="inline-flex items-center rounded-full px-4 py-1.5 text-xs font-semibold {{ $statusBadgeClasses }}">
+                    class="inline-flex w-fit justify-center items-center rounded-full px-4 py-2 sm:py-1.5 text-xs font-semibold {{ $statusBadgeClasses }}">
                     <span class="mr-2 h-1.5 w-1.5 rounded-full {{ $statusBadgeDot }}"></span>
                     {{ $registrationStatusLabel }}
                 </div>
 
                 @if (!$canRegisterNewScheme)
                     <button type="button" onclick="alert('{{ $newSchemeAlertMessage }}')"
-                        class="inline-flex items-center gap-2 rounded-xl bg-gray-100 px-5 py-2.5 text-sm font-semibold text-gray-400 transition hover:bg-gray-200">
-                        <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        class="inline-flex w-full sm:w-auto justify-center items-center gap-2 rounded-xl bg-gray-100 px-5 py-2.5 text-sm font-semibold text-gray-400 transition hover:bg-gray-200">
+                        <svg class="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
                         </svg>
                         Daftar Skema Baru
                     </button>
                 @else
                     <a href="{{ route('dashboard.skema') }}"
-                        class="inline-flex items-center gap-2 rounded-xl bg-emerald-400 px-5 py-2.5 text-sm font-semibold text-black hover:bg-emerald-500">
-                        <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        class="inline-flex w-full sm:w-auto justify-center items-center gap-2 rounded-xl bg-emerald-400 px-5 py-2.5 text-sm font-semibold text-black hover:bg-emerald-500">
+                        <svg class="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
                         </svg>
                         Daftar Skema Baru
@@ -131,8 +132,9 @@
         </div>
 
         {{-- Stepper --}}
-        <div class="mt-8 mb-4 pb-12">
-            <div class="relative flex w-full px-2 md:px-8">
+        <div id="stepper-container" class="mt-8 mb-4 pb-24 overflow-x-auto overflow-y-hidden"
+            style="scrollbar-width: none;">
+            <div class="relative flex w-full min-w-[500px] px-16 md:px-20">
                 @php
                     $progressWidth = 0;
                     $progressWidth = match ($currentStep) {
@@ -147,8 +149,8 @@
                 {{-- Background Line --}}
                 <div class="absolute left-0 right-0 top-[19px] h-[2px] bg-slate-200 z-0"></div>
 
-                <div class="absolute left-0 top-[19px] h-[2px] bg-[#10b981] transition-all duration-500 z-0"
-                    style="width: {{ $progressWidth }}%;"></div>
+                <div class="absolute left-0 top-[19px] h-[2px] bg-[#10b981] z-0" style="width: {{ $progressWidth }}%;">
+                </div>
 
                 {{-- Stepper Items --}}
                 <div class="relative z-10 flex w-full justify-between">
@@ -164,7 +166,8 @@
                             $displayLabel = str_replace(' & ', "\n& ", $stepLabel);
                         @endphp
 
-                        <div class="relative flex shrink-0 flex-col items-center">
+                        <div @if ($isCurrent) id="active-step-item" @endif
+                            class="relative flex shrink-0 flex-col items-center">
                             {{-- Circle --}}
                             <div @class([
                                 'relative z-10 flex shrink-0 h-[40px] w-[40px] items-center justify-center rounded-full text-[15px] font-bold ring-[6px] ring-white transition-colors',
@@ -210,10 +213,10 @@
         </div>
 
         {{-- Bottom Section: Sertifikat Aktif (LEFT) & Detail Pendaftaran (RIGHT) --}}
-        <div class="grid grid-cols-1 gap-6 lg:grid-cols-[400px_1fr]">
+        <div class="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_1fr] xl:grid-cols-[400px_1fr]">
 
             {{-- LEFT: Sertifikat Aktif Sidebar (Dynamic) --}}
-            <div class="rounded-[1.25rem] bg-white p-6 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] md:p-8">
+            <div class="rounded-[1.25rem] bg-white p-5 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] sm:p-6 md:p-8">
 
                 @if (in_array($latestRegistration?->status, ['dokumen_ditolak', 'rejected'], true))
                     {{-- STATUS: Dokumen Ditolak --}}
@@ -298,24 +301,25 @@
 
                     <div class="mt-5 space-y-3">
                         <div class="rounded-xl border border-amber-100 bg-amber-50/40 p-4">
-                            <p class="text-[10px] font-bold uppercase tracking-wider text-amber-500">Kode Instruksi Pembayaran</p>
+                            <p class="text-[10px] font-bold uppercase tracking-wider text-amber-500">Kode Instruksi
+                                Pembayaran</p>
                             <p class="mt-1.5 font-mono text-lg font-bold text-gray-900">
                                 {{ $latestRegistration->payment_reference }}</p>
                         </div>
                         <div class="rounded-xl border border-amber-100 bg-amber-50/40 p-4">
-                            <p class="text-[10px] font-bold uppercase tracking-wider text-amber-500">Riwayat Skema</p>
+                            <p class="text-[10px] font-bold uppercase tracking-wider text-amber-500">Skema Saat Ini</p>
                             <div class="mt-2 space-y-2">
-                                @forelse ($allRegistrations->take(3) as $registrationHistory)
+                                @if ($latestRegistration)
                                     <div
                                         class="flex items-center justify-between rounded-lg bg-white/80 px-3 py-2 text-sm">
                                         <span
-                                            class="font-medium text-gray-900">{{ $registrationHistory->scheme?->name ?: '-' }}</span>
+                                            class="font-medium text-gray-900">{{ $latestRegistration->scheme?->name ?: '-' }}</span>
                                         <span
-                                            class="text-gray-500">{{ $registrationHistory->created_at?->translatedFormat('d M Y') }}</span>
+                                            class="text-gray-500">{{ $latestRegistration->created_at?->translatedFormat('d M Y') }}</span>
                                     </div>
-                                @empty
+                                @else
                                     <p class="text-sm text-gray-500">Belum ada riwayat skema.</p>
-                                @endforelse
+                                @endif
                             </div>
                         </div>
                         @if (($latestRegistration->document_statuses['payment_proof_path']['note'] ?? null) !== null)
@@ -431,7 +435,7 @@
                                 </a>
                             @endif
 
-                            <a href="{{ route('dashboard.daftar-skema', ['type' => 'perpanjangan', 'scheme' => $latestRegistration->scheme_id, 'source' => 'dashboard-skema']) }}"
+                            <a href="{{ route('dashboard.daftar-skema', ['type' => 'baru', 'scheme' => $latestRegistration->scheme_id, 'source' => 'dashboard-skema']) }}"
                                 class="mt-3 flex w-full items-center justify-center gap-2 rounded-xl bg-red-600 px-4 py-3.5 text-sm font-semibold text-white transition-all hover:bg-red-700">
                                 <svg class="h-4.5 w-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -472,7 +476,7 @@
 
                     <div class="mt-8 flex flex-col gap-3">
                         @if ($activeCertificate->file_path)
-                            <a href="{{ route('dashboard.certificates') }}"
+                            <a href="{{ Storage::url($activeCertificate->file_path) }}" target="_blank"
                                 class="flex w-full items-center justify-center gap-2 rounded-xl bg-[#1b8a6b] px-4 py-3.5 text-sm font-semibold text-white transition-all hover:bg-[#157158]">
                                 <svg class="h-4.5 w-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -490,7 +494,7 @@
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                         d="M12 4v12m0 0l-4-4m4 4l4-4M4 20h16" />
                                 </svg>
-                                Unduh Hasil Ujian
+                                Unduh Surat Keterangan
                             </a>
                         @endif
                     </div>
@@ -518,8 +522,8 @@
             </div>
 
             {{-- RIGHT: Detail Pendaftaran --}}
-            <div class="rounded-[1.25rem] bg-white p-6 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] md:p-8">
-                <div class="flex items-center justify-between">
+            <div class="rounded-[1.25rem] bg-white p-5 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] sm:p-6 md:p-8">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                     <h2 class="text-[1.35rem] font-bold text-gray-900">Detail Pendaftaran</h2>
                     @if ($profileComplete)
                         <a href="{{ route('profile.edit') }}" wire:navigate
@@ -529,17 +533,52 @@
                     @endif
                 </div>
 
-                @if (!$profileComplete)
+                <div class="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                    <div class="rounded-xl border border-gray-200 bg-white p-4">
+                        <p class="text-[10px] font-bold uppercase tracking-wider text-gray-400">Nama</p>
+                        <p class="mt-1.5 font-medium text-gray-900">{{ $dashboardUser->name ?: '-' }}</p>
+                    </div>
+                    <div class="rounded-xl border border-gray-200 bg-white p-4">
+                        <p class="text-[10px] font-bold uppercase tracking-wider text-gray-400">
+                            {{ $isGeneralUser ? 'NIK' : 'NIM' }}</p>
+                        <p class="mt-1.5 font-medium text-gray-900">
+                            {{ $isGeneralUser ? ($dashboardUser->no_ktp ?: '-') : ($dashboardUser->nim ?: '-') }}
+                        </p>
+                    </div>
+                    <div class="rounded-xl border border-gray-200 bg-white p-4">
+                        <p class="text-[10px] font-bold uppercase tracking-wider text-gray-400">Skema</p>
+                        <p class="mt-1.5 font-medium text-gray-900">
+                            {{ $latestRegistration?->scheme?->name ?: '-' }}
+                        </p>
+                    </div>
+                    <div class="rounded-xl border border-gray-200 bg-white p-4">
+                        <p class="text-[10px] font-bold uppercase tracking-wider text-gray-400">
+                            {{ $isGeneralUser ? 'Nama Institusi / Perusahaan' : 'Jurusan' }}</p>
+                        <p class="mt-1.5 font-medium text-gray-900">
+                            {{ $isGeneralUser ? ($dashboardUser->nama_perusahaan ?: '-') : ($dashboardUser->program_studi ?: '-') }}
+                        </p>
+                    </div>
+                    <div class="rounded-xl border border-gray-200 bg-white p-4">
+                        <p class="text-[10px] font-bold uppercase tracking-wider text-gray-400">No. WhatsApp</p>
+                        <p class="mt-1.5 font-medium text-gray-900">{{ $dashboardUser->no_wa ?: '-' }}</p>
+                    </div>
+                    <div class="rounded-xl border border-gray-200 bg-white p-4">
+                        <p class="text-[10px] font-bold uppercase tracking-wider text-gray-400">Tanggal Daftar</p>
+                        <p class="mt-1.5 font-medium text-gray-900">{{ $registrationDate }}</p>
+                    </div>
+                </div>
+
+                @if ($shouldShowProfileCompletionNotice)
                     <div class="mt-6 rounded-3xl border border-dashed border-emerald-200 bg-emerald-50/60 p-6">
                         <div class="flex flex-col gap-4">
                             <div>
-                                <p class="text-xs font-bold uppercase tracking-[0.2em] text-emerald-700">Biodata Belum Lengkap</p>
-                                <h3 class="mt-2 text-lg font-bold text-gray-900">Lengkapi biodata di tahap kedua daftar skema</h3>
+                                <p class="text-xs font-bold uppercase tracking-[0.2em] text-emerald-700">Biodata Belum
+                                    Lengkap</p>
+                                <h3 class="mt-2 text-lg font-bold text-gray-900">Lengkapi biodata di tahap kedua daftar
+                                    skema</h3>
                                 <p class="mt-2 max-w-xl text-sm text-gray-600">
-                                    Ringkasan detail pendaftaran masih kosong karena biodata peserta umum belum
-                                    dilengkapi.
-                                    Sekarang biodata dilengkapi langsung di halaman daftar skema pada tahap kedua,
-                                    setelah pemilihan skema.
+                                    Beberapa data wajib masih perlu dilengkapi agar proses pendaftaran dan dokumen
+                                    sertifikasi bisa diproses tanpa kendala.
                                 </p>
                             </div>
 
@@ -563,49 +602,37 @@
                             </div>
                         </div>
                     </div>
-                @else
-                    <div class="mt-6 grid gap-4 sm:grid-cols-2">
-                        <div class="rounded-xl border border-gray-200 bg-white p-4">
-                            <p class="text-[10px] font-bold uppercase tracking-wider text-gray-400">Nama</p>
-                            <p class="mt-1.5 font-medium text-gray-900">{{ $dashboardUser->name }}</p>
-                        </div>
-                        <div class="rounded-xl border border-gray-200 bg-white p-4">
-                            <p class="text-[10px] font-bold uppercase tracking-wider text-gray-400">
-                                {{ $isGeneralUser ? 'NIK' : 'NIM' }}</p>
-                            <p class="mt-1.5 font-medium text-gray-900">
-                                {{ $isGeneralUser ? ($dashboardUser->no_ktp ?: '-') : ($dashboardUser->nim ?: '-') }}
-                            </p>
-                        </div>
-                        <div class="rounded-xl border border-gray-200 bg-white p-4">
-                            <p class="text-[10px] font-bold uppercase tracking-wider text-gray-400">
-                                {{ $isGeneralUser ? 'Nama Institusi / Perusahaan' : 'Program Studi' }}</p>
-                            <p class="mt-1.5 font-medium text-gray-900">
-                                {{ $isGeneralUser ? ($dashboardUser->nama_perusahaan ?: '-') : ($dashboardUser->program_studi ?: '-') }}
-                            </p>
-                        </div>
-                        <div class="rounded-xl border border-gray-200 bg-white p-4">
-                            <p class="text-[10px] font-bold uppercase tracking-wider text-gray-400">
-                                {{ $isGeneralUser ? 'Jurusan / Program Studi' : 'Skema' }}</p>
-                            <p class="mt-1.5 font-medium text-gray-900">
-                                {{ $isGeneralUser ? ($dashboardUser->program_studi ?: '-') : ($latestRegistration?->scheme?->name ?: '-') }}
-                            </p>
-                        </div>
-                        <div class="rounded-xl border border-gray-200 bg-white p-4">
-                            <p class="text-[10px] font-bold uppercase tracking-wider text-gray-400">
-                                {{ $isGeneralUser ? 'Telepon Kantor' : 'Tanggal Daftar' }}</p>
-                            <p class="mt-1.5 font-medium text-gray-900">
-                                {{ $isGeneralUser ? ($dashboardUser->profile?->telp_kantor ?: '-') : $registrationDate }}</p>
-                        </div>
-                        <div class="rounded-xl border border-gray-200 bg-white p-4">
-                            <p class="text-[10px] font-bold uppercase tracking-wider text-gray-400">
-                                {{ $isGeneralUser ? 'No. WhatsApp' : 'Kode Referensi' }}</p>
-                            <p class="mt-1.5 font-medium text-gray-900">
-                                {{ $isGeneralUser ? ($dashboardUser->no_wa ?: '-') : ($latestRegistration?->payment_reference ?: '-') }}
-                            </p>
-                        </div>
-                    </div>
                 @endif
             </div>
 
         </div>
     </div>
+
+    @script
+        <script>
+            document.addEventListener('livewire:initialized', () => {
+                const scrollToActiveStep = () => {
+                    const container = document.getElementById('stepper-container');
+                    const activeItem = document.getElementById('active-step-item');
+
+                    if (container && activeItem) {
+                        // Kalkulasi agar elemen berada persis di tengah layar
+                        const scrollPosition = activeItem.offsetLeft - (container.clientWidth / 2) + (activeItem
+                            .clientWidth / 2);
+                        container.scrollTo({
+                            left: scrollPosition,
+                            behavior: 'smooth'
+                        });
+                    }
+                };
+
+                // Jalankan saat pertama dimuat
+                setTimeout(scrollToActiveStep, 100);
+
+                // Jalankan ulang jika livewire update merender ulang komponen
+                Livewire.hook('morph.updated', () => {
+                    setTimeout(scrollToActiveStep, 100);
+                });
+            });
+        </script>
+    @endscript

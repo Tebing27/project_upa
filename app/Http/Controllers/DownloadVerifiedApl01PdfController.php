@@ -66,14 +66,13 @@ class DownloadVerifiedApl01PdfController extends Controller
             ),
             'applicantSignatureImage' => $this->optimizedImageDataUrlFromPublicPath($registration->applicant_signature_path, 420, 120),
             'adminSignatureImage' => $this->optimizedImageDataUrlFromPublicPath($registration->admin_signature_path, 420, 120),
-            'passportPhotoImage' => $this->optimizedImageDataUrlFromPublicPath($registration->passport_photo_path, 180, 240, true),
             'applicantSignedDate' => $registration->created_at?->translatedFormat('d F Y'),
             'adminSignedDate' => $registration->latestDocumentVerificationDate()?->translatedFormat('d F Y'),
         ])
             ->setPaper('a4')
             ->setWarnings(false)
             ->setOption([
-                'defaultFont' => 'DejaVu Sans',
+                'defaultFont' => 'Times-Roman',
                 'dpi' => 72,
                 'isRemoteEnabled' => false,
                 'isPhpEnabled' => false,
@@ -118,7 +117,9 @@ class DownloadVerifiedApl01PdfController extends Controller
 
         foreach ($documentTypes as $index => $documentType) {
             $label = $customDescriptions[$index] ?? $fallbackLabels[$documentType] ?? Str::headline($documentType);
-            $status = $statusMap[$documentType]['status'] ?? ($registration->getDocumentPath($documentType) ? 'pending' : 'missing');
+            $status = $documentType === 'fr_apl_01_path'
+                ? 'verified'
+                : ($statusMap[$documentType]['status'] ?? ($registration->getDocumentPath($documentType) ? 'pending' : 'missing'));
 
             $rows[] = [
                 'label' => $label,

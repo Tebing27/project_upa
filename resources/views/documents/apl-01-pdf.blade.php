@@ -78,6 +78,8 @@
         .line-value {
             min-height: 16px;
             border-bottom: 1px solid #6b7280;
+            word-wrap: break-word;
+            word-break: break-word;
         }
 
         .line-value.tight {
@@ -98,9 +100,13 @@
         .requirements-table th,
         .recommendation-table td,
         .recommendation-table th {
-            border: 1px solid #374151;
+            border: 1px solid #000;
             padding: 6px 7px;
             vertical-align: top;
+        }
+
+        .boxed-table td.no-padding {
+            padding: 0;
         }
 
         .boxed-table th,
@@ -109,6 +115,11 @@
             font-weight: 700;
             text-align: center;
         }
+
+        .boxed-table {
+            border-collapse: collapse;
+        }
+
 
         .boxed-table .label-cell {
             width: 150px;
@@ -141,6 +152,8 @@
         }
 
         .signature-box {
+            background: transparent;
+            border: 0;
             height: 54px;
             text-align: center;
         }
@@ -201,13 +214,6 @@
                 <td>
                     <div class="line-value">{{ $user->nama ?: ' ' }}</div>
                 </td>
-                <td rowspan="5" style="width: 110px; padding-left: 12px;">
-                    <div class="passport-photo">
-                        @if ($passportPhotoImage)
-                            <img src="{{ $passportPhotoImage }}" alt="Pasfoto">
-                        @endif
-                    </div>
-                </td>
             </tr>
             <tr>
                 <td class="field-label">No. KTP/NIK/Paspor</td>
@@ -229,7 +235,7 @@
                 <td class="field-label">Jenis kelamin</td>
                 <td class="field-separator">:</td>
                 <td>
-                    <div class="line-value">{{ $genderLabel }} / Wanita *)</div>
+                    <div class="line-value">{{ $genderLabel }}</div>
                 </td>
             </tr>
             <tr>
@@ -287,8 +293,6 @@
             </tr>
         </table>
 
-        <p class="note" style="margin: 4px 0 0;">*Coret yang tidak perlu</p>
-
         <h3 class="subsection-title">b. Data Pekerjaan Sekarang</h3>
         <table class="field-table">
             <tr>
@@ -339,11 +343,15 @@
                 </td>
             </tr>
         </table>
+    </div>
 
+    <div class="page">
         <h2 class="section-title">Bagian 2 : Data Sertifikasi</h2>
         <p class="intro">
-            Tuliskan Judul dan Nomor Skema Sertifikasi yang anda ajukan berikut Daftar Unit Kompetensi sesuai kemasan
-            pada skema sertifikasi untuk mendapatkan pengakuan sesuai dengan latar belakang pendidikan, pelatihan serta
+            Tuliskan Judul dan Nomor Skema Sertifikasi yang anda ajukan berikut Daftar Unit Kompetensi sesuai
+            kemasan
+            pada skema sertifikasi untuk mendapatkan pengakuan sesuai dengan latar belakang pendidikan, pelatihan
+            serta
             pengalaman kerja yang anda miliki.
         </p>
 
@@ -360,25 +368,21 @@
                 <td>{{ $scheme?->kode_skema ?: '-' }}</td>
             </tr>
             <tr>
-                <td rowspan="{{ count($assessmentPurposeOptions) }}">Tujuan Asesmen</td>
-                <td colspan="3" style="padding: 0;">
-                    <table class="field-table" style="width:100%;">
-                        @foreach ($assessmentPurposeOptions as $option)
-                            <tr>
-                                <td style="border-bottom: 1px solid #374151; padding: 8px 12px;">
-                                    <span
-                                        class="checkbox {{ $option['checked'] ? 'checked' : '' }}">{{ $option['checked'] ? '✓' : '' }}</span>{{ $option['label'] }}
-                                </td>
-                            </tr>
-                        @endforeach
-                    </table>
+                <td>Tujuan Asesmen</td>
+                <td colspan="3" class="no-padding">
+                    @foreach ($assessmentPurposeOptions as $option)
+                        <div style="border-bottom: 1px solid #000; padding: 8px 12px;">
+                            <span class="checkbox {{ $option['checked'] ? 'checked' : '' }}">
+                                {{ $option['checked'] ? 'V' : '' }}
+                            </span>
+                            {{ $option['label'] }}
+                        </div>
+                    @endforeach
                 </td>
             </tr>
         </table>
-    </div>
 
-    <div class="page">
-        <p style="margin: 0 0 8px; font-weight: 700;">Daftar Unit Kompetensi sesuai kemasan:</p>
+        <p style="margin: 16px 0 8px; font-weight: 700;">Daftar Unit Kompetensi Sesuai Kemasan:</p>
         <table class="boxed-table">
             <thead>
                 <tr>
@@ -428,9 +432,9 @@
                     <tr>
                         <td class="text-center">{{ $index + 1 }}.</td>
                         <td>{{ $row['label'] }}</td>
-                        <td class="text-center">{{ $row['status'] === 'verified' ? '✓' : '' }}</td>
-                        <td class="text-center">{{ $row['status'] === 'rejected' ? '✓' : '' }}</td>
-                        <td class="text-center">{{ $row['status'] === 'missing' ? '✓' : '' }}</td>
+                        <td class="text-center">{{ $row['status'] === 'verified' ? 'V' : '' }}</td>
+                        <td class="text-center">{{ $row['status'] === 'rejected' ? 'V' : '' }}</td>
+                        <td class="text-center">{{ $row['status'] === 'missing' ? 'V' : '' }}</td>
                     </tr>
                 @endforeach
             </tbody>
@@ -455,9 +459,9 @@
                     <tr>
                         <td class="text-center">{{ $index + 1 }}.</td>
                         <td>{{ $row['label'] }}</td>
-                        <td class="text-center">{{ $row['status'] === 'verified' ? '✓' : '' }}</td>
-                        <td class="text-center">{{ $row['status'] === 'rejected' ? '✓' : '' }}</td>
-                        <td class="text-center">{{ $row['status'] === 'missing' ? '✓' : '' }}</td>
+                        <td class="text-center">{{ $row['status'] === 'verified' ? 'V' : '' }}</td>
+                        <td class="text-center">{{ $row['status'] === 'rejected' ? 'V' : '' }}</td>
+                        <td class="text-center">{{ $row['status'] === 'missing' ? 'V' : '' }}</td>
                     </tr>
                 @endforeach
             </tbody>

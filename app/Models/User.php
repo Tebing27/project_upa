@@ -140,10 +140,6 @@ class User extends Authenticatable implements MustVerifyEmail
 
     public function hasCompletedProfile(): bool
     {
-        if ($this->isUpnvjUser()) {
-            return true;
-        }
-
         if (! $this->relationLoaded('umumProfile') || ! $this->umumProfile) {
             $this->load('umumProfile');
         }
@@ -164,8 +160,11 @@ class User extends Authenticatable implements MustVerifyEmail
             'tempat_lahir' => $this->profile->tempat_lahir,
             'tanggal_lahir' => $this->profile->tanggal_lahir,
             'alamat_rumah' => $this->profile->alamat_rumah,
+            'kode_pos_rumah' => $this->profile->kode_pos_rumah,
             'no_wa' => $this->profile->no_wa,
             'kualifikasi_pendidikan' => $this->umumProfile->kualifikasi_pendidikan,
+            'nama_perusahaan' => $this->umumProfile->nama_perusahaan,
+            'kode_pos_perusahaan' => $this->umumProfile->kode_pos_perusahaan,
         ])->every(static fn (mixed $value): bool => filled($value));
     }
 
@@ -220,12 +219,12 @@ class User extends Authenticatable implements MustVerifyEmail
 
     public function setFakultasAttribute(?string $value): void
     {
-        $this->legacyProfileAttributes['fakultas'] = $value;
+        $this->legacyMahasiswaProfileAttributes['fakultas'] = $value;
     }
 
     public function setProgramStudiAttribute(?string $value): void
     {
-        $this->legacyProfileAttributes['program_studi'] = $value;
+        $this->legacyMahasiswaProfileAttributes['program_studi'] = $value;
     }
 
     public function setTempatLahirAttribute(?string $value): void
@@ -297,20 +296,20 @@ class User extends Authenticatable implements MustVerifyEmail
      */
     public function getProgramStudiAttribute(): ?string
     {
-        if (! $this->relationLoaded('profile')) {
-            $this->load('profile');
+        if (! $this->relationLoaded('mahasiswaProfile')) {
+            $this->load('mahasiswaProfile');
         }
 
-        return $this->profile?->program_studi;
+        return $this->mahasiswaProfile?->program_studi;
     }
 
     public function getFakultasAttribute(): ?string
     {
-        if (! $this->relationLoaded('profile')) {
-            $this->load('profile');
+        if (! $this->relationLoaded('mahasiswaProfile')) {
+            $this->load('mahasiswaProfile');
         }
 
-        return $this->profile?->fakultas;
+        return $this->mahasiswaProfile?->fakultas;
     }
 
     public function getTempatLahirAttribute(): ?string
@@ -484,8 +483,12 @@ class User extends Authenticatable implements MustVerifyEmail
             $this->legacyProfileAttributes = [];
         }
 
-        if ($this->legacyMahasiswaProfileAttributes !== []) {
+        if ($this->legacyMahasiswaProfileAttributes !== [] && $this->isUpnvjUser()) {
             $this->mahasiswaProfile()->updateOrCreate([], $this->legacyMahasiswaProfileAttributes);
+            $this->legacyMahasiswaProfileAttributes = [];
+        }
+
+        if (! $this->isUpnvjUser()) {
             $this->legacyMahasiswaProfileAttributes = [];
         }
 

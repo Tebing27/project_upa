@@ -51,7 +51,8 @@
                                 {{ $registration->user->isGeneralUser() ? 'NIK' : 'NIM' }} / No. Pendaftaran
                             </span>
                             <span class="mt-1.5 text-sm font-semibold text-gray-900">
-                                {{ $registration->user->isGeneralUser() ? ($registration->user->no_ktp ?: '-') : ($registration->user->nim ?: '-') }} /
+                                {{ $registration->user->isGeneralUser() ? ($registration->user->no_ktp ?: '-') : ($registration->user->nim ?: '-') }}
+                                /
                                 {{ $registration->payment_reference ?: '-' }}</span>
                         </div>
                         <div class="flex flex-col">
@@ -84,63 +85,41 @@
                 </h3>
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     @php
-                        $biodata = $registration->user->isGeneralUser()
-                            ? [
-                                'Nama Lengkap' => $registration->user->name ?: '-',
-                                'Email' => $registration->user->email ?: '-',
-                                'NIK' => $registration->user->no_ktp ?: '-',
-                                'Tempat Lahir' => $registration->user->tempat_lahir ?: '-',
-                                'Tanggal Lahir' => $registration->user->tanggal_lahir
-                                    ? \Carbon\Carbon::parse($registration->user->tanggal_lahir)->translatedFormat(
-                                        'd M Y',
-                                    )
-                                    : '-',
-                                'Jenis Kelamin' =>
-                                    $registration->user->jenis_kelamin === 'L'
-                                        ? 'Laki-laki'
-                                        : ($registration->user->jenis_kelamin === 'P'
-                                            ? 'Perempuan'
-                                            : '-'),
-                                'Nomor WhatsApp' => $registration->user->no_wa ?: '-',
-                                'Kualifikasi Pendidikan' => $registration->user->kualifikasi_pendidikan ?: '-',
-                                'Telepon Rumah' => $registration->user->profile?->telp_rumah ?: '-',
-                                'Telepon Kantor' => $registration->user->profile?->telp_kantor ?: '-',
-                                'Nama Institusi / Perusahaan' => $registration->user->nama_perusahaan ?: '-',
-                                'Jabatan' => $registration->user->jabatan ?: '-',
-                                'Alamat Perusahaan' => $registration->user->alamat_perusahaan ?: '-',
-                                'Kode Pos Perusahaan' => $registration->user->kode_pos_perusahaan ?: '-',
-                                'Telepon Perusahaan' => $registration->user->no_telp_perusahaan ?: '-',
-                                'Email Perusahaan' => $registration->user->email_perusahaan ?: '-',
-                            ]
-                            : [
-                                'Nama Lengkap' => $registration->user->name ?: '-',
-                                'NIM' => $registration->user->nim ?: '-',
-                                'Tempat, Tgl Lahir' =>
-                                    ($registration->user->tempat_lahir ?: '-') .
-                                    ', ' .
-                                    ($registration->user->tanggal_lahir
-                                        ? \Carbon\Carbon::parse($registration->user->tanggal_lahir)->translatedFormat(
-                                            'd F Y',
-                                        )
+                        $biodata = [
+                            'Nama Lengkap' => $registration->user->name ?: '-',
+                            'Email' => $registration->user->email ?: '-',
+                            'NIK' => $registration->user->no_ktp ?: '-',
+                            ...($registration->user->isUpnvjUser()
+                                ? [
+                                    'NIM' => $registration->user->nim ?: '-',
+                                    'Fakultas' => $registration->user->fakultas ?: '-',
+                                    'Program Studi' => $registration->user->program_studi ?: '-',
+                                ]
+                                : []),
+                            'Tempat Lahir' => $registration->user->tempat_lahir ?: '-',
+                            'Tanggal Lahir' => $registration->user->tanggal_lahir
+                                ? \Carbon\Carbon::parse($registration->user->tanggal_lahir)->translatedFormat(
+                                    'd M Y',
+                                )
+                                : '-',
+                            'Jenis Kelamin' =>
+                                $registration->user->jenis_kelamin === 'L'
+                                    ? 'Laki-laki'
+                                    : ($registration->user->jenis_kelamin === 'P'
+                                        ? 'Perempuan'
                                         : '-'),
-                                'Jenis Kelamin' =>
-                                    $registration->user->jenis_kelamin === 'L'
-                                        ? 'Laki-laki'
-                                        : ($registration->user->jenis_kelamin === 'P'
-                                            ? 'Perempuan'
-                                            : '-'),
-                                'No. WhatsApp' => $registration->user->no_wa ?: '-',
-                                'Kualifikasi Pendidikan' => $registration->user->kualifikasi_pendidikan ?: '-',
-                                'Fakultas / Prodi' =>
-                                    ($registration->user->fakultas ?: '-') .
-                                    ' / ' .
-                                    ($registration->user->program_studi ?: '-'),
-                                'SKS / Semester' =>
-                                    ($registration->user->total_sks ?: '-') .
-                                    ' SKS (' .
-                                    ($registration->user->status_semester ?: '-') .
-                                    ')',
-                            ];
+                            'Nomor WhatsApp' => $registration->user->no_wa ?: '-',
+                            'Kualifikasi Pendidikan' => $registration->user->kualifikasi_pendidikan ?: '-',
+                            'Kode Pos' => $registration->user->profile?->kode_pos_rumah ?: '-',
+                            'Telepon Rumah' => $registration->user->profile?->telp_rumah ?: '-',
+                            'Telepon Kantor' => $registration->user->profile?->telp_kantor ?: '-',
+                            'Nama Institusi / Perusahaan' => $registration->user->nama_perusahaan ?: '-',
+                            'Jabatan' => $registration->user->jabatan ?: '-',
+                            'Alamat Perusahaan' => $registration->user->alamat_perusahaan ?: '-',
+                            'Kode Pos Perusahaan' => $registration->user->kode_pos_perusahaan ?: '-',
+                            'Telepon Perusahaan' => $registration->user->no_telp_perusahaan ?: '-',
+                            'Email Perusahaan' => $registration->user->email_perusahaan ?: '-',
+                        ];
                     @endphp
                     @foreach ($biodata as $label => $value)
                         <div class="flex flex-col p-5 rounded-2xl bg-gray-50/50 border border-gray-50">
@@ -189,7 +168,7 @@
 
             @if ($registration->usesSimplifiedDocumentFlow())
                 <div class="mb-6 rounded-2xl border border-blue-100 bg-blue-50/70 p-4 text-sm text-blue-800">
-                    Peserta ini menggunakan alur pendaftaran skema baru lanjutan. Dokumen yang direview hanya FR APL 01 dan FR APL 02.
+                    Peserta ini menggunakan alur pendaftaran skema baru lanjutan. Dokumen yang direview hanya FR APL 02.
                 </div>
             @endif
 

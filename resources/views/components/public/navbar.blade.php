@@ -8,9 +8,9 @@
         'profil' => [
             'label' => 'Profil',
             'children' => [
-                ['label' => 'Tentang kami', 'url' => route('profil').'#tentang-kami'],
-                ['label' => 'Visi & Misi', 'url' => route('profil').'#visi-misi'],
-                ['label' => 'Struktur organisasi', 'url' => route('profil').'#struktur-organisasi'],
+                ['label' => 'Tentang kami', 'url' => route('profil') . '#tentang-kami'],
+                ['label' => 'Visi & Misi', 'url' => route('profil') . '#visi-misi'],
+                ['label' => 'Struktur organisasi', 'url' => route('profil') . '#struktur-organisasi'],
                 ['label' => 'Program Kerja', 'url' => '#'],
                 ['label' => 'Testimoni', 'url' => '#'],
             ],
@@ -83,10 +83,10 @@
     <div class="{{ $sticky ? 'relative w-full' : 'relative w-full' }}">
         <nav :class="{
             'fixed top-0 bg-white py-3 shadow-md border-b border-gray-100': {{ $sticky ? 'false' : 'scrolled' }},
-            'absolute top-0 bg-transparent py-4 border-b border-transparent': {{ $sticky ? 'false' : '!scrolled' }},
+            'relative bg-white py-3 border-b border-gray-100': {{ $sticky ? 'false' : '!scrolled' }},
             'bg-white py-3 border-b border-gray-100': {{ $sticky ? 'true' : 'false' }}
         }"
-            class="z-40 w-full px-6 transition-all duration-300 lg:px-16">
+            class="z-40 w-full px-6 duration-300 lg:px-16">
             <div class="mx-auto flex w-full max-w-340 items-center justify-between">
 
                 <a href="{{ route('home') }}" class="flex items-center gap-3">
@@ -101,16 +101,11 @@
                                 class="relative py-4">
                                 <button
                                     :class="{
-                                        'text-[#15803d]': {{ $sticky ? 'true' : 'scrolled' }} &&
+                                        'text-[#15803d]': ({{ $sticky ? 'true' : 'scrolled' }} || true) &&
                                             '{{ $active === $key ? 'true' : 'false' }}'
                                         === 'true',
-                                        'text-white': {{ $sticky ? 'false' : '!scrolled' }} &&
-                                            '{{ $active === $key ? 'true' : 'false' }}'
-                                        === 'true',
-                                        'text-gray-700 hover:text-[#15803d]': {{ $sticky ? 'true' : 'scrolled' }} &&
-                                            '{{ $active === $key ? 'false' : 'true' }}'
-                                        === 'true',
-                                        'text-white hover:text-[#86efac]': {{ $sticky ? 'false' : '!scrolled' }} &&
+                                        'text-gray-700 hover:text-[#15803d]': ({{ $sticky ? 'true' : 'scrolled' }} ||
+                                                true) &&
                                             '{{ $active === $key ? 'false' : 'true' }}'
                                         === 'true'
                                     }"
@@ -120,8 +115,7 @@
                                     <span class="relative ml-1 flex h-4 w-4 items-center justify-center">
                                         <span x-show="!open" x-transition:enter="transition opacity duration-300"
                                             x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100"
-                                            :class="{{ $sticky ? '{ \'text-gray-500\': true }' : '{ \'text-gray-500\': scrolled, \'text-white/80\': !scrolled }' }}"
-                                            class="absolute">+</span>
+                                            :class="{ 'text-gray-500': true }" class="absolute">+</span>
                                         <span x-show="open" style="display: none;"
                                             x-transition:enter="transition opacity duration-300"
                                             x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100"
@@ -148,16 +142,11 @@
                         @else
                             <a href="{{ $resolveLink($link) }}"
                                 :class="{
-                                    'text-[#15803d]': {{ $sticky ? 'true' : 'scrolled' }} &&
+                                    'text-[#15803d]': ({{ $sticky ? 'true' : 'scrolled' }} || true) &&
                                         '{{ $active === $key ? 'true' : 'false' }}'
                                     === 'true',
-                                    'text-white': {{ $sticky ? 'false' : '!scrolled' }} &&
-                                        '{{ $active === $key ? 'true' : 'false' }}'
-                                    === 'true',
-                                    'text-gray-700 hover:text-[#15803d]': {{ $sticky ? 'true' : 'scrolled' }} &&
-                                        '{{ $active === $key ? 'false' : 'true' }}'
-                                    === 'true',
-                                    'text-white hover:text-[#86efac]': {{ $sticky ? 'false' : '!scrolled' }} &&
+                                    'text-gray-700 hover:text-[#15803d]': ({{ $sticky ? 'true' : 'scrolled' }} ||
+                                            true) &&
                                         '{{ $active === $key ? 'false' : 'true' }}'
                                     === 'true'
                                 }"
@@ -167,11 +156,7 @@
                         @endif
                     @endforeach
 
-                    <div :class="{
-                        'border-gray-200': {{ $sticky ? 'true' : 'scrolled' }},
-                        'border-white/30': {{ $sticky ? 'false' : '!scrolled' }}
-                    }"
-                        class="flex items-center gap-2 border-l-2 pl-4">
+                    <div class="flex items-center gap-2 border-l-2 border-gray-200 pl-4">
                         <img src="https://flagcdn.com/w20/gb.png" alt="English"
                             class="h-4 w-6 object-cover cursor-pointer hover:opacity-80">
                         <img src="https://flagcdn.com/w20/id.png" alt="Indonesia"
@@ -201,8 +186,7 @@
 
                 <button @click="mobileMenuOpen = !mobileMenuOpen"
                     :class="{
-                        'text-gray-800 focus:ring-gray-300': {{ $sticky ? 'true' : 'scrolled' }},
-                        'text-white focus:ring-white/40': {{ $sticky ? 'false' : '!scrolled' }}
+                        'text-gray-800 focus:ring-gray-300': true
                     }"
                     class="rounded-md p-2 transition-colors duration-300 lg:hidden">
                     <svg class="h-7 w-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
