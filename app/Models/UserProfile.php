@@ -10,8 +10,7 @@ class UserProfile extends Model
     protected $table = 'users_profiles';
 
     protected $fillable = [
-        'user_id', 'fakultas', 'program_studi', 'tempat_lahir',
-        'tanggal_lahir', 'jenis_kelamin', 'alamat_rumah',
+        'user_id', 'tempat_lahir', 'tanggal_lahir', 'jenis_kelamin', 'alamat_rumah',
         'no_wa', 'kode_pos_rumah', 'telp_rumah', 'telp_kantor',
     ];
 

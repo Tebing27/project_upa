@@ -42,3 +42,23 @@
         @endif
     </div>
 </div>
+
+@once
+    @push('styles')
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.css">
+        <style>
+            .cropper-view-box,
+            .cropper-face {
+                border-radius: 4px;
+            }
+
+            .aspect-3-4 {
+                aspect-ratio: 3 / 4;
+            }
+        </style>
+    @endpush
+
+    @push('scripts')
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.js"></script>
+    @endpush
+@endonce

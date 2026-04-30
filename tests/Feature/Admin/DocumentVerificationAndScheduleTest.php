@@ -154,16 +154,14 @@ it('can continue to the payment verification page after a rejected document is l
         'status' => 'menunggu_verifikasi',
         'document_statuses' => [
             '_meta_condensed_flow' => ['status' => 'meta'],
-            'fr_apl_01_path' => ['status' => 'rejected', 'note' => 'Perbaiki formulir.'],
-            'fr_apl_02_path' => ['status' => 'verified'],
+            'fr_apl_02_path' => ['status' => 'rejected', 'note' => 'Perbaiki formulir.'],
         ],
-        'fr_apl_01_path' => 'documents/fr_apl_01/form-1.pdf',
         'fr_apl_02_path' => 'documents/fr_apl_02/form-2.pdf',
     ]);
 
     Livewire::actingAs($admin)
         ->test(DetailDokumen::class, ['registration' => $registration])
-        ->call('verifikasiDokumen', 'fr_apl_01_path')
+        ->call('verifikasiDokumen', 'fr_apl_02_path')
         ->assertSee('Lanjut ke Pembayaran')
         ->call('lanjutkanKeJadwal')
         ->assertRedirect(route('admin.payment', ['highlight' => $registration->id], absolute: false));
@@ -174,8 +172,9 @@ it('can continue to the payment verification page after a rejected document is l
 it('shows the Data Pribadi modal button and correct user data in DetailDokumen', function () {
     $admin = User::factory()->create(['role' => 'admin']);
     $scheme = Scheme::factory()->create(['name' => 'Junior Web Developer']);
-    $participant = User::factory()->create([
+    $participant = createMahasiswaUser([
         'name' => 'Data Pribadi Peserta',
+    ], [], [
         'nim' => '12345678',
     ]);
     $registration = Registration::factory()->create([
@@ -188,7 +187,7 @@ it('shows the Data Pribadi modal button and correct user data in DetailDokumen',
         ->test(DetailDokumen::class, ['registration' => $registration])
         ->assertSee('Data Pribadi')
         ->assertSee('Data Pribadi Peserta')
-        ->assertSee('12345678');
+        ->assertSee('3174000000000001');
 });
 
 it('shows nik instead of generated nim for general users across admin verification pages', function () {
@@ -761,7 +760,7 @@ it('keeps uploaded participants visible on the upload page for future updates', 
         ->assertSee('Peserta Upload Tetap Tampil')
         ->assertSee('Kompeten')
         ->assertSee('Sertifikat PDF')
-        ->assertSee('Hasil Ujian PDF')
+        ->assertSee('Surat Keterangan PDF')
         ->assertSee('Edit')
         ->assertSee('Hapus')
         ->assertDontSee('Upload Ulang')

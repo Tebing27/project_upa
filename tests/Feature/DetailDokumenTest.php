@@ -29,7 +29,6 @@ it('sets status to dokumen_ok when all required documents are verified even with
             'payment_reference' => '982210511042',
         ],
         [
-            'fr_apl_01_path' => 'documents/fr_apl_01/test.pdf',
             'fr_apl_02_path' => 'documents/fr_apl_02/test.pdf',
             'ktm_path' => 'documents/ktm/test.pdf',
             'khs_path' => 'documents/khs/test.pdf',
@@ -39,7 +38,6 @@ it('sets status to dokumen_ok when all required documents are verified even with
     );
 
     $requiredDocs = [
-        'fr_apl_01_path',
         'fr_apl_02_path',
         'ktm_path',
         'khs_path',
@@ -75,7 +73,6 @@ it('sets status to dokumen_ok when all documents including optional internship a
             'payment_reference' => '982210511042',
         ],
         [
-            'fr_apl_01_path' => 'documents/fr_apl_01/test.pdf',
             'fr_apl_02_path' => 'documents/fr_apl_02/test.pdf',
             'ktm_path' => 'documents/ktm/test.pdf',
             'khs_path' => 'documents/khs/test.pdf',
@@ -86,7 +83,6 @@ it('sets status to dokumen_ok when all documents including optional internship a
     );
 
     $allDocs = [
-        'fr_apl_01_path',
         'fr_apl_02_path',
         'ktm_path',
         'khs_path',
@@ -116,7 +112,6 @@ it('sets status to dokumen_ditolak when any document is rejected', function () {
             'payment_reference' => '982210511042',
         ],
         [
-            'fr_apl_01_path' => 'documents/fr_apl_01/test.pdf',
             'fr_apl_02_path' => 'documents/fr_apl_02/test.pdf',
             'ktm_path' => 'documents/ktm/test.pdf',
             'khs_path' => 'documents/khs/test.pdf',
@@ -128,7 +123,7 @@ it('sets status to dokumen_ditolak when any document is rejected', function () {
     $component = Livewire::actingAs($this->admin)
         ->test(DetailDokumen::class, ['registration' => $registration]);
 
-    $component->call('verifikasiDokumen', 'fr_apl_01_path');
+    $component->call('verifikasiDokumen', 'fr_apl_02_path');
 
     $component->set('rejectDocType', 'ktm_path')
         ->set('rejectNote', 'KTM tidak jelas')
@@ -139,7 +134,7 @@ it('sets status to dokumen_ditolak when any document is rejected', function () {
     expect($registration->status)->toBe('dokumen_ditolak');
 });
 
-it('sets status to dokumen_ok after verifying only FR APL 01 and FR APL 02 in the condensed flow', function () {
+it('sets status to dokumen_ok after verifying only FR APL 02 in the condensed flow', function () {
     Storage::fake('public');
     AppSetting::put('admin_signature_name', 'Admin Condensed');
     AppSetting::put('admin_signature_path', 'documents/signatures/admin-global.png');
@@ -153,7 +148,6 @@ it('sets status to dokumen_ok after verifying only FR APL 01 and FR APL 02 in th
             'payment_reference' => '982210511042',
         ],
         [
-            'fr_apl_01_path' => 'documents/fr_apl_01/test.pdf',
             'fr_apl_02_path' => 'documents/fr_apl_02/test.pdf',
             'ktm_path' => 'documents/ktm/test.pdf',
             'khs_path' => 'documents/khs/test.pdf',
@@ -167,14 +161,12 @@ it('sets status to dokumen_ok after verifying only FR APL 01 and FR APL 02 in th
 
     $component = Livewire::actingAs($this->admin)
         ->test(DetailDokumen::class, ['registration' => $registration])
-        ->assertSee('Formulir APL-01')
         ->assertSee('Formulir APL-02')
         ->assertSee('KHS / Transkrip')
         ->assertSee('Pendukung')
         ->assertDontSeeHtml("wire:click=\"verifikasiDokumen('khs_path')\"")
         ->assertDontSeeHtml("wire:click=\"bukaModalTolak('khs_path')\"");
 
-    $component->call('verifikasiDokumen', 'fr_apl_01_path');
     $component->call('verifikasiDokumen', 'fr_apl_02_path');
 
     expect($registration->refresh()->status)->toBe('dokumen_ok');

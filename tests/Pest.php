@@ -67,15 +67,17 @@ function createMahasiswaUser(array $user = [], array $profile = [], array $mahas
         'role' => 'mahasiswa',
     ], $user));
 
+    $academicProfile = array_intersect_key($profile, array_flip(['fakultas', 'program_studi']));
+    $profile = array_diff_key($profile, $academicProfile);
+
     UserProfile::query()->updateOrCreate(
         ['user_id' => $user->id],
         array_merge([
-            'fakultas' => 'Ilmu Komputer',
-            'program_studi' => 'Teknik Informatika',
             'tempat_lahir' => 'Jakarta',
             'tanggal_lahir' => '2000-01-01',
             'jenis_kelamin' => 'L',
             'alamat_rumah' => 'Jl. Contoh No. 1',
+            'kode_pos_rumah' => '12450',
             'no_wa' => '081234567890',
         ], $profile)
     );
@@ -86,8 +88,27 @@ function createMahasiswaUser(array $user = [], array $profile = [], array $mahas
             'nim' => '2210511042',
             'total_sks' => 144,
             'status_semester' => 'Lulus',
-        ], $mahasiswaProfile)
+            'fakultas' => 'Ilmu Komputer',
+            'program_studi' => 'Teknik Informatika',
+        ], $academicProfile, $mahasiswaProfile)
     );
+
+    UserUmumProfile::query()->updateOrCreate(
+        ['user_id' => $user->id],
+        [
+            'no_ktp' => '3174000000000001',
+            'kualifikasi_pendidikan' => 'S1',
+            'nama_perusahaan' => 'Universitas Pembangunan Nasional Veteran Jakarta',
+            'jabatan' => 'Mahasiswa',
+            'alamat_perusahaan' => 'Jl. RS Fatmawati No. 1',
+            'kode_pos_perusahaan' => '12450',
+            'no_telp_perusahaan' => '0217656971',
+            'email_perusahaan' => 'kampus@example.com',
+        ]
+    );
+
+    $user->syncProfileCompletionStatus();
+    $user->save();
 
     return $user->fresh(['profile', 'mahasiswaProfile', 'umumProfile']);
 }
@@ -100,15 +121,16 @@ function createGeneralUser(array $user = [], array $profile = [], array $umumPro
     ], $user));
 
     if ($completed || $profile !== [] || $umumProfile !== []) {
+        $profile = array_diff_key($profile, array_flip(['fakultas', 'program_studi']));
+
         UserProfile::query()->updateOrCreate(
             ['user_id' => $user->id],
             array_merge([
-                'fakultas' => 'Umum',
-                'program_studi' => 'Manajemen Informatika',
                 'tempat_lahir' => 'Jakarta',
                 'tanggal_lahir' => '1998-04-10',
                 'jenis_kelamin' => 'L',
                 'alamat_rumah' => 'Jl. Contoh No. 1',
+                'kode_pos_rumah' => '12950',
                 'no_wa' => '081234567890',
                 'telp_rumah' => '0211234567',
                 'telp_kantor' => '0217654321',

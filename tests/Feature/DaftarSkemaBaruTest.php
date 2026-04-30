@@ -50,11 +50,10 @@ beforeEach(function () {
 function fakeDocuments(): array
 {
     return [
-        'frApl01' => UploadedFile::fake()->create('fr_apl_01.pdf', 100, 'application/pdf'),
         'frApl02' => UploadedFile::fake()->create('fr_apl_02.pdf', 100, 'application/pdf'),
-        'ktm' => UploadedFile::fake()->create('ktm.pdf', 100, 'application/pdf'),
+        'ktm' => UploadedFile::fake()->image('ktm.jpg'),
         'khs' => UploadedFile::fake()->create('khs.pdf', 100, 'application/pdf'),
-        'ktp' => UploadedFile::fake()->create('ktp.pdf', 100, 'application/pdf'),
+        'ktp' => UploadedFile::fake()->image('ktp.png'),
         'passportPhoto' => UploadedFile::fake()->image('photo.jpg'),
     ];
 }
@@ -62,7 +61,6 @@ function fakeDocuments(): array
 function fakeCondensedDocuments(): array
 {
     return [
-        'frApl01' => UploadedFile::fake()->create('fr_apl_01.pdf', 100, 'application/pdf'),
         'frApl02' => UploadedFile::fake()->create('fr_apl_02.pdf', 100, 'application/pdf'),
     ];
 }
@@ -119,7 +117,7 @@ it('prefills type and scheme from dashboard skema source without auto advancing'
         ->assertSet('currentStep', 1);
 });
 
-it('prefills perpanjangan shortcut without auto advancing to the next step', function () {
+it('normalizes old perpanjangan shortcuts to the new registration flow', function () {
     createCertificateForUser($this->user, $this->scheme, [
         'status' => 'inactive',
         'expired_date' => now()->subMonths(2),
@@ -132,7 +130,7 @@ it('prefills perpanjangan shortcut without auto advancing to the next step', fun
             'source' => 'dashboard-skema',
         ])
         ->test(DaftarSkemaBaru::class)
-        ->assertSet('registrationType', 'perpanjangan')
+        ->assertSet('registrationType', 'baru')
         ->assertSet('schemeId', (string) $this->scheme->id)
         ->assertSet('currentStep', 1);
 });
@@ -206,7 +204,6 @@ it('completes the full baru registration flow', function () {
         ->assertHasNoErrors()
         ->assertSet('currentStep', 3)
         // Step 3 visible: APL 02
-        ->set('frApl01', $docs['frApl01'])
         ->set('frApl02', $docs['frApl02'])
         ->call('nextStep')
         ->assertHasNoErrors()
@@ -245,7 +242,6 @@ it('keeps the stepper on the last visible step after registration is submitted',
         ->call('confirmApl01')
         ->set('applicantSignature', $fakeSignature)
         ->call('nextStep')
-        ->set('frApl01', $docs['frApl01'])
         ->set('frApl02', $docs['frApl02'])
         ->call('nextStep')
         ->call('submit')
@@ -253,36 +249,19 @@ it('keeps the stepper on the last visible step after registration is submitted',
         ->assertSeeHtml('style="width: 100%;"');
 });
 
-it('completes the full perpanjangan registration flow', function () {
+it('allows registration again when the previous certificate is expired', function () {
     createCertificateForUser($this->user, $this->scheme, [
         'status' => 'inactive',
         'expired_date' => now()->subMonths(2),
     ]);
 
-    $docs = fakeDocuments();
-
     Livewire::actingAs($this->user)
         ->test(DaftarSkemaBaru::class)
-        ->set('registrationType', 'perpanjangan')
+        ->set('registrationType', 'baru')
         ->set('schemeId', $this->scheme->id)
         ->call('nextStep')
         ->assertHasNoErrors()
-        ->assertSet('currentStep', 3)
-        ->set('frApl01', $docs['frApl01'])
-        ->set('frApl02', $docs['frApl02'])
-        ->call('nextStep')
-        ->assertHasNoErrors()
-        ->assertSet('currentStep', 4)
-        ->call('submit')
-        ->assertHasNoErrors()
-        ->assertSet('currentStep', 5);
-
-    $this->assertDatabaseHas('registrations', [
-        'user_id' => $this->user->id,
-        'scheme_id' => $this->scheme->id,
-        'type' => 'perpanjangan',
-        'status' => 'menunggu_verifikasi',
-    ]);
+        ->assertSet('currentStep', 2);
 });
 
 it('generates unique payment_reference when user has existing registrations', function () {
@@ -293,21 +272,27 @@ it('generates unique payment_reference when user has existing registrations', fu
         'payment_reference' => '98'.$this->user->nim,
     ]);
 
-    createCertificateForUser($this->user, $this->scheme, [
-        'status' => 'inactive',
-        'expired_date' => now()->subMonths(2),
-    ]);
-
     $docs = fakeDocuments();
 
     Livewire::actingAs($this->user)
         ->test(DaftarSkemaBaru::class)
-        ->set('registrationType', 'perpanjangan')
-        ->set('schemeId', $this->scheme->id)
+        ->set('registrationType', 'baru')
+        ->set('schemeId', $this->secondScheme->id)
+        ->call('nextStep')
+        ->assertHasNoErrors()
+        ->assertSet('currentStep', 2)
+        ->call('nextStep')
+        ->set('assessmentPurpose', 'sertifikasi')
+        ->call('nextStep')
+        ->set('ktm', $docs['ktm'])
+        ->set('khs', $docs['khs'])
+        ->set('ktp', $docs['ktp'])
+        ->set('passportPhoto', $docs['passportPhoto'])
+        ->call('confirmApl01')
+        ->set('applicantSignature', 'data:image/png;base64,iVBORw0KGgo=')
         ->call('nextStep')
         ->assertHasNoErrors()
         ->assertSet('currentStep', 3)
-        ->set('frApl01', $docs['frApl01'])
         ->set('frApl02', $docs['frApl02'])
         ->call('nextStep')
         ->assertHasNoErrors()
@@ -318,8 +303,8 @@ it('generates unique payment_reference when user has existing registrations', fu
 
     $this->assertDatabaseHas('registrations', [
         'user_id' => $this->user->id,
-        'scheme_id' => $this->scheme->id,
-        'type' => 'perpanjangan',
+        'scheme_id' => $this->secondScheme->id,
+        'type' => 'baru',
         'status' => 'menunggu_verifikasi',
         'payment_reference' => '98'.$this->user->nim.'-2',
     ]);
@@ -359,7 +344,6 @@ it('generates 16 digit payment_reference for general users from nik and current 
         ->set('applicantSignature', $fakeSignature)
         ->call('nextStep')
         ->assertSet('currentStep', 3)
-        ->set('frApl01', $docs['frApl01'])
         ->set('frApl02', $docs['frApl02'])
         ->call('nextStep')
         ->assertSet('currentStep', 4)
@@ -380,7 +364,7 @@ it('generates 16 digit payment_reference for general users from nik and current 
     Carbon::setTestNow();
 });
 
-it('blocks perpanjangan when user has no expired or inactive certificate for that scheme', function () {
+it('blocks new registration when user has an active certificate for that scheme', function () {
     // Has an ACTIVE certificate, shouldn't be allowed to renew
     createCertificateForUser($this->user, $this->scheme, [
         'status' => 'active',
@@ -389,14 +373,14 @@ it('blocks perpanjangan when user has no expired or inactive certificate for tha
 
     Livewire::actingAs($this->user)
         ->test(DaftarSkemaBaru::class)
-        ->set('registrationType', 'perpanjangan')
+        ->set('registrationType', 'baru')
         ->set('schemeId', $this->scheme->id)
         ->call('nextStep')
         ->assertHasErrors(['schemeId'])
         ->assertSet('currentStep', 1);
 });
 
-it('uses the condensed document flow for upnvj users who already have an issued certificate', function () {
+it('requires APL 01 again for upnvj users who already have an issued certificate', function () {
     createRegistrationWithRelations(
         $this->user,
         $this->scheme,
@@ -416,19 +400,49 @@ it('uses the condensed document flow for upnvj users who already have an issued 
         'expired_date' => now()->addMonths(6),
     ]);
 
-    $docs = fakeCondensedDocuments();
+    $this->user->profile()->updateOrCreate([], [
+        'tempat_lahir' => 'Jakarta',
+        'tanggal_lahir' => '2001-02-03',
+        'jenis_kelamin' => 'L',
+        'alamat_rumah' => 'Jl. Lama No. 1',
+        'no_wa' => '081234567890',
+        'kode_pos_rumah' => '12950',
+    ]);
+    $this->user->unsetRelation('profile');
+
+    $docs = fakeDocuments();
+    $fakeSignature = 'data:image/png;base64,iVBORw0KGgo=';
 
     Livewire::actingAs($this->user)
         ->test(DaftarSkemaBaru::class)
-        ->assertSet('useCondensedDocumentFlow', true)
+        ->assertSet('useCondensedDocumentFlow', false)
+        ->assertSet('name', $this->user->nama)
+        ->assertSet('email', $this->user->email)
+        ->assertSet('tempat_lahir', 'Jakarta')
+        ->assertSet('tanggal_lahir', '2001-02-03')
+        ->assertSet('alamat_rumah', 'Jl. Lama No. 1')
         ->set('registrationType', 'baru')
         ->set('schemeId', $this->secondScheme->id)
         ->call('nextStep')
-        ->assertSet('currentStep', 3)
+        ->assertSet('currentStep', 2)
+        ->assertSet('apl01SubStep', 1)
         ->call('nextStep')
-        ->assertHasErrors(['frApl01', 'frApl02'])
+        ->assertSet('apl01SubStep', 2)
+        ->set('assessmentPurpose', 'sertifikasi')
+        ->call('nextStep')
+        ->assertSet('apl01SubStep', 3)
+        ->call('confirmApl01')
+        ->assertHasErrors(['ktm', 'khs', 'ktp', 'passportPhoto'])
+        ->set('ktm', $docs['ktm'])
+        ->set('khs', $docs['khs'])
+        ->set('ktp', $docs['ktp'])
+        ->set('passportPhoto', $docs['passportPhoto'])
+        ->call('confirmApl01')
         ->assertHasNoErrors(['ktm', 'khs', 'ktp', 'passportPhoto'])
-        ->set('frApl01', $docs['frApl01'])
+        ->assertSet('apl01SubStep', 4)
+        ->set('applicantSignature', $fakeSignature)
+        ->call('nextStep')
+        ->assertSet('currentStep', 3)
         ->set('frApl02', $docs['frApl02'])
         ->call('nextStep')
         ->assertSet('currentStep', 4)
@@ -442,16 +456,16 @@ it('uses the condensed document flow for upnvj users who already have an issued 
         ->first();
 
     expect($registration)->not->toBeNull()
-        ->and($registration->fr_apl_01_path)->not->toBeNull()
+        ->and($registration->fr_apl_01_path)->toBeNull()
         ->and($registration->fr_apl_02_path)->not->toBeNull()
-        ->and($registration->ktm_path)->toBe('documents/ktm/old.pdf')
-        ->and($registration->khs_path)->toBe('documents/khs/old.pdf')
-        ->and($registration->ktp_path)->toBe('documents/ktp/old.pdf')
-        ->and($registration->passport_photo_path)->toBe('documents/photo/old.jpg')
-        ->and($registration->usesSimplifiedDocumentFlow())->toBeTrue();
+        ->and($registration->ktm_path)->not->toBe('documents/ktm/old.pdf')
+        ->and($registration->khs_path)->not->toBe('documents/khs/old.pdf')
+        ->and($registration->ktp_path)->not->toBe('documents/ktp/old.pdf')
+        ->and($registration->passport_photo_path)->not->toBe('documents/photo/old.jpg')
+        ->and($registration->usesSimplifiedDocumentFlow())->toBeFalse();
 });
 
-it('skips the biodata step for general users who already have an issued certificate', function () {
+it('prefills but does not skip biodata for general users who already have an issued certificate', function () {
     $user = createGeneralUser(
         profile: [
             'fakultas' => 'Fakultas Ilmu Komputer',
@@ -467,12 +481,15 @@ it('skips the biodata step for general users who already have an issued certific
 
     Livewire::actingAs($user)
         ->test(DaftarSkemaBaru::class)
-        ->assertSet('useCondensedDocumentFlow', true)
-        ->assertSet('shouldShowProfileStep', false)
+        ->assertSet('useCondensedDocumentFlow', false)
+        ->assertSet('shouldShowProfileStep', true)
+        ->assertSet('name', $user->nama)
+        ->assertSet('email', $user->email)
         ->set('registrationType', 'baru')
         ->set('schemeId', $this->secondScheme->id)
         ->call('nextStep')
-        ->assertSet('currentStep', 3);
+        ->assertSet('currentStep', 2)
+        ->assertSet('apl01SubStep', 1);
 });
 
 it('blocks baru registration when user has active certificate for that scheme', function () {
@@ -503,17 +520,35 @@ it('shows renewal guidance when no new schemes are available because the user al
         ->test(DaftarSkemaBaru::class)
         ->assertSet('registrationType', 'baru')
         ->assertSee('Tidak ada skema baru yang tersedia untuk pilihan Anda saat ini.')
-        ->assertSee('Anda sudah memiliki sertifikasi skema ini, mohon untuk diperpanjang jika sudah kadaluarsa.');
+        ->assertSee('Anda sudah memiliki riwayat sertifikasi untuk skema yang cocok.');
 });
 
-it('blocks perpanjangan when user has no active certificate for that scheme', function () {
+it('shows expired certificate schemes as selectable without renewal warning', function () {
+    $this->secondScheme->update(['is_active' => false]);
+
+    createCertificateForUser($this->user, $this->scheme, [
+        'status' => 'inactive',
+        'expired_date' => now()->subDay(),
+    ]);
+
+    Livewire::actingAs($this->user)
+        ->test(DaftarSkemaBaru::class)
+        ->assertSet('registrationType', 'baru')
+        ->assertSee('Pilih Skema Sertifikasi')
+        ->assertDontSee('Pilih Tipe Pendaftaran')
+        ->assertSee($this->scheme->name)
+        ->assertDontSee('Anda sudah memiliki riwayat sertifikasi untuk skema yang cocok.');
+});
+
+it('keeps old perpanjangan selection normalized when no certificate exists', function () {
     Livewire::actingAs($this->user)
         ->test(DaftarSkemaBaru::class)
         ->set('registrationType', 'perpanjangan')
         ->set('schemeId', $this->scheme->id)
         ->call('nextStep')
-        ->assertHasErrors(['schemeId'])
-        ->assertSet('currentStep', 1);
+        ->assertHasNoErrors()
+        ->assertSet('registrationType', 'baru')
+        ->assertSet('currentStep', 2);
 });
 
 it('blocks registration for a scheme that already has an in-progress registration', function () {
@@ -558,7 +593,8 @@ it('validates required fields on step 1', function () {
     Livewire::actingAs($this->user)
         ->test(DaftarSkemaBaru::class)
         ->call('nextStep')
-        ->assertHasErrors(['registrationType', 'schemeId'])
+        ->assertHasErrors(['schemeId'])
+        ->assertHasNoErrors(['registrationType'])
         ->assertSet('currentStep', 1);
 });
 
@@ -587,6 +623,87 @@ it('validates required documents on step 2', function () {
         ->call('confirmApl01')
         ->assertHasErrors(['ktm', 'khs', 'ktp', 'passportPhoto'])
         ->assertSet('currentStep', 2);
+});
+
+it('validates apl 01 supporting document file types', function () {
+    Livewire::actingAs($this->user)
+        ->test(DaftarSkemaBaru::class)
+        ->set('registrationType', 'baru')
+        ->set('schemeId', $this->scheme->id)
+        ->call('nextStep')
+        ->call('nextStep')
+        ->set('assessmentPurpose', 'sertifikasi')
+        ->call('nextStep')
+        ->set('ktm', UploadedFile::fake()->create('ktm.pdf', 100, 'application/pdf'))
+        ->set('khs', UploadedFile::fake()->image('khs.jpg'))
+        ->set('internshipCertificate', UploadedFile::fake()->image('magang.png'))
+        ->set('ktp', UploadedFile::fake()->create('ktp.pdf', 100, 'application/pdf'))
+        ->set('passportPhoto', UploadedFile::fake()->image('photo.jpg'))
+        ->call('nextStep')
+        ->assertHasErrors(['ktm', 'khs', 'ktp'])
+        ->assertHasNoErrors(['internshipCertificate', 'passportPhoto'])
+        ->assertSet('apl01SubStep', 3);
+});
+
+it('renders upload previews and 3x4 passport photo preview on apl 01 section 3', function () {
+    $docs = fakeDocuments();
+
+    Livewire::actingAs($this->user)
+        ->test(DaftarSkemaBaru::class)
+        ->set('registrationType', 'baru')
+        ->set('schemeId', $this->scheme->id)
+        ->call('nextStep')
+        ->call('nextStep')
+        ->set('assessmentPurpose', 'sertifikasi')
+        ->call('nextStep')
+        ->set('ktm', $docs['ktm'])
+        ->set('khs', $docs['khs'])
+        ->set('ktp', $docs['ktp'])
+        ->set('passportPhoto', $docs['passportPhoto'])
+        ->assertSeeHtml('Preview pasfoto')
+        ->assertSeeHtml('aspect-[3/4]')
+        ->assertSee('Sesuaikan Pas Foto')
+        ->assertSee('Atur Ulang Crop')
+        ->assertSee('PDF')
+        ->assertSee('JPG, JPEG, PNG maksimal 2MB.');
+});
+
+it('stores the cropped 3x4 passport photo when provided', function () {
+    $docs = fakeDocuments();
+    $fakeSignature = 'data:image/png;base64,iVBORw0KGgo=';
+    $croppedPhoto = 'data:image/jpeg;base64,'.base64_encode('cropped-passport-photo');
+
+    Livewire::actingAs($this->user)
+        ->test(DaftarSkemaBaru::class)
+        ->set('registrationType', 'baru')
+        ->set('schemeId', $this->scheme->id)
+        ->call('nextStep')
+        ->call('nextStep')
+        ->set('assessmentPurpose', 'sertifikasi')
+        ->call('nextStep')
+        ->set('ktm', $docs['ktm'])
+        ->set('khs', $docs['khs'])
+        ->set('ktp', $docs['ktp'])
+        ->set('passportPhoto', $docs['passportPhoto'])
+        ->set('passportPhotoBase64', $croppedPhoto)
+        ->call('nextStep')
+        ->assertSet('apl01SubStep', 4)
+        ->set('applicantSignature', $fakeSignature)
+        ->call('nextStep')
+        ->set('frApl02', $docs['frApl02'])
+        ->call('nextStep')
+        ->call('submit')
+        ->assertSet('currentStep', 5);
+
+    $registration = Registration::query()
+        ->where('user_id', $this->user->id)
+        ->latest('id')
+        ->firstOrFail();
+
+    expect($registration->passport_photo_path)->toStartWith('documents/photo/passport_')
+        ->and($registration->passport_photo_path)->toEndWith('.jpg');
+
+    Storage::disk('public')->assertExists($registration->passport_photo_path);
 });
 
 it('can navigate back with previousStep', function () {
@@ -618,12 +735,14 @@ it('requires incomplete general users to fill biodata and documents on APL 01', 
         ->set('tempat_lahir', 'Jakarta')
         ->set('tanggal_lahir', '1998-04-10')
         ->set('alamat_rumah', 'Jl. Contoh No. 1')
+        ->set('kode_pos_rumah', '12950')
         ->set('telp_rumah', '0211234567')
         ->set('telp_kantor', '0217654321')
         ->set('no_wa', '081234567890')
         ->set('kualifikasi_pendidikan', 'S1')
         ->set('fakultas', 'Fakultas Ilmu Komputer')
         ->set('nama_perusahaan', 'Universitas Contoh')
+        ->set('kode_pos_perusahaan', '12950')
         ->set('program_studi', 'Teknik Informatika')
         ->call('nextStep')
         ->assertHasNoErrors()
@@ -656,12 +775,14 @@ it('requires incomplete general users to fill biodata and documents on APL 01', 
         ->set('tempat_lahir', 'Jakarta')
         ->set('tanggal_lahir', '1998-04-10')
         ->set('alamat_rumah', 'Jl. Contoh No. 1')
+        ->set('kode_pos_rumah', '12950')
         ->set('telp_rumah', '0211234567')
         ->set('telp_kantor', '0217654321')
         ->set('no_wa', '081234567890')
         ->set('kualifikasi_pendidikan', 'S1')
         ->set('fakultas', 'Fakultas Ilmu Komputer')
         ->set('nama_perusahaan', 'Universitas Contoh')
+        ->set('kode_pos_perusahaan', '12950')
         ->set('program_studi', 'Teknik Informatika')
         ->call('nextStep')
         ->assertHasNoErrors()
@@ -678,7 +799,6 @@ it('requires incomplete general users to fill biodata and documents on APL 01', 
         ->call('nextStep')
         ->assertSet('currentStep', 3)
         ->assertSet('shouldShowProfileStep', true)
-        ->set('frApl01', $docs['frApl01'])
         ->set('frApl02', $docs['frApl02'])
         ->call('nextStep')
         ->assertSet('currentStep', 4)
@@ -755,7 +875,7 @@ it('shows the admin apl 02 template download action on step 3 when available', f
         ->call('nextStep')
         ->assertSet('currentStep', 3)
         ->assertSee('Template APL 02 dari admin tersedia')
-        ->assertSee('Download Template APL 02');
+        ->assertSee('Download APL 02');
 });
 
 it('shows entered biodata on the review step before general user submits the registration', function () {
@@ -776,12 +896,14 @@ it('shows entered biodata on the review step before general user submits the reg
         ->set('tempat_lahir', 'Jakarta')
         ->set('tanggal_lahir', '1998-04-10')
         ->set('alamat_rumah', 'Jl. Contoh No. 1')
+        ->set('kode_pos_rumah', '12950')
         ->set('telp_rumah', '0211234567')
         ->set('telp_kantor', '0217654321')
         ->set('no_wa', '081234567890')
         ->set('kualifikasi_pendidikan', 'S1')
         ->set('fakultas', 'Fakultas Ilmu Komputer')
         ->set('nama_perusahaan', 'Universitas Contoh')
+        ->set('kode_pos_perusahaan', '12950')
         ->set('program_studi', 'Teknik Informatika')
         ->call('nextStep')
         ->set('assessmentPurpose', 'sertifikasi')
@@ -795,21 +917,19 @@ it('shows entered biodata on the review step before general user submits the reg
         ->set('applicantSignature', $fakeSignature)
         ->call('nextStep')
         ->assertSet('currentStep', 3)
-        ->set('frApl01', $docs['frApl01'])
         ->set('frApl02', $docs['frApl02'])
         ->call('nextStep')
         ->assertSet('currentStep', 4)
         ->assertSee('Bing')
         ->assertSee('3174000000000001')
+        ->assertSee('No. WhatsApp')
+        ->assertSee('081234567890')
+        ->assertDontSee('Telepon Kantor')
         ->assertSee('Universitas Contoh');
 });
 
-it('prefills filters for completed general users from biodata', function () {
+it('does not prefill academic filters for completed general users', function () {
     $user = createGeneralUser(
-        profile: [
-            'fakultas' => 'Fakultas Ilmu Komputer',
-            'program_studi' => 'Informatika',
-        ],
         completed: true,
     );
 
@@ -817,8 +937,8 @@ it('prefills filters for completed general users from biodata', function () {
         ->test(DaftarSkemaBaru::class)
         ->assertSet('shouldShowProfileStep', true)
         ->assertSet('requiresProfileCompletion', false)
-        ->assertSet('faculty', (string) $this->scheme->faculty_id)
-        ->assertSet('studyProgram', (string) $this->scheme->study_program_id)
+        ->assertSet('faculty', '')
+        ->assertSet('studyProgram', '')
         ->assertSee('APL 01')
         ->set('registrationType', 'baru')
         ->assertSee($this->scheme->name);

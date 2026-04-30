@@ -1,6 +1,5 @@
 <?php
 
-use App\Livewire\UserCertificatesPage;
 use App\Livewire\UserRegistrationStatus;
 use App\Livewire\UserSchemesPage;
 use App\Models\AppSetting;
@@ -223,6 +222,27 @@ it('allows users to upload payment proof from the registration status page', fun
     Storage::disk('public')->assertExists($registration->payment_proof_path);
 });
 
+it('rejects payment proof files with unsupported extensions', function () {
+    Storage::fake('public');
+
+    $user = User::factory()->create();
+    $scheme = createScheme();
+    $registration = createRegistrationWithRelations($user, $scheme, [
+        'status' => 'dokumen_ok',
+        'payment_reference' => 'PAY-009',
+    ]);
+
+    $file = UploadedFile::fake()->create('payment-proof.txt', 200, 'application/pdf');
+
+    Livewire::actingAs($user)
+        ->test(UserRegistrationStatus::class, ['registration' => $registration])
+        ->set('paymentProof', $file)
+        ->call('uploadPaymentProof')
+        ->assertHasErrors(['paymentProof']);
+
+    expect($registration->refresh()->payment_proof_path)->toBeNull();
+});
+
 it('allows biodata updates from the registration status page when a document is rejected', function () {
     $user = createGeneralUser([
         'nama' => 'Peserta Lama',
@@ -232,7 +252,7 @@ it('allows biodata updates from the registration status page when a document is 
     $registration = createRegistrationWithRelations($user, $scheme, [
         'status' => 'dokumen_ditolak',
     ], [], [
-        'fr_apl_01_path' => [
+        'fr_apl_02_path' => [
             'status' => 'rejected',
             'note' => 'Nama pada formulir perlu diperbarui.',
         ],
@@ -249,11 +269,13 @@ it('allows biodata updates from the registration status page when a document is 
         ->set('profile.tanggal_lahir', '1998-04-10')
         ->set('profile.jenis_kelamin', 'L')
         ->set('profile.alamat_rumah', 'Jl. Contoh No. 1')
+        ->set('profile.kode_pos_rumah', '12950')
         ->set('profile.telp_rumah', '0211234567')
         ->set('profile.telp_kantor', '0217654321')
         ->set('profile.no_wa', '081234567890')
         ->set('profile.kualifikasi_pendidikan', 'S1')
         ->set('profile.nama_perusahaan', 'Universitas Contoh')
+        ->set('profile.kode_pos_perusahaan', '12950')
         ->call('saveBiodata')
         ->assertSet('isEditingBiodata', false)
         ->assertSet('successMessage', 'Biodata berhasil diperbarui. Silakan lanjutkan perbaikan dokumen yang ditolak.');
@@ -269,7 +291,7 @@ it('shows a biodata edit notice on the dokumen tab when documents are rejected',
     $registration = createRegistrationWithRelations($user, $scheme, [
         'status' => 'dokumen_ditolak',
     ], [], [
-        'fr_apl_01_path' => [
+        'fr_apl_02_path' => [
             'status' => 'rejected',
             'note' => 'Perlu revisi biodata.',
         ],
@@ -291,7 +313,6 @@ it('shows bagian 3 requirement documents on the registration status page', funct
         'status' => 'menunggu_verifikasi',
         'assessment_purpose' => 'sertifikasi',
     ], [
-        'fr_apl_01_path' => 'documents/fr_apl_01/test.pdf',
         'fr_apl_02_path' => 'documents/fr_apl_02/test.pdf',
         'ktm_path' => 'documents/ktm/test.pdf',
         'khs_path' => 'documents/khs/test.pdf',
@@ -306,10 +327,10 @@ it('shows bagian 3 requirement documents on the registration status page', funct
     Livewire::actingAs($user)
         ->test(UserRegistrationStatus::class, ['registration' => $registration])
         ->assertSee('5 bukti kelengkapan pemohon')
-        ->assertSee('Bukti Persyaratan Dasar')
+        ->assertSee('Dokumen Pendaftaran')
         ->assertSee('Fotokopi Kartu Mahasiswa (KTM)')
         ->assertDontSee('FR APL 01')
-        ->assertDontSee('FR APL 02');
+        ->assertDontSee('Formulir APL-01');
 });
 
 it('shows the applicant signature on the tanda tangan tab before admin verification is complete', function () {
@@ -324,7 +345,8 @@ it('shows the applicant signature on the tanda tangan tab before admin verificat
     Livewire::actingAs($user)
         ->test(UserRegistrationStatus::class, ['registration' => $registration])
         ->call('setActiveTab', 'tanda_tangan')
-        ->assertSee('Tanda Tangan Pemohon')
+        ->assertSee('Tanda Tangan')
+        ->assertSee('Pemohon')
         ->assertSee('Menunggu finalisasi admin')
         ->assertSee($user->name);
 });
@@ -338,16 +360,12 @@ it('shows the admin signature on the tanda tangan tab after document verificatio
         'status' => 'dokumen_ok',
         'admin_signatory_name' => 'Admin Sertifikasi',
     ], [
-        'fr_apl_01_path' => 'documents/fr_apl_01/test.pdf',
         'fr_apl_02_path' => 'documents/fr_apl_02/test.pdf',
         'applicant_signature_path' => 'documents/signatures/applicant-test.png',
         'admin_signature_path' => 'documents/signatures/admin-test.png',
     ], [
         '_meta_condensed_flow' => [
             'status' => 'meta',
-        ],
-        'fr_apl_01_path' => [
-            'status' => 'verified',
         ],
         'fr_apl_02_path' => [
             'status' => 'verified',
@@ -363,9 +381,10 @@ it('shows the admin signature on the tanda tangan tab after document verificatio
         ->test(UserRegistrationStatus::class, ['registration' => $registration])
         ->call('setActiveTab', 'tanda_tangan')
         ->assertSee('Tanda tangan admin tersedia')
-        ->assertSee('Tanda Tangan Verifikator')
+        ->assertSee('Tanda Tangan')
+        ->assertSee('Verifikator')
         ->assertSee('Admin Sertifikasi')
-        ->assertSee('Arsip Tanda Tangan Pemohon')
+        ->assertSee('Arsip Tanda')
         ->assertSee('Download PDF FR.APL.01');
 });
 
@@ -413,7 +432,6 @@ it('allows users to download the verified FR.APL.01 pdf after admin signature is
         'assessment_purpose' => 'sertifikasi',
         'admin_signatory_name' => 'Admin Sertifikasi',
     ], [
-        'fr_apl_01_path' => 'documents/fr_apl_01/test.pdf',
         'fr_apl_02_path' => 'documents/fr_apl_02/test.pdf',
         'ktm_path' => 'documents/ktm/test.pdf',
         'khs_path' => 'documents/khs/test.pdf',
@@ -423,7 +441,6 @@ it('allows users to download the verified FR.APL.01 pdf after admin signature is
         'applicant_signature_path' => 'documents/signatures/applicant-test.png',
         'admin_signature_path' => 'documents/signatures/admin-test.png',
     ], [
-        'fr_apl_01_path' => ['status' => 'verified', 'verified_at' => now()->subDay()],
         'fr_apl_02_path' => ['status' => 'verified', 'verified_at' => now()->subDay()],
         'ktm_path' => ['status' => 'verified', 'verified_at' => now()->subDay()],
         'khs_path' => ['status' => 'verified', 'verified_at' => now()->subDay()],
@@ -447,6 +464,54 @@ it('allows users to download the verified FR.APL.01 pdf after admin signature is
         ->assertDownload('FR-APL-01-customer-service-'.$registration->id.'.pdf');
 });
 
+it('renders the FR.APL.01 blade with the plain four-page official form styling', function () {
+    $user = createGeneralUser(['nama' => 'Asa'], completed: true);
+    $scheme = createScheme(['nama' => 'Customer Service', 'kode_skema' => 'CS-001']);
+
+    $registration = createRegistrationWithRelations($user, $scheme, [
+        'status' => 'dokumen_ok',
+        'assessment_purpose' => 'sertifikasi',
+        'payment_reference' => 'REG-001',
+    ]);
+
+    $html = view('documents.apl-01-pdf', [
+        'registration' => $registration->load(['user.profile', 'user.umumProfile', 'user.mahasiswaProfile', 'scheme.unitKompetensis']),
+        'assessmentPurposeOptions' => [
+            ['label' => 'Sertifikasi', 'checked' => true],
+        ],
+        'unitKompetensiRows' => collect(),
+        'persyaratanDasarRows' => [
+            ['label' => 'Persyaratan dasar', 'status' => 'verified'],
+        ],
+        'persyaratanAdministrasiRows' => [
+            ['label' => 'Persyaratan administratif', 'status' => 'verified'],
+        ],
+        'applicantSignatureImage' => null,
+        'adminSignatureImage' => null,
+        'applicantSignedDate' => '21 April 2026',
+        'adminSignedDate' => '21 April 2026',
+    ])->render();
+
+    expect($html)
+        ->toContain('font-family: "Times New Roman", Times, serif;')
+        ->toContain('font-size: 12px;')
+        ->toContain('FR.APL.01. Permohonan Sertifikasi Kompetensi')
+        ->toContain('Bagian 1 : Rincian Data Pemohon Sertifikasi')
+        ->toContain('Bagian 2 : Data Sertifikasi')
+        ->toContain('<td>Tujuan Asesmen</td>')
+        ->toContain('Daftar Unit Kompetensi')
+        ->toContain('3.2 Bukti Administratif')
+        ->toContain('background: transparent;')
+        ->toContain('border: 0;')
+        ->not->toContain('background: #fffdf8;')
+        ->not->toContain('rowspan="1">Tujuan Asesmen</td>')
+        ->toContain('recommendation-table')
+        ->not->toContain('document-header')
+        ->not->toContain('No. Dokumen')
+        ->not->toContain('No. Pendaftaran')
+        ->not->toContain('class="passport-photo"');
+});
+
 it('prevents users from downloading the FR.APL.01 pdf before verification is complete', function () {
     $user = User::factory()->create();
     $scheme = createScheme();
@@ -457,7 +522,7 @@ it('prevents users from downloading the FR.APL.01 pdf before verification is com
         'applicant_signature_path' => 'documents/signatures/applicant-test.png',
         'admin_signature_path' => 'documents/signatures/admin-test.png',
     ], [
-        'fr_apl_01_path' => ['status' => 'pending'],
+        'fr_apl_02_path' => ['status' => 'pending'],
     ]);
 
     $this->actingAs($user)
@@ -516,7 +581,7 @@ it('shows only general-user biodata fields on the registration status page for g
         ->assertDontSee('Status Semester');
 });
 
-it('shows only mahasiswa biodata fields on the registration status page for mahasiswa users', function () {
+it('shows the shared general biodata fields on the registration status page for mahasiswa users', function () {
     $user = createMahasiswaUser();
     $scheme = createScheme();
     $registration = createRegistrationWithRelations($user, $scheme, [
@@ -529,16 +594,17 @@ it('shows only mahasiswa biodata fields on the registration status page for maha
         ->call('setActiveTab', 'biodata')
         ->assertSee('Tujuan Asesmen')
         ->assertSee('Rekognisi Pembelajaran Lampau (RPL)')
+        ->assertSee('NIK')
+        ->assertSee('Nama Institusi / Perusahaan')
+        ->assertSee('Telepon Rumah')
+        ->assertSee('Telepon Kantor')
+        ->assertSee('Jabatan')
+        ->assertSee('Telepon Perusahaan')
         ->assertSee('NIM')
-        ->assertSee('Fakultas')
-        ->assertSee('Program Studi')
-        ->assertSee('Total SKS')
-        ->assertSee('Status Semester')
-        ->assertDontSee('Nama Institusi')
-        ->assertDontSee('Telepon Kantor')
-        ->assertDontSee('Nama Perusahaan')
-        ->assertDontSee('Jabatan')
-        ->assertDontSee('Email Perusahaan');
+        ->assertDontSee('Fakultas')
+        ->assertDontSee('Program Studi')
+        ->assertDontSee('Total SKS')
+        ->assertDontSee('Status Semester');
 });
 
 it('renders the certificates page with the active certificate and table', function () {
@@ -560,7 +626,7 @@ it('renders the certificates page with the active certificate and table', functi
         ->assertSee('Junior Web Developer')
         ->assertSee('Semua Sertifikat')
         ->assertSee('Unduh Sertifikat')
-        ->assertSee('Unduh Hasil Ujian');
+        ->assertSee('Unduh Surat Keterangan');
 });
 
 it('shows surat keterangan download while certificate copy is still waiting for admin upload', function () {
@@ -587,12 +653,9 @@ it('shows surat keterangan download while certificate copy is still waiting for 
         ->assertOk()
         ->assertSee('Status Kompeten Menunggu Sertifikat Copy')
         ->assertSee('Unduh Surat Keterangan')
-        ->assertSee('Sertifikat copy menunggu upload admin');
-
-    Livewire::actingAs($user)
-        ->test(UserCertificatesPage::class)
-        ->call('downloadCompetencyLetter', $registration->id)
-        ->assertFileDownloaded('surat-keterangan-kompeten-junior-web-developer.doc');
+        ->assertSee(Storage::url('exam-results/kompeten.pdf'), false)
+        ->assertSee('Unduh Sertifikat')
+        ->assertSee('Sertifikat belum tersedia');
 });
 
 it('filters only popular schemes on the user schemes page', function () {

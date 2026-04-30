@@ -45,10 +45,9 @@
                         class="block w-full rounded-xl border border-slate-200 px-4 py-3 outline-none transition-all focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 dark:border-zinc-800 dark:bg-zinc-950 dark:text-white" />
                 </div>
 
-                <button type="submit"
-                    class="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-400 px-6 py-3.5 text-sm font-bold text-black hover:bg-emerald-500">
+                <x-ui.primary-button type="submit" class="w-full">
                     Buat Akun
-                </button>
+                </x-ui.primary-button>
             </form>
 
             <div

@@ -11,6 +11,7 @@ class UserMahasiswaProfile extends Model
 
     protected $fillable = [
         'user_id', 'nim', 'total_sks', 'status_semester',
+        'fakultas', 'program_studi',
     ];
 
     public function user(): BelongsTo

@@ -127,11 +127,11 @@ class UploadHasilUji extends Component
         ];
 
         if ($this->examResult === 'kompeten') {
-            $rules['certificateFile'] = 'nullable|file|mimes:pdf|max:4096';
-            $rules['resultFile'] = ($hasExistingResultFile ? 'nullable' : 'required').'|file|mimes:pdf|max:4096';
+            $rules['certificateFile'] = 'nullable|file|mimes:pdf|extensions:pdf|max:4096';
+            $rules['resultFile'] = ($hasExistingResultFile ? 'nullable' : 'required').'|file|mimes:pdf|extensions:pdf|max:4096';
             $rules['expiredDate'] = ($isEditingCertificate || $this->certificateFile ? 'required' : 'nullable').'|date|after:today';
         } else {
-            $rules['resultFile'] = ($currentExamResultPath !== null ? 'nullable' : 'required').'|file|mimes:pdf|max:4096';
+            $rules['resultFile'] = ($currentExamResultPath !== null ? 'nullable' : 'required').'|file|mimes:pdf|extensions:pdf|max:4096';
         }
 
         $validated = $this->validate($rules);
@@ -146,7 +146,7 @@ class UploadHasilUji extends Component
                     Storage::disk('public')->delete($currentExamResultPath);
                 }
 
-                $resultPath = $this->resultFile->store('exam-results', 'public');
+                $resultPath = $this->resultFile->store('competency-letters', 'public');
             }
 
             if ($isEditingCertificate) {
@@ -406,18 +406,6 @@ class UploadHasilUji extends Component
         return Registration::query()
             ->with(['user.mahasiswaProfile', 'user.umumProfile', 'scheme', 'exam'])
             ->whereIn('status', ['terjadwal', 'kompeten', 'sertifikat_terbit', 'tidak_kompeten'])
-            ->where(function (Builder $query): void {
-                $query->where('status', '!=', 'sertifikat_terbit')
-                    ->orWhereNotExists(function (\Illuminate\Database\Query\Builder $sub): void {
-                        $sub->selectRaw(1)
-                            ->from('registrations as r2')
-                            ->whereColumn('r2.user_id', 'registrations.user_id')
-                            ->whereColumn('r2.scheme_id', 'registrations.scheme_id')
-                            ->whereColumn('r2.id', '>', 'registrations.id')
-                            ->where('r2.type', 'perpanjangan')
-                            ->whereIn('r2.status', ['terjadwal', 'kompeten', 'sertifikat_terbit', 'tidak_kompeten']);
-                    });
-            })
             ->when($this->search !== '', function (Builder $query): void {
                 $query->whereHas('user', function (Builder $userQuery): void {
                     $userQuery->where('nama', 'like', '%'.$this->search.'%')

@@ -1,50 +1,14 @@
 <div class="rounded-[1.25rem] bg-white p-6 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] md:p-8">
-    <h2 class="text-xl font-bold text-gray-900">Pilih Tipe Pendaftaran</h2>
-    <p class="mt-1 text-sm text-gray-500">Tentukan apakah Anda ingin mendaftar skema baru atau
-        memperpanjang sertifikat yang sudah ada.</p>
+    <h2 class="text-xl font-bold text-gray-900">Pilih Skema Sertifikasi</h2>
+    <p class="mt-1 text-sm text-gray-500">Pilih skema sertifikasi yang ingin Anda ikuti.</p>
 
-    <div class="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <label @class([
-            'relative flex cursor-pointer rounded-xl border-2 p-5 transition-all',
-            'border-emerald-500 bg-emerald-50/50 ring-1 ring-emerald-500' => $registrationType === 'baru',
-            'border-gray-200 hover:border-gray-300' => $registrationType !== 'baru',
-        ])>
-            <input type="radio" wire:model.live="registrationType" value="baru" class="sr-only">
-            <div>
-                <p class="font-semibold text-gray-900">Skema Baru</p>
-                <p class="mt-1 text-[13px] text-gray-500">Daftar skema sertifikasi yang belum pernah
-                    Anda ambil.</p>
-            </div>
-        </label>
-
-        <label @class([
-            'relative flex cursor-pointer rounded-xl border-2 p-5 transition-all',
-            'border-blue-500 bg-blue-50/50 ring-1 ring-blue-500' => $registrationType === 'perpanjangan',
-            'border-gray-200 hover:border-gray-300' => $registrationType !== 'perpanjangan',
-        ])>
-            <input type="radio" wire:model.live="registrationType" value="perpanjangan" class="sr-only">
-            <div>
-                <p class="font-semibold text-gray-900">Perpanjangan</p>
-                <p class="mt-1 text-[13px] text-gray-500">Perpanjang sertifikat yang sudah tidak
-                    aktif atau kedaluwarsa.</p>
-            </div>
-        </label>
-    </div>
-    @error('registrationType')
-        <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
-    @enderror
-
-    @if ($registrationType)
-        <div class="mt-8">
-            <h3 class="text-lg font-semibold text-gray-900">Pilih Skema Sertifikasi</h3>
+    <div class="mt-8">
             <p class="mt-1 text-sm text-gray-500">
                 @if ($showFacultyFilters)
                     Gunakan filter fakultas dan program studi untuk mempersempit pilihan skema. Jika
                     biodata sudah terisi, filter akan otomatis menyesuaikan.
-                @elseif ($registrationType === 'baru')
-                    Pilih skema yang sesuai dengan tujuan sertifikasi Anda.
                 @else
-                    Skema dengan sertifikat kedaluwarsa atau tidak aktif yang bisa diperpanjang.
+                    Pilih skema yang sesuai dengan tujuan sertifikasi Anda.
                 @endif
             </p>
 
@@ -76,19 +40,14 @@
             @endif
 
             @php
-                $schemes = $registrationType === 'baru' ? $newSchemes : $renewalSchemes;
+                $schemes = $newSchemes;
             @endphp
 
             @if ($schemes->isEmpty())
                 <div class="mt-4 rounded-xl border border-amber-100 bg-amber-50/50 p-5 text-sm text-amber-700">
-                    @if ($registrationType === 'baru')
-                        Tidak ada skema baru yang tersedia untuk pilihan Anda saat ini.
-                        @if ($hasMatchingCertifiedSchemeForNewRegistration)
-                            <p class="mt-2 text-amber-800">Anda sudah memiliki sertifikasi skema ini, mohon untuk diperpanjang jika sudah kadaluarsa.</p>
-                        @endif
-                    @else
-                        Tidak ada sertifikat kedaluwarsa atau tidak aktif yang bisa diperpanjang
-                        saat ini.
+                    Tidak ada skema baru yang tersedia untuk pilihan Anda saat ini.
+                    @if ($hasMatchingCertifiedSchemeForNewRegistration)
+                        <p class="mt-2 text-amber-800">Anda sudah memiliki riwayat sertifikasi untuk skema yang cocok.</p>
                     @endif
                 </div>
             @else
@@ -117,12 +76,11 @@
             @error('schemeId')
                 <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
             @enderror
-        </div>
-    @endif
+    </div>
 
     <div class="mt-8 flex justify-end">
-        <button type="button" wire:click="nextStep" @disabled(! $registrationType || ! $schemeId)
-            class="inline-flex items-center gap-2 rounded-xl bg-gray-900 px-6 py-3 text-sm font-semibold text-white shadow-sm transition-all hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-50">
+        <button type="button" wire:click="nextStep" @disabled(! $schemeId)
+            class="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-gray-900 px-6 py-3 text-sm font-semibold text-white shadow-sm transition-all hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto">
             Selanjutnya
             <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />

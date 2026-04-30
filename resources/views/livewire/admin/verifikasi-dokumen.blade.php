@@ -107,10 +107,6 @@
                     <div class="flex-1">
                         <div class="flex items-center gap-3 mb-4">
                             <h2 class="text-xl font-bold text-gray-900">{{ $reg->user->name }}</h2>
-                            @if ($reg->type === 'perpanjangan')
-                                <span
-                                    class="inline-flex items-center rounded-full bg-blue-50 px-2 py-0.5 text-xs font-bold text-blue-600 border border-blue-100">Perpanjangan</span>
-                            @endif
                             @php
                                 $statusColorMap = [
                                     'dokumen_ok' => 'bg-teal-50 text-teal-700 border-teal-100',

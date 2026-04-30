@@ -20,10 +20,7 @@
                     <div class="relative group">
                         <div
                             class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400 group-focus-within:text-emerald-500 transition-colors">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                            </svg>
+                            <x-svg.user />
                         </div>
                         <input type="text" name="nim" id="nim" value="{{ old('nim') }}"
                             autocomplete="username" placeholder="Masukkan NIM atau email Anda" required autofocus
@@ -49,10 +46,7 @@
                     <div class="relative group">
                         <div
                             class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400 group-focus-within:text-emerald-500 transition-colors">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                            </svg>
+                            <x-svg.lock />
                         </div>
                         <input type="password" name="password" id="password" autocomplete="current-password"
                             placeholder="••••••••" required
@@ -73,15 +67,10 @@
                     </div>
                 </div>
 
-                <button type="submit"
-                    class="w-full mt-2 inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-400 px-6 py-3.5 text-sm font-bold text-black hover:bg-emerald-500"
-                    data-test="login-button">
+                <x-ui.primary-button type="submit" class="w-full mt-2" data-test="login-button">
                     {{ __('Masuk ke Akun') }}
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"
-                            d="M14 5l7 7-7 7M3 12h18" />
-                    </svg>
-                </button>
+                    <x-svg.arrow-right />
+                </x-ui.primary-button>
             </form>
 
             @if (Route::has('register'))

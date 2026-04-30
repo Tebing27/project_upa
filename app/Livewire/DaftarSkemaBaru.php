@@ -32,7 +32,7 @@ class DaftarSkemaBaru extends Component
     public string $assessmentPurpose = 'sertifikasi';
 
     #[Url(as: 'type')]
-    public string $registrationType = '';
+    public string $registrationType = 'baru';
 
     #[Url(as: 'scheme')]
     public string $schemeId = '';
@@ -121,6 +121,8 @@ class DaftarSkemaBaru extends Component
     /** @var TemporaryUploadedFile|null */
     public $passportPhoto;
 
+    public ?string $passportPhotoBase64 = null;
+
     /** @var string|null Base64 data URL of the applicant digital signature */
     public ?string $applicantSignature = null;
 
@@ -131,6 +133,10 @@ class DaftarSkemaBaru extends Component
     public function mount(): void
     {
         $user = Auth::user();
+
+        if ($this->registrationType === 'perpanjangan') {
+            $this->registrationType = 'baru';
+        }
 
         $this->fillProfileFromUser();
         $this->syncFlowConfiguration();
@@ -167,6 +173,10 @@ class DaftarSkemaBaru extends Component
 
     public function updatedRegistrationType(): void
     {
+        if ($this->registrationType === 'perpanjangan') {
+            $this->registrationType = 'baru';
+        }
+
         $this->schemeId = '';
         $this->syncFlowConfiguration();
     }
@@ -179,7 +189,7 @@ class DaftarSkemaBaru extends Component
 
         if ($this->currentStep === 1) {
             $this->validate([
-                'registrationType' => 'required|in:baru,perpanjangan',
+                'registrationType' => 'required|in:baru',
                 'schemeId' => 'required|exists:schemes,id',
             ], [
                 'registrationType.required' => 'Pilih tipe pendaftaran.',
@@ -233,13 +243,7 @@ class DaftarSkemaBaru extends Component
             if ($this->apl01SubStep === 3) {
                 // Validate Bagian 3 (Documents)
                 if (! $this->useCondensedDocumentFlow) {
-                    $this->validate([
-                        'ktm' => 'required|file|mimes:pdf,jpg,jpeg,png|max:2048',
-                        'khs' => 'required|file|mimes:pdf|max:2048',
-                        'internshipCertificate' => 'nullable|file|mimes:pdf|max:2048',
-                        'ktp' => 'required|file|mimes:pdf,jpg,jpeg,png|max:2048',
-                        'passportPhoto' => 'required|file|mimes:jpg,jpeg,png|max:2048',
-                    ]);
+                    $this->validate($this->supportingDocumentRules());
                 }
                 $this->apl01SubStep = 4;
 
@@ -259,7 +263,6 @@ class DaftarSkemaBaru extends Component
 
         if ($this->currentStep === 3) {
             $this->validate([
-                'frApl01' => 'required|file|mimes:pdf|max:2048',
                 'frApl02' => 'required|file|mimes:pdf|max:2048',
             ]);
 
@@ -269,6 +272,16 @@ class DaftarSkemaBaru extends Component
 
     public function confirmApl01(): void
     {
+        if ($this->currentStep === 2 && $this->apl01SubStep === 3) {
+            if (! $this->useCondensedDocumentFlow) {
+                $this->validate($this->supportingDocumentRules());
+            }
+
+            $this->apl01SubStep = 4;
+
+            return;
+        }
+
         // Re-validate Bagian 1 & 2 then move to Bagian 4 (Tanda Tangan)
         $validated = $this->validateProfileStep();
 
@@ -281,13 +294,7 @@ class DaftarSkemaBaru extends Component
         ]);
 
         if (! $this->useCondensedDocumentFlow) {
-            $this->validate([
-                'ktm' => 'required|file|mimes:pdf,jpg,jpeg,png|max:2048',
-                'khs' => 'required|file|mimes:pdf|max:2048',
-                'internshipCertificate' => 'nullable|file|mimes:pdf|max:2048',
-                'ktp' => 'required|file|mimes:pdf,jpg,jpeg,png|max:2048',
-                'passportPhoto' => 'required|file|mimes:jpg,jpeg,png|max:2048',
-            ]);
+            $this->validate($this->supportingDocumentRules());
         }
 
         $this->apl01SubStep = 4; // Move to signature section (Bagian 4)
@@ -350,7 +357,6 @@ class DaftarSkemaBaru extends Component
             $applicantSignaturePath = $signaturePath;
         }
 
-        $frApl01Path = $this->frApl01->store('documents/fr_apl_01', 'public');
         $frApl02Path = $this->frApl02->store('documents/fr_apl_02', 'public');
         $ktmPath = $this->useCondensedDocumentFlow
             ? $supportingDocumentPaths['ktm_path']
@@ -366,21 +372,20 @@ class DaftarSkemaBaru extends Component
             : $this->ktp?->store('documents/ktp', 'public');
         $passportPhotoPath = $this->useCondensedDocumentFlow
             ? $supportingDocumentPaths['passport_photo_path']
-            : $this->passportPhoto?->store('documents/photo', 'public');
+            : $this->storePassportPhoto();
 
         $paymentReference = $this->generatePaymentReference();
 
         $registration = $user->registrations()->create([
             'scheme_id' => $schemeId,
-            'type' => $this->registrationType,
-            'assessment_purpose' => $this->registrationType === 'baru' ? $this->assessmentPurpose : null,
+            'type' => 'baru',
+            'assessment_purpose' => $this->assessmentPurpose,
             'payment_reference' => $paymentReference,
             'va_numer' => null,
             'status' => 'menunggu_verifikasi',
         ]);
 
         $documents = [
-            'fr_apl_01_path' => $frApl01Path,
             'fr_apl_02_path' => $frApl02Path,
             'ktm_path' => $ktmPath,
             'khs_path' => $khsPath,
@@ -443,8 +448,9 @@ class DaftarSkemaBaru extends Component
     {
         $user = Auth::user();
 
-        $existingSchemeIds = Certificate::query()
+        $activeCertificateSchemeIds = Certificate::query()
             ->where('user_id', $user->id)
+            ->active()
             ->pluck('scheme_id')
             ->filter()
             ->all();
@@ -455,7 +461,7 @@ class DaftarSkemaBaru extends Component
             ->pluck('scheme_id')
             ->all();
 
-        $excludeIds = array_unique(array_merge($existingSchemeIds, $inProgressSchemeIds));
+        $excludeIds = array_unique(array_merge($activeCertificateSchemeIds, $inProgressSchemeIds));
 
         return Scheme::query()
             ->where('is_active', true)
@@ -517,7 +523,7 @@ class DaftarSkemaBaru extends Component
     {
         return view('livewire.daftar-skema-baru', [
             'newSchemes' => $this->getNewSchemes(),
-            'renewalSchemes' => $this->getRenewalSchemes(),
+            'renewalSchemes' => collect(),
             'hasMatchingCertifiedSchemeForNewRegistration' => $this->hasMatchingCertifiedSchemeForNewRegistration(),
             'selectedScheme' => $this->schemeId ? Scheme::find($this->schemeId) : null,
             'faculties' => $this->getFaculties(),
@@ -609,11 +615,11 @@ class DaftarSkemaBaru extends Component
         $this->kualifikasi_pendidikan = $user->umumProfile?->kualifikasi_pendidikan;
         $this->total_sks = $user->mahasiswaProfile?->total_sks;
         $this->status_semester = $user->mahasiswaProfile?->status_semester;
-        $this->fakultas = $user->profile?->fakultas;
-        $this->program_studi = $user->profile?->program_studi;
-        $this->faculty = $this->resolveFacultyFilterValue($user->profile?->fakultas);
+        $this->fakultas = $user->mahasiswaProfile?->fakultas;
+        $this->program_studi = $user->mahasiswaProfile?->program_studi;
+        $this->faculty = $this->resolveFacultyFilterValue($user->mahasiswaProfile?->fakultas);
         $this->studyProgram = $this->resolveStudyProgramFilterValue(
-            $user->profile?->program_studi,
+            $user->mahasiswaProfile?->program_studi,
             $this->faculty,
         );
         $this->nama_perusahaan = $user->umumProfile?->nama_perusahaan;
@@ -675,12 +681,20 @@ class DaftarSkemaBaru extends Component
             'jenis_kelamin' => $validated['jenis_kelamin'] ?? null,
             'alamat_rumah' => $validated['alamat_rumah'] ?? null,
             'no_wa' => $validated['no_wa'] ?? null,
-            'fakultas' => $validated['fakultas'] ?? null,
-            'program_studi' => $validated['program_studi'] ?? null,
             'kode_pos_rumah' => $validated['kode_pos_rumah'] ?? null,
             'telp_rumah' => $validated['telp_rumah'] ?? null,
             'telp_kantor' => $validated['telp_kantor'] ?? null,
         ]);
+
+        if ($user->isUpnvjUser()) {
+            $user->mahasiswaProfile()->updateOrCreate([], [
+                'nim' => $user->mahasiswaProfile?->nim,
+                'total_sks' => $user->mahasiswaProfile?->total_sks,
+                'status_semester' => $user->mahasiswaProfile?->status_semester,
+                'fakultas' => $validated['fakultas'] ?? null,
+                'program_studi' => $validated['program_studi'] ?? null,
+            ]);
+        }
 
         $user->umumProfile()->updateOrCreate([], [
             'no_ktp' => $validated['no_ktp'] ?? null,
@@ -698,9 +712,11 @@ class DaftarSkemaBaru extends Component
         $user->syncProfileCompletionStatus();
         $user->save();
 
-        $this->faculty = $this->resolveFacultyFilterValue($user->profile?->fakultas);
+        $user->load('mahasiswaProfile');
+
+        $this->faculty = $this->resolveFacultyFilterValue($user->mahasiswaProfile?->fakultas);
         $this->studyProgram = $this->resolveStudyProgramFilterValue(
-            $user->profile?->program_studi,
+            $user->mahasiswaProfile?->program_studi,
             $this->faculty,
         );
     }
@@ -716,20 +732,8 @@ class DaftarSkemaBaru extends Component
             return false;
         }
 
-        if ($this->registrationType === 'baru' && $user->hasAnyCertificateForScheme($schemeId)) {
-            $this->addError('schemeId', 'Anda sudah memiliki riwayat sertifikat untuk skema ini. Gunakan opsi perpanjangan.');
-
-            return false;
-        }
-
-        if ($this->registrationType === 'perpanjangan' && ! $user->hasAnyCertificateForScheme($schemeId)) {
-            $this->addError('schemeId', 'Anda belum pernah memiliki sertifikat untuk skema ini. Pilih opsi skema baru.');
-
-            return false;
-        }
-
-        if ($this->registrationType === 'perpanjangan' && $user->hasActiveCertificateForScheme($schemeId)) {
-            $this->addError('schemeId', 'Sertifikat Anda untuk skema ini masih aktif dan belum bisa diperpanjang.');
+        if ($this->registrationType === 'baru' && $user->hasActiveCertificateForScheme($schemeId)) {
+            $this->addError('schemeId', 'Anda masih memiliki sertifikat aktif untuk skema ini.');
 
             return false;
         }
@@ -743,9 +747,7 @@ class DaftarSkemaBaru extends Component
             return false;
         }
 
-        $schemeIds = ($this->registrationType === 'perpanjangan'
-            ? $this->getRenewalSchemes()
-            : $this->getNewSchemes())
+        $schemeIds = $this->getNewSchemes()
             ->pluck('id')
             ->all();
 
@@ -774,18 +776,48 @@ class DaftarSkemaBaru extends Component
     private function documentRules(): array
     {
         $rules = [
-            'frApl01' => 'required|file|mimes:pdf|max:2048',
             'frApl02' => 'required|file|mimes:pdf|max:2048',
         ];
 
         return $rules;
     }
 
+    private function storePassportPhoto(): ?string
+    {
+        if (filled($this->passportPhotoBase64)) {
+            preg_match('/^data:image\/(?<extension>jpeg|jpg|png);base64,/', $this->passportPhotoBase64, $matches);
+
+            $extension = ($matches['extension'] ?? 'jpg') === 'jpeg' ? 'jpg' : ($matches['extension'] ?? 'jpg');
+            $base64Data = preg_replace('/^data:image\/\w+;base64,/', '', $this->passportPhotoBase64);
+            $photoPath = 'documents/photo/passport_'.uniqid().'.'.$extension;
+
+            Storage::disk('public')->put($photoPath, base64_decode((string) $base64Data));
+
+            return $photoPath;
+        }
+
+        return $this->passportPhoto?->store('documents/photo', 'public');
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    private function supportingDocumentRules(): array
+    {
+        return [
+            'ktm' => 'required|file|mimes:jpg,jpeg,png|max:2048',
+            'khs' => 'required|file|mimes:pdf|max:2048',
+            'internshipCertificate' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:2048',
+            'ktp' => 'required|file|mimes:jpg,jpeg,png|max:2048',
+            'passportPhoto' => 'required|file|mimes:jpg,jpeg,png|max:2048',
+        ];
+    }
+
     private function syncFlowConfiguration(): void
     {
         $user = Auth::user();
 
-        $this->useCondensedDocumentFlow = $user->hasIssuedCertificate();
+        $this->useCondensedDocumentFlow = false;
         $this->shouldShowProfileStep = ! $this->useCondensedDocumentFlow;
         $this->requiresProfileCompletion = $this->shouldShowProfileStep && ! $user->hasCompletedProfile();
     }
@@ -800,6 +832,7 @@ class DaftarSkemaBaru extends Component
 
         return Certificate::query()
             ->where('user_id', $user->id)
+            ->active()
             ->whereHas('scheme', function ($query): void {
                 $query->where('is_active', true)
                     ->when($this->faculty !== '', fn ($schemeQuery) => $schemeQuery->where('faculty_id', $this->faculty))
