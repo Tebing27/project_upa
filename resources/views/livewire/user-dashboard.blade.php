@@ -41,59 +41,7 @@
             'Selesaikan satu skema sertifikasi hingga tahap sertifikat terbit terlebih dahulu sebelum mendaftar skema baru.';
     @endphp
 
-    {{-- Top Cards Section --}}
-    <div class="grid grid-cols-1 gap-4 sm:gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3">
-        {{-- Card 1: Sertifikat Aktif --}}
-        <div class="rounded-[1.25rem] bg-white p-6 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)]">
-            <div class="flex items-start justify-between">
-                <div>
-                    <p class="text-[11px] font-bold uppercase tracking-wider text-gray-500">Sertifikat Aktif</p>
-                    <p class="mt-2 text-3xl font-bold text-gray-900">{{ $activeCertificatesCount ?? '0' }}</p>
-                    <p class="mt-2 text-[13px] text-gray-500">
-                        {{ $activeCertificate?->scheme_name ?? 'Tidak ada sertifikat' }}
-                    </p>
-                </div>
-                <div class="flex h-10 w-10 items-center justify-center rounded-full bg-emerald-50 text-emerald-600">
-                    <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
-                    </svg>
-                </div>
-            </div>
-        </div>
-
-        {{-- Card 2: Status Pendaftaran --}}
-        <div class="rounded-[1.25rem] bg-white p-6 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)]">
-            <div class="flex items-start justify-between">
-                <div>
-                    <p class="text-[11px] font-bold uppercase tracking-wider text-gray-500">Status Pendaftaran</p>
-                    <p class="mt-2 text-2xl font-bold text-gray-900">{{ $registrationStatusLabel }}</p>
-                    <p class="mt-2 text-[13px] text-gray-500">Tahap {{ $currentStep }} dari 5</p>
-                </div>
-                <div class="flex h-10 w-10 items-center justify-center rounded-full bg-emerald-50 text-emerald-600">
-                    <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                    </svg>
-                </div>
-            </div>
-        </div>
-
-        {{-- Card 3: Kode Referensi --}}
-        <div class="rounded-[1.25rem] bg-white p-6 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)]">
-            <div class="flex items-start justify-between">
-                <div>
-                    <p class="text-[11px] font-bold uppercase tracking-wider text-gray-500">Kode Referensi</p>
-                    <p class="mt-2 text-2xl font-bold text-gray-900">
-                        {{ $latestRegistration?->payment_reference ?? '-' }}</p>
-                    <p class="mt-2 text-[13px] text-gray-500">Menyesuaikan data pendaftaran terbaru.</p>
-                </div>
-                <div class="flex h-10 w-10 items-center justify-center rounded-full bg-blue-50 text-blue-600">
-                    <span class="text-xl font-semibold">#</span>
-                </div>
-            </div>
-        </div>
-    </div>
+    @include('livewire.user-dashboard._summary-cards')
 
     {{-- Progress Pendaftaran Section --}}
     <div class="rounded-[1.25rem] bg-white p-5 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] sm:p-6 md:p-8">
@@ -114,103 +62,20 @@
                 @if (!$canRegisterNewScheme)
                     <button type="button" onclick="alert('{{ $newSchemeAlertMessage }}')"
                         class="inline-flex w-full sm:w-auto justify-center items-center gap-2 rounded-xl bg-gray-100 px-5 py-2.5 text-sm font-semibold text-gray-400 transition hover:bg-gray-200">
-                        <svg class="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-                        </svg>
+                        <x-svg.plus class="h-4 w-4 shrink-0" />
                         Daftar Skema Baru
                     </button>
                 @else
                     <a href="{{ route('dashboard.skema') }}"
                         class="inline-flex w-full sm:w-auto justify-center items-center gap-2 rounded-xl bg-emerald-400 px-5 py-2.5 text-sm font-semibold text-black hover:bg-emerald-500">
-                        <svg class="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-                        </svg>
+                        <x-svg.plus class="h-4 w-4 shrink-0" />
                         Daftar Skema Baru
                     </a>
                 @endif
             </div>
         </div>
 
-        {{-- Stepper --}}
-        <div id="stepper-container" class="mt-8 mb-4 pb-24 overflow-x-auto overflow-y-hidden"
-            style="scrollbar-width: none;">
-            <div class="relative flex w-full min-w-[500px] px-16 md:px-20">
-                @php
-                    $progressWidth = 0;
-                    $progressWidth = match ($currentStep) {
-                        2 => 25,
-                        3 => 50,
-                        4 => 75,
-                        5 => 100,
-                        default => 0,
-                    };
-                @endphp
-
-                {{-- Background Line --}}
-                <div class="absolute left-0 right-0 top-[19px] h-[2px] bg-slate-200 z-0"></div>
-
-                <div class="absolute left-0 top-[19px] h-[2px] bg-[#10b981] z-0" style="width: {{ $progressWidth }}%;">
-                </div>
-
-                {{-- Stepper Items --}}
-                <div class="relative z-10 flex w-full justify-between">
-                    @foreach ($steps as $stepNumber => $stepLabel)
-                        @php
-                            $isCompleted = $stepNumber < $currentStep;
-                            $isCurrent = $stepNumber === $currentStep;
-                            $isRejectedStep =
-                                ($stepNumber === 2 &&
-                                    in_array($latestRegistration?->status, ['dokumen_ditolak', 'rejected'], true)) ||
-                                ($stepNumber === 5 && $latestRegistration?->status === 'tidak_kompeten');
-
-                            $displayLabel = str_replace(' & ', "\n& ", $stepLabel);
-                        @endphp
-
-                        <div @if ($isCurrent) id="active-step-item" @endif
-                            class="relative flex shrink-0 flex-col items-center">
-                            {{-- Circle --}}
-                            <div @class([
-                                'relative z-10 flex shrink-0 h-[40px] w-[40px] items-center justify-center rounded-full text-[15px] font-bold ring-[6px] ring-white transition-colors',
-                                'bg-[#10b981] text-white' =>
-                                    $isCompleted || ($isCurrent && !$isRejectedStep),
-                                'bg-red-500 text-white' => $isRejectedStep,
-                                'bg-white border-[2px] border-slate-200 text-slate-400' =>
-                                    !$isCompleted && !$isCurrent && !$isRejectedStep,
-                            ])>
-                                @if ($isCompleted)
-                                    <svg class="h-[18px] w-[18px]" fill="none" viewBox="0 0 24 24"
-                                        stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"
-                                            d="M5 13l4 4L19 7" />
-                                    </svg>
-                                @elseif ($isRejectedStep)
-                                    <svg class="h-[18px] w-[18px]" fill="none" viewBox="0 0 24 24"
-                                        stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"
-                                            d="M6 18L18 6M6 6l12 12" />
-                                    </svg>
-                                @else
-                                    {{ $stepNumber }}
-                                @endif
-                            </div>
-
-                            {{-- Label --}}
-                            <div
-                                class="absolute top-[52px] left-1/2 w-[120px] -translate-x-1/2 text-center md:w-[150px]">
-                                <p @class([
-                                    'whitespace-pre-line leading-[1.3] text-[11px] md:text-[13px]',
-                                    'text-slate-600 font-medium' => $isCompleted || $isCurrent,
-                                    'text-slate-400' => !$isCompleted && !$isCurrent,
-                                    'text-red-600 font-medium' => $isRejectedStep,
-                                ])>
-                                    {{ $displayLabel }}
-                                </p>
-                            </div>
-                        </div>
-                    @endforeach
-                </div>
-            </div>
-        </div>
+        @include('livewire.user-dashboard._registration-stepper')
 
         {{-- Bottom Section: Sertifikat Aktif (LEFT) & Detail Pendaftaran (RIGHT) --}}
         <div class="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_1fr] xl:grid-cols-[400px_1fr]">
@@ -608,31 +473,4 @@
         </div>
     </div>
 
-    @script
-        <script>
-            document.addEventListener('livewire:initialized', () => {
-                const scrollToActiveStep = () => {
-                    const container = document.getElementById('stepper-container');
-                    const activeItem = document.getElementById('active-step-item');
-
-                    if (container && activeItem) {
-                        // Kalkulasi agar elemen berada persis di tengah layar
-                        const scrollPosition = activeItem.offsetLeft - (container.clientWidth / 2) + (activeItem
-                            .clientWidth / 2);
-                        container.scrollTo({
-                            left: scrollPosition,
-                            behavior: 'smooth'
-                        });
-                    }
-                };
-
-                // Jalankan saat pertama dimuat
-                setTimeout(scrollToActiveStep, 100);
-
-                // Jalankan ulang jika livewire update merender ulang komponen
-                Livewire.hook('morph.updated', () => {
-                    setTimeout(scrollToActiveStep, 100);
-                });
-            });
-        </script>
-    @endscript
+    @include('livewire.user-dashboard._auto-scroll-script')
